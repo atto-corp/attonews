@@ -45,6 +45,7 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
   // Check authentication status
   useEffect(() => {
@@ -54,6 +55,14 @@ export default function Home() {
   // Fetch daily editions on component mount
   useEffect(() => {
     fetchDailyEditions();
+  }, []);
+
+  // Load header collapse state from localStorage
+  useEffect(() => {
+    const collapsed = localStorage.getItem('newsroom_header_collapse');
+    if (collapsed !== null) {
+      setIsHeaderCollapsed(JSON.parse(collapsed));
+    }
   }, []);
 
   const checkAuthStatus = async () => {
@@ -113,6 +122,12 @@ export default function Home() {
     });
   };
 
+  const toggleHeaderCollapse = () => {
+    const newCollapsed = !isHeaderCollapsed;
+    setIsHeaderCollapsed(newCollapsed);
+    localStorage.setItem('newsroom_header_collapse', JSON.stringify(newCollapsed));
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 flex items-center justify-center relative overflow-hidden">
@@ -137,38 +152,42 @@ export default function Home() {
       </div>
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Welcome Box for Non-Authenticated Users */}
-        {!user && (
-            <div className="relative mb-8 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
-             <div className="flex items-start space-x-4">
-               <div className="flex-shrink-0">
-                 <div className="w-12 h-12 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                   </svg>
-                 </div>
-               </div>
-               <div className="flex-1">
-                 <h2 className="text-xl font-bold text-white/90 mb-3">
-                   Welcome to Skylines AI Newsroom
-                 </h2>
-                 <div className="text-white/80 space-y-3">
-                   <p className="text-base leading-relaxed">
-                     Each article in our newsroom is sourced from real messages on the Bluesky social media platform's firehose - a continuous stream of public posts and conversations.
-                   </p>
-                    <p className="text-base leading-relaxed">
-                      Every article clearly states which specific social media messages were used to write and inform the content, ensuring transparency about our AI-powered reporting process.
-                    </p>
-                    <p className="text-base leading-relaxed">
-                      Check out the new Events feature, where you can explore list-of-facts style event coverage sourced from real Bluesky conversations.
-                    </p>
-
-                  </div>
+        {!user && isHeaderCollapsed && (
+          <div className="text-center py-2 mb-8 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg">
+            <p className="text-white/80 text-sm">Welcome to the newsroom!</p>
+            <button onClick={toggleHeaderCollapse} className="ml-4 text-white/60 hover:text-white/80 text-xs underline">Expand</button>
+          </div>
+        )}
+        {!user && !isHeaderCollapsed && (
+          <div className="relative mb-8 backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
+            <button onClick={toggleHeaderCollapse} className="absolute top-4 right-4 text-white/60 hover:text-white/80 text-sm underline">Collapse</button>
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
               </div>
-
-
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white/90 mb-3">
+                  Welcome to Skylines AI Newsroom
+                </h2>
+                <div className="text-white/80 space-y-3">
+                  <p className="text-base leading-relaxed">
+                    Each article in our newsroom is sourced from real messages on the Bluesky social media platform's firehose - a continuous stream of public posts and conversations.
+                  </p>
+                  <p className="text-base leading-relaxed">
+                    Every article clearly states which specific social media messages were used to write and inform the content, ensuring transparency about our AI-powered reporting process.
+                  </p>
+                  <p className="text-base leading-relaxed">
+                    Check out the new Events feature, where you can explore list-of-facts style event coverage sourced from real Bluesky conversations.
+                  </p>
+                </div>
+              </div>
             </div>
-         )}
+          </div>
+        )}
 
         {/* Page Header */}
         <div className="text-center mb-8">
