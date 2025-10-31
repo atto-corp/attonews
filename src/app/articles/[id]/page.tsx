@@ -23,6 +23,7 @@ export default function ArticlePage() {
   const [error, setError] = useState('');
   const [showPrompt, setShowPrompt] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
+  const [appName, setAppName] = useState('Newsroom');
 
   const fetchArticle = useCallback(async () => {
     try {
@@ -48,6 +49,22 @@ export default function ArticlePage() {
       fetchArticle();
     }
   }, [articleId, fetchArticle]);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -222,7 +239,7 @@ export default function ArticlePage() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-slate-500">
-          <p>Skylines Article</p>
+          <p>{appName} Article</p>
         </div>
       </div>
     </div>

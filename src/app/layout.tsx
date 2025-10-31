@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navigation from "./components/Navigation";
 import "./globals.css";
+import { ServiceContainer } from "./services/service-container";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,10 +14,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Skylines AI Newsroom",
-  description: "AI-powered newsroom with automated reporting and editing",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const configService = await ServiceContainer.getInstance().getConfigService();
+  const fullName = await configService.getAppFullName();
+
+  return {
+    title: fullName,
+    description: "AI-powered newsroom with automated reporting and editing",
+  };
+}
 
 export default function RootLayout({
   children,

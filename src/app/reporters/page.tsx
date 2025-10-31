@@ -28,6 +28,7 @@ export default function ReportersPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newReporter, setNewReporter] = useState({ beats: [] as string[], prompt: '' });
   const [user, setUser] = useState<User | null>(null);
+  const [appName, setAppName] = useState('Newsroom');
   const [userLoading, setUserLoading] = useState(true);
 
   // Check user authentication and abilities
@@ -41,6 +42,22 @@ export default function ReportersPage() {
       fetchReporters();
     }
   }, [userLoading]);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const checkUserAuth = async () => {
     try {
@@ -685,7 +702,7 @@ export default function ReportersPage() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-white/60 relative z-10">
-          <p>Skylines Reporter Management Panel</p>
+          <p>{appName} Reporter Management Panel</p>
         </div>
       </div>
     </div>

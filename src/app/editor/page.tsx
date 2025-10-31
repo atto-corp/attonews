@@ -66,6 +66,7 @@ export default function EditorPage() {
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [kpiData, setKpiData] = useState<KpiData | null>(null);
+  const [appName, setAppName] = useState('Newsroom');
   const router = useRouter();
 
   // Check admin status and fetch data on component mount
@@ -74,6 +75,22 @@ export default function EditorPage() {
     fetchEditorData();
     fetchJobStatus();
     fetchKpiData();
+  }, []);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
   }, []);
 
   const checkAdminStatus = async () => {
@@ -976,7 +993,7 @@ export default function EditorPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-white/50">
-          <p>Skylines Editor Configuration Panel</p>
+          <p>{appName} Editor Configuration Panel</p>
         </div>
       </div>
     </div>

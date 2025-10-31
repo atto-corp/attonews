@@ -23,10 +23,27 @@ export default function EditionsPage() {
   const [editions, setEditions] = useState<NewspaperEdition[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [appName, setAppName] = useState('Newsroom');
 
   // Fetch newspaper editions on component mount
   useEffect(() => {
     fetchEditions();
+  }, []);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
   }, []);
 
   const fetchEditions = async () => {
@@ -174,7 +191,7 @@ export default function EditionsPage() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-white/50">
-          <p>Skylines Edition Archive</p>
+          <p>{appName} Edition Archive</p>
         </div>
       </div>
     </div>
