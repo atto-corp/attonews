@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "cron": "^4.3.3",
+    "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "mbjc": "^1.0.5",
     "mcp-bsky-jetstream": "^1.0.3",

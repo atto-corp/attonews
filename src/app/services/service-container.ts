@@ -6,6 +6,7 @@ import { EditorService } from './editor.service';
 import { KpiService } from './kpi.service';
 import { AIService } from './ai.service';
 import { AbilitiesService } from './abilities.service';
+import { ConfigService } from './config.service';
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
@@ -16,6 +17,7 @@ export class ServiceContainer {
   private kpiService: KpiService | null = null;
   private aiService: AIService | null = null;
   private abilitiesService: AbilitiesService | null = null;
+  private configService: ConfigService | null = null;
 
   private constructor() {}
 
@@ -83,6 +85,13 @@ export class ServiceContainer {
     return this.abilitiesService;
   }
 
+  async getConfigService(): Promise<ConfigService> {
+    if (!this.configService) {
+      this.configService = new ConfigService();
+    }
+    return this.configService;
+  }
+
   // Cleanup method for testing or shutdown
   async disconnect(): Promise<void> {
     if (this.dataStorageService) {
@@ -96,5 +105,6 @@ export class ServiceContainer {
     this.kpiService = null;
     this.aiService = null;
     this.abilitiesService = null;
+    this.configService = null;
   }
 }

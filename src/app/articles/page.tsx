@@ -35,6 +35,7 @@ function ArticlesContent() {
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const [_user, setUser] = useState<User | null>(null);
   const [hasReaderAccess, setHasReaderAccess] = useState(false);
+  const [appName, setAppName] = useState('Newsroom');
 
   const checkUserAccess = useCallback(async () => {
     try {
@@ -82,6 +83,22 @@ function ArticlesContent() {
   useEffect(() => {
     checkUserAccess();
   }, [checkUserAccess]);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const fetchArticles = useCallback(async () => {
     try {
@@ -363,7 +380,7 @@ function ArticlesContent() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-white/50">
-          <p>Skylines Articles</p>
+          <p>{appName} Articles</p>
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ export default function Navigation() {
   const [user, setUser] = useState<User | null>(null);
   const [_loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [appFullName, setAppFullName] = useState('AI Newsroom');
   const pathname = usePathname();
 
   useEffect(() => {
@@ -27,6 +28,22 @@ export default function Navigation() {
   useEffect(() => {
     checkAuthStatus();
   }, [pathname]);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppFullName(config.app.fullName);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const checkAuthStatus = async () => {
     try {
@@ -81,7 +98,7 @@ export default function Navigation() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h.01M11 12h.01M15 12h.01M7 16h.01M11 16h.01M15 16h.01" />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-slate-800">Skylines AI Newsroom</span>
+               <span className="text-xl font-bold text-slate-800">{appFullName}</span>
             </Link>
           </div>
 

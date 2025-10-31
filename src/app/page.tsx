@@ -46,6 +46,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [appName, setAppName] = useState('Newsroom');
+  const [appFullName, setAppFullName] = useState('AI Newsroom');
 
   // Check authentication status
   useEffect(() => {
@@ -63,6 +65,23 @@ export default function Home() {
     if (collapsed !== null) {
       setIsHeaderCollapsed(JSON.parse(collapsed));
     }
+  }, []);
+
+  // Load app configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          const config = await response.json();
+          setAppName(config.app.name);
+          setAppFullName(config.app.fullName);
+        }
+      } catch (error) {
+        console.error('Failed to load config:', error);
+      }
+    };
+    loadConfig();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -170,9 +189,9 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-white/90 mb-3">
-                  Welcome to Skylines AI Newsroom
-                </h2>
+                 <h2 className="text-xl font-bold text-white/90 mb-3">
+                   Welcome to {appFullName}
+                 </h2>
                 <div className="text-white/80 space-y-3">
                   <p className="text-base leading-relaxed">
                     Each article in our newsroom is sourced from real messages on the Bluesky social media platform's firehose - a continuous stream of public posts and conversations.
@@ -317,9 +336,9 @@ export default function Home() {
                                  <svg className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help" fill="currentColor" viewBox="0 0 20 20">
                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                  </svg>
-                                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                   To assist in semantic parsing of the given story, Skylines generates several opposing reactions to the story.
-                                 </div>
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                    To assist in semantic parsing of the given story, {appName} generates several opposing reactions to the story.
+                                  </div>
                                </div>
                              </h4>
                              <p className="text-white/70 italic">"{topic.supportingSocialMediaMessage}"</p>
@@ -382,7 +401,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-white/50">
-          <p>Skylines AI Newsroom Daily Edition Reader</p>
+          <p>{appFullName} Daily Edition Reader</p>
         </div>
       </div>
     </div>
