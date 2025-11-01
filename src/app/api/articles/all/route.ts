@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../../utils/auth';
 
 // GET /api/articles/all - Get all articles (requires Reader permission)
-export const GET = withAuth(async (request: NextRequest, user, redis) => {
+export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
   // Parse and validate results parameter
   const { searchParams } = new URL(request.url);
   const resultsParam = searchParams.get('results');
@@ -19,7 +19,7 @@ export const GET = withAuth(async (request: NextRequest, user, redis) => {
   }
 
   // Get all articles with limit
-  const articles = await redis.getAllArticles(limit);
+  const articles = await dataStorage.getAllArticles(user.id, limit);
 
   return NextResponse.json(articles);
 }, { requiredPermission: 'reader' });

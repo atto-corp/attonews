@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
+import { withAuth } from '../../utils/auth';
 
 // GET /api/editions - Get all newspaper editions with full article data
-export const GET = withRedis(async (_request: NextRequest, redis) => {
-  const editions = await redis.getNewspaperEditions();
+export const GET = withAuth(async (_request: NextRequest, user, dataStorage) => {
+  const editions = await dataStorage.getNewspaperEditions(user.id);
 
   // Fetch full article data for each edition
   const editionsWithArticles = await Promise.all(
     editions.map(async (edition) => {
       const articles = await Promise.all(
         edition.stories.map(async (storyId) => {
-          const article = await redis.getArticle(storyId);
+          const article = await dataStorage.getArticle(user.id, storyId);
           return article;
         })
       );
@@ -26,10 +26,10 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
   );
 
   return NextResponse.json(editionsWithArticles);
-});
+}, { requiredPermission: 'reader' });
 
-// POST /api/editions - Generate a new newspaper edition (placeholder for now)
-export async function POST() {
+// POST /api/editions - Generate a new newspaper edition
+export const POST = withAuth(async (request: NextRequest, user, dataStorage) => {
   try {
     // For now, return a message that this feature is not yet implemented
     // In a full implementation, this would call the EditorService to generate a new edition
@@ -44,4 +44,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+}, { requiredPermission: 'editor' });

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../utils/auth';
-import { withRedis } from '../../utils/redis';
 import { ServiceContainer } from '../../services/service-container';
 
 let container: ServiceContainer | null = null;
@@ -46,11 +45,11 @@ async function checkReporterPermission(request: NextRequest): Promise<{ user: an
   return { user };
 }
 
-// GET /api/reporters - Get all reporters (public read-only access)
-export const GET = withRedis(async (_request: NextRequest, dataStorage) => {
-  const reporters = await dataStorage.getAllReporters();
+// GET /api/reporters - Get all reporters (requires reporter permission)
+export const GET = withAuth(async (_request: NextRequest, user, dataStorage) => {
+  const reporters = await dataStorage.getAllReporters(user.id);
   return NextResponse.json(reporters);
-});
+}, { requiredPermission: 'reporter' });
 
 // POST /api/reporters - Create new reporter
 export const POST = withAuth(async (request: NextRequest, user, dataStorage) => {
@@ -67,7 +66,7 @@ export const POST = withAuth(async (request: NextRequest, user, dataStorage) => 
     );
   }
 
-  const reporter = await reporterService.createReporter({
+  const reporter = await reporterService.createReporter(user.id, {
     beats,
     prompt,
     enabled: enabled ?? true // Default to true if not specified

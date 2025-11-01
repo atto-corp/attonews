@@ -34,32 +34,15 @@ function ArticlesContent() {
   const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
   const [_user, setUser] = useState<User | null>(null);
-  const [hasReaderAccess, setHasReaderAccess] = useState(false);
   const [appName, setAppName] = useState('Newsroom');
 
   const checkUserAccess = useCallback(async () => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
-        // Allow public access - no redirect needed
+        setError('Authentication required to view articles');
+        setLoading(false);
         return;
-      }
-
-      // Check reader ability if no reporterId (all articles view)
-      if (!reporterId) {
-        const response = await fetch('/api/abilities/reader', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setHasReaderAccess(data.hasReader);
-        } else {
-          // If we can't check permissions, assume no reader access
-          setHasReaderAccess(false);
-        }
       }
 
       // Get user info for display
@@ -72,12 +55,16 @@ function ArticlesContent() {
       if (userResponse.ok) {
         const userData = await userResponse.json();
         setUser(userData.user);
+      } else {
+        setError('Authentication failed');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error checking user access:', error);
-      // Continue with public access if there's an error
+      setError('Authentication error');
+      setLoading(false);
     }
-  }, [reporterId]);
+  }, []);
 
   // Check user authentication and reader access
   useEffect(() => {
@@ -102,24 +89,28 @@ function ArticlesContent() {
 
   const fetchArticles = useCallback(async () => {
     try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required to view articles');
+        setLoading(false);
+        return;
+      }
+
       let response;
       if (reporterId) {
-        // Fetch articles by specific reporter
-        response = await fetch(`/api/articles?reporterId=${reporterId}`);
+        // Fetch articles by specific reporter (requires auth)
+        response = await fetch(`/api/articles?reporterId=${reporterId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       } else {
-        // Check if user has reader access for all articles
-        const token = localStorage.getItem('accessToken');
-        if (token && hasReaderAccess) {
-          // User is authenticated and has reader access - fetch all articles
-          response = await fetch('/api/articles/all', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        } else {
-          // User is not authenticated or doesn't have reader access - fetch latest 5 articles
-          response = await fetch('/api/articles/public');
-        }
+        // Fetch all articles for the authenticated user
+        response = await fetch('/api/articles/all', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
       }
 
       if (response.ok) {
@@ -135,15 +126,10 @@ function ArticlesContent() {
     } finally {
       setLoading(false);
     }
-  }, [reporterId, hasReaderAccess]);
+  }, [reporterId]);
 
   useEffect(() => {
-    if (reporterId) {
-      fetchArticles();
-    } else {
-      // For all articles view, fetch regardless of reader access (will use public endpoint if needed)
-      fetchArticles();
-    }
+    fetchArticles();
   }, [reporterId, fetchArticles]);
 
   const formatDate = (timestamp: number) => {
@@ -220,14 +206,12 @@ function ArticlesContent() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white/90 mb-2">
-                {reporterId ? 'Articles by Reporter' : (!hasReaderAccess ? 'Latest Articles' : 'All Articles')}
+                {reporterId ? 'Articles by Reporter' : 'All Articles'}
               </h1>
               <p className="text-white/70 text-lg">
                 {reporterId
                   ? `Reporter ${reporterId.split('_')[2] || reporterId} (${articles.length} articles)`
-                  : !hasReaderAccess
-                    ? `Showing the ${articles.length} most recent articles (login with Reader access to see all articles)`
-                    : `Chronological list of all published articles (${articles.length} articles)`
+                  : `Chronological list of all published articles (${articles.length} articles)`
                 }
               </p>
             </div>

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../../utils/auth';
-import { withRedis } from '../../../utils/redis';
 import { ServiceContainer } from '../../../services/service-container';
 
 let container: ServiceContainer | null = null;
@@ -12,15 +11,16 @@ async function getContainer(): Promise<ServiceContainer> {
   return container;
 }
 
-// GET /api/reporters/[id] - Get specific reporter (public read-only access)
-export const GET = withRedis(async (
+// GET /api/reporters/[id] - Get specific reporter (requires reporter permission)
+export const GET = withAuth(async (
   request: NextRequest,
-  redis,
+  user,
+  dataStorage,
   context: { params: Promise<{ id: string }> }
 ) => {
   const { id: reporterId } = await context.params;
 
-  const reporter = await redis.getReporter(reporterId);
+  const reporter = await dataStorage.getReporter(user.id, reporterId);
   if (!reporter) {
     return NextResponse.json(
       { error: 'Reporter not found' },
@@ -29,13 +29,13 @@ export const GET = withRedis(async (
   }
 
   return NextResponse.json(reporter);
-});
+}, { requiredPermission: 'reporter' });
 
 // PUT /api/reporters/[id] - Update specific reporter
 export const PUT = withAuth(async (
   request: NextRequest,
   user,
-  redis,
+  dataStorage,
   context
 ) => {
   const { id: reporterId } = await context.params;
@@ -53,7 +53,7 @@ export const PUT = withAuth(async (
     );
   }
 
-  const updatedReporter = await reporterService.updateReporter(reporterId, { beats, prompt, enabled });
+  const updatedReporter = await reporterService.updateReporter(user.id, reporterId, { beats, prompt, enabled });
 
   if (!updatedReporter) {
     return NextResponse.json(
@@ -72,7 +72,7 @@ export const PUT = withAuth(async (
 export const DELETE = withAuth(async (
   request: NextRequest,
   user,
-  redis,
+  dataStorage,
   context
 ) => {
   const { id: reporterId } = await context.params;
@@ -80,7 +80,7 @@ export const DELETE = withAuth(async (
   const container = await getContainer();
   const reporterService = await container.getReporterService();
 
-  const success = await reporterService.deleteReporter(reporterId);
+  const success = await reporterService.deleteReporter(user.id, reporterId);
   if (!success) {
     return NextResponse.json(
       { error: 'Reporter not found' },

@@ -20,35 +20,56 @@ export async function GET(_request: NextRequest) {
     const redis = await container.getDataStorageService();
     const editorService = await container.getEditorService();
 
+    // Get all users
+    const users = await redis.getAllUsers();
+    console.log(`[${new Date().toISOString()}] Found ${users.length} users to process`);
+
     const currentTime = Date.now();
+    const userResults: { [userId: string]: { editionId?: string; skipped: boolean; reason?: string } } = {};
 
-    // Set job as running and update last run time
-    await redis.setJobRunning('daily', true);
-    await redis.setJobLastRun('daily', currentTime);
-    console.log(`[${new Date().toISOString()}] Set daily job running=true and last_run=${currentTime}`);
+    // Process each user
+    for (const user of users) {
+      try {
+        console.log(`[${new Date().toISOString()}] Processing user ${user.id} (${user.email})`);
 
-    try {
-      const dailyEdition = await editorService.generateDailyEdition();
+        // Set job as running and update last run time for this user
+        await redis.setJobRunning(user.id, 'daily', true);
+        await redis.setJobLastRun(user.id, 'daily', currentTime);
+        console.log(`[${new Date().toISOString()}] Set daily job running=true and last_run=${currentTime} for user ${user.id}`);
 
-      // Mark job as completed successfully
-      await redis.setJobRunning('daily', false);
-      await redis.setJobLastSuccess('daily', currentTime);
-      console.log(`[${new Date().toISOString()}] Set daily job running=false and last_success=${currentTime}`);
+        try {
+          const dailyEdition = await editorService.generateDailyEdition(user.id);
 
-      console.log(`[${new Date().toISOString()}] Successfully generated daily edition ${dailyEdition.id}`);
-      console.log('Cron job completed successfully\n');
+          // Mark job as completed successfully for this user
+          await redis.setJobRunning(user.id, 'daily', false);
+          await redis.setJobLastSuccess(user.id, 'daily', currentTime);
+          console.log(`[${new Date().toISOString()}] Set daily job running=false and last_success=${currentTime} for user ${user.id}`);
 
-      return NextResponse.json({
-        success: true,
-        message: `Daily edition generation job completed successfully. Generated edition ${dailyEdition.id}.`,
-        dailyEditionId: dailyEdition.id
-      });
-    } catch (error) {
-      // Mark job as not running on error (don't update last_success)
-      await redis.setJobRunning('daily', false);
-      console.log(`[${new Date().toISOString()}] Set daily job running=false due to error`);
-      throw error; // Re-throw to be handled by outer catch
+          userResults[user.id] = { editionId: dailyEdition.id, skipped: false };
+          console.log(`[${new Date().toISOString()}] Successfully generated daily edition ${dailyEdition.id} for user ${user.id}`);
+
+        } catch (error) {
+          // Mark job as not running on error (don't update last_success) for this user
+          await redis.setJobRunning(user.id, 'daily', false);
+          console.log(`[${new Date().toISOString()}] Set daily job running=false due to error for user ${user.id}`);
+          console.error(`[${new Date().toISOString()}] Failed to generate daily edition for user ${user.id}:`, error);
+          userResults[user.id] = { skipped: false, reason: error instanceof Error ? error.message : 'Unknown error' };
+        }
+
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] Failed to process user ${user.id}:`, error);
+        userResults[user.id] = { skipped: false, reason: error instanceof Error ? error.message : 'Unknown error' };
+      }
     }
+
+    console.log(`[${new Date().toISOString()}] Daily edition generation completed for all users`);
+    console.log('Cron job completed successfully\n');
+
+    return NextResponse.json({
+      success: true,
+      message: `Daily edition generation job completed successfully for ${users.length} users.`,
+      userResults
+    });
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Cron job failed:`, error);
     return NextResponse.json(

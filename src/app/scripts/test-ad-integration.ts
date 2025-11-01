@@ -10,29 +10,30 @@ async function testAdIntegration() {
     const redis = await container.getDataStorageService();
     const aiService = await container.getAIService();
 
+    // Use a test user ID for multi-tenant testing
+    const testUserId = 'test-user-123';
+
     // First, create a test ad
 
     const testAd = {
       id: await redis.generateId('ad'),
-      userId: '1',
       name: 'Test Advertisement',
       bidPrice: 10.50,
       promptContent: 'This is a test advertisement that should appear in the article prompt every 20 messages.'
     };
 
-    await redis.saveAd(testAd);
+    await redis.saveAd(testUserId, testAd);
     console.log('Created test ad:', testAd.id);
 
     // Create another ad to test most recent functionality
     const newerAd = {
       id: await redis.generateId('ad'),
-      userId: '1',
       name: 'Newer Test Advertisement',
       bidPrice: 15.75,
       promptContent: 'This is the most recent advertisement that should be used in article generation.'
     };
 
-    await redis.saveAd(newerAd);
+    await redis.saveAd(testUserId, newerAd);
     console.log('Created newer test ad:', newerAd.id);
 
     // Test the AI service with mock social media messages
@@ -50,7 +51,7 @@ async function testAdIntegration() {
 
     // Generate an article
     console.log('Generating article with ad integration...');
-    const article = await aiService.generateStructuredArticle(mockReporter);
+    const article = await aiService.generateStructuredArticle('test-user-id', mockReporter);
 
     console.log('Article generated successfully!');
     console.log('Article headline:', article.response.headline);

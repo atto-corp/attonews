@@ -35,12 +35,15 @@ async function testDailyEditionStorage(): Promise<void> {
       prompt: 'Test prompt for daily edition generation'
     };
 
+    // Use a test user ID for multi-tenant testing
+    const testUserId = 'test-user-123';
+
     console.log('📝 Storing test daily edition...');
-    await redisService.saveDailyEdition(testDailyEdition);
+    await redisService.saveDailyEdition(testUserId, testDailyEdition);
     console.log('✅ Test daily edition stored successfully');
 
     console.log('\n🔍 Retrieving stored daily edition...');
-    const retrievedEdition = await redisService.getDailyEdition(testDailyEdition.id);
+    const retrievedEdition = await redisService.getDailyEdition(testUserId, testDailyEdition.id);
 
     if (retrievedEdition) {
       console.log('✅ Daily edition retrieved successfully');
@@ -54,7 +57,7 @@ async function testDailyEditionStorage(): Promise<void> {
     }
 
     console.log('\n📊 Checking all daily editions...');
-    const allEditions = await redisService.getDailyEditions();
+    const allEditions = await redisService.getDailyEditions(testUserId);
     console.log(`✅ Found ${allEditions.length} daily edition(s) in Redis`);
 
     // Note: Test data will remain in Redis for verification

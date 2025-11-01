@@ -41,55 +41,55 @@ export class RedisDataStorageService implements IDataStorageService {
 
 
   // Editor operations
-  async saveEditor(editor: Editor): Promise<void> {
+  async saveEditor(userId: string, editor: Editor): Promise<void> {
     const multi = this.client.multi();
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_BIO, editor.bio);
-    multi.set(REDIS_KEYS.EDITOR_BIO, editor.bio);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
-    multi.set(REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
-    console.log('Redis Write: SET', REDIS_KEYS.MODEL_NAME, editor.modelName);
-    multi.set(REDIS_KEYS.MODEL_NAME, editor.modelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
-    multi.set(REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.INPUT_TOKEN_COST, editor.inputTokenCost.toString());
-    multi.set(REDIS_KEYS.INPUT_TOKEN_COST, editor.inputTokenCost.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.OUTPUT_TOKEN_COST, editor.outputTokenCost.toString());
-    multi.set(REDIS_KEYS.OUTPUT_TOKEN_COST, editor.outputTokenCost.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES, editor.articleGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES, editor.articleGenerationPeriodMinutes.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_BIO(userId), editor.bio);
+    multi.set(REDIS_KEYS.USER_EDITOR_BIO(userId), editor.bio);
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_PROMPT(userId), editor.prompt);
+    multi.set(REDIS_KEYS.USER_EDITOR_PROMPT(userId), editor.prompt);
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_MODEL_NAME(userId), editor.modelName);
+    multi.set(REDIS_KEYS.USER_EDITOR_MODEL_NAME(userId), editor.modelName);
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_MESSAGE_SLICE_COUNT(userId), editor.messageSliceCount.toString());
+    multi.set(REDIS_KEYS.USER_EDITOR_MESSAGE_SLICE_COUNT(userId), editor.messageSliceCount.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_INPUT_TOKEN_COST(userId), editor.inputTokenCost.toString());
+    multi.set(REDIS_KEYS.USER_EDITOR_INPUT_TOKEN_COST(userId), editor.inputTokenCost.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITOR_OUTPUT_TOKEN_COST(userId), editor.outputTokenCost.toString());
+    multi.set(REDIS_KEYS.USER_EDITOR_OUTPUT_TOKEN_COST(userId), editor.outputTokenCost.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_ARTICLE_GENERATION_PERIOD_MINUTES(userId), editor.articleGenerationPeriodMinutes.toString());
+    multi.set(REDIS_KEYS.USER_ARTICLE_GENERATION_PERIOD_MINUTES(userId), editor.articleGenerationPeriodMinutes.toString());
     if (editor.lastArticleGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME, editor.lastArticleGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME, editor.lastArticleGenerationTime.toString());
+      console.log('Redis Write: SET', REDIS_KEYS.USER_ARTICLE_GENERATION_LAST_TIME(userId), editor.lastArticleGenerationTime.toString());
+      multi.set(REDIS_KEYS.USER_ARTICLE_GENERATION_LAST_TIME(userId), editor.lastArticleGenerationTime.toString());
     }
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES, editor.eventGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES, editor.eventGenerationPeriodMinutes.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EVENT_GENERATION_PERIOD_MINUTES(userId), editor.eventGenerationPeriodMinutes.toString());
+    multi.set(REDIS_KEYS.USER_EVENT_GENERATION_PERIOD_MINUTES(userId), editor.eventGenerationPeriodMinutes.toString());
     if (editor.lastEventGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_EVENT_GENERATION_TIME, editor.lastEventGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_EVENT_GENERATION_TIME, editor.lastEventGenerationTime.toString());
+      console.log('Redis Write: SET', REDIS_KEYS.USER_EVENT_GENERATION_LAST_TIME(userId), editor.lastEventGenerationTime.toString());
+      multi.set(REDIS_KEYS.USER_EVENT_GENERATION_LAST_TIME(userId), editor.lastEventGenerationTime.toString());
     }
-    console.log('Redis Write: SET', REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES, editor.editionGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES, editor.editionGenerationPeriodMinutes.toString());
+    console.log('Redis Write: SET', REDIS_KEYS.USER_EDITION_GENERATION_PERIOD_MINUTES(userId), editor.editionGenerationPeriodMinutes.toString());
+    multi.set(REDIS_KEYS.USER_EDITION_GENERATION_PERIOD_MINUTES(userId), editor.editionGenerationPeriodMinutes.toString());
     if (editor.lastEditionGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_EDITION_GENERATION_TIME, editor.lastEditionGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_EDITION_GENERATION_TIME, editor.lastEditionGenerationTime.toString());
+      console.log('Redis Write: SET', REDIS_KEYS.USER_EDITION_GENERATION_LAST_TIME(userId), editor.lastEditionGenerationTime.toString());
+      multi.set(REDIS_KEYS.USER_EDITION_GENERATION_LAST_TIME(userId), editor.lastEditionGenerationTime.toString());
     }
     await multi.exec();
   }
 
-  async getEditor(): Promise<Editor | null> {
+  async getEditor(userId: string): Promise<Editor | null> {
     const [bio, prompt, modelName, messageSliceCountStr, inputTokenCostStr, outputTokenCostStr, articleGenerationPeriodMinutesStr, lastArticleGenerationTimeStr, eventGenerationPeriodMinutesStr, lastEventGenerationTimeStr, editionGenerationPeriodMinutesStr, lastEditionGenerationTimeStr] = await Promise.all([
-      this.client.get(REDIS_KEYS.EDITOR_BIO),
-      this.client.get(REDIS_KEYS.EDITOR_PROMPT),
-      this.client.get(REDIS_KEYS.MODEL_NAME),
-      this.client.get(REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT),
-      this.client.get(REDIS_KEYS.INPUT_TOKEN_COST),
-      this.client.get(REDIS_KEYS.OUTPUT_TOKEN_COST),
-      this.client.get(REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES),
-      this.client.get(REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME),
-      this.client.get(REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES),
-      this.client.get(REDIS_KEYS.LAST_EVENT_GENERATION_TIME),
-      this.client.get(REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES),
-      this.client.get(REDIS_KEYS.LAST_EDITION_GENERATION_TIME)
+      this.client.get(REDIS_KEYS.USER_EDITOR_BIO(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITOR_PROMPT(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITOR_MODEL_NAME(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITOR_MESSAGE_SLICE_COUNT(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITOR_INPUT_TOKEN_COST(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITOR_OUTPUT_TOKEN_COST(userId)),
+      this.client.get(REDIS_KEYS.USER_ARTICLE_GENERATION_PERIOD_MINUTES(userId)),
+      this.client.get(REDIS_KEYS.USER_ARTICLE_GENERATION_LAST_TIME(userId)),
+      this.client.get(REDIS_KEYS.USER_EVENT_GENERATION_PERIOD_MINUTES(userId)),
+      this.client.get(REDIS_KEYS.USER_EVENT_GENERATION_LAST_TIME(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITION_GENERATION_PERIOD_MINUTES(userId)),
+      this.client.get(REDIS_KEYS.USER_EDITION_GENERATION_LAST_TIME(userId))
     ]);
 
     if (!bio || !prompt) return null;
@@ -987,9 +987,9 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   // Job status operations
-  async setJobRunning(jobName: string, running: boolean): Promise<void> {
-    console.log('Redis Write: SET', REDIS_KEYS.JOB_RUNNING(jobName), running.toString());
-    await this.client.set(REDIS_KEYS.JOB_RUNNING(jobName), running.toString());
+  async setJobRunning(userId: string, jobName: string, running: boolean): Promise<void> {
+    console.log('Redis Write: SET', REDIS_KEYS.USER_JOB_RUNNING(userId, jobName), running.toString());
+    await this.client.set(REDIS_KEYS.USER_JOB_RUNNING(userId, jobName), running.toString());
   }
 
   async getJobRunning(jobName: string): Promise<boolean> {

@@ -15,35 +15,37 @@ export class KpiService {
    */
   static async incrementKpisFromOpenAIResponse(
     response: OpenAI.Chat.Completions.ChatCompletion,
-    dataStorageService: IDataStorageService
+    dataStorageService: IDataStorageService,
+    userId: string
   ): Promise<void> {
     if (!response.usage) {
       console.warn('No usage data in OpenAI response');
       return;
     }
+
     const kpiService = new KpiService(dataStorageService);
-    await kpiService.incrementKpis({
+    await kpiService.incrementKpis(userId, {
       promptTokens: response.usage.prompt_tokens,
       completionTokens: response.usage.completion_tokens,
       totalTokens: response.usage.total_tokens
     });
   }
 
-  async incrementKpis(usage: {
+  async incrementKpis(userId: string, usage: {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
   }): Promise<void> {
     try {
       // Increment input tokens
-      await this.incrementKpi(KpiName.TOTAL_TEXT_INPUT_TOKENS, usage.promptTokens);
+      await this.incrementKpi(userId, KpiName.TOTAL_TEXT_INPUT_TOKENS, usage.promptTokens);
 
       // Increment output tokens
-      await this.incrementKpi(KpiName.TOTAL_TEXT_OUTPUT_TOKENS, usage.completionTokens);
+      await this.incrementKpi(userId, KpiName.TOTAL_TEXT_OUTPUT_TOKENS, usage.completionTokens);
 
       // Calculate and increment spend
-      const spendIncrement = await this.calculateSpend(usage.promptTokens, usage.completionTokens);
-      await this.incrementKpi(KpiName.TOTAL_AI_API_SPEND, spendIncrement);
+      const spendIncrement = await this.calculateSpend(userId, usage.promptTokens, usage.completionTokens);
+      await this.incrementKpi(userId, KpiName.TOTAL_AI_API_SPEND, spendIncrement);
 
     } catch (error) {
       console.error('Error incrementing KPIs:', error);
@@ -51,32 +53,32 @@ export class KpiService {
     }
   }
 
-  private async incrementKpi(kpiName: KpiName, increment: number): Promise<void> {
-    const currentValue = await this.getKpiValue(kpiName);
+  private async incrementKpi(userId: string, kpiName: KpiName, increment: number): Promise<void> {
+    const currentValue = await this.getKpiValue(userId, kpiName);
     const newValue = currentValue + increment;
-    await this.setKpiValue(kpiName, newValue);
+    await this.setKpiValue(userId, kpiName, newValue);
   }
 
-  async getKpiValue(kpiName: KpiName): Promise<number> {
+  async getKpiValue(userId: string, kpiName: KpiName): Promise<number> {
     try {
-      return await this.dataStorageService.getKpiValue(kpiName);
+      return await this.dataStorageService.getKpiValue(userId, kpiName);
     } catch (error) {
       console.error(`Error getting KPI value for ${kpiName}:`, error);
       return 0;
     }
   }
 
-  private async setKpiValue(kpiName: KpiName, value: number): Promise<void> {
+  private async setKpiValue(userId: string, kpiName: KpiName, value: number): Promise<void> {
     try {
-      await this.dataStorageService.setKpiValue(kpiName, value);
+      await this.dataStorageService.setKpiValue(userId, kpiName, value);
     } catch (error) {
       console.error(`Error setting KPI value for ${kpiName}:`, error);
       throw error;
     }
   }
 
-  private async calculateSpend(inputTokens: number, outputTokens: number): Promise<number> {
-    const editor = await this.dataStorageService.getEditor();
+  private async calculateSpend(userId: string, inputTokens: number, outputTokens: number): Promise<number> {
+    const editor = await this.dataStorageService.getEditor(userId);
     const inputTokenCost = editor?.inputTokenCost || 0.050; // Fallback to default
     const outputTokenCost = editor?.outputTokenCost || 0.400; // Fallback to default
 
@@ -85,11 +87,11 @@ export class KpiService {
     return inputCost + outputCost;
   }
 
-  async getAllKpis(): Promise<Record<KpiName, number>> {
+  async getAllKpis(userId: string): Promise<Record<KpiName, number>> {
     const kpis: Partial<Record<KpiName, number>> = {};
 
     for (const kpiName of Object.values(KpiName)) {
-      kpis[kpiName as KpiName] = await this.getKpiValue(kpiName as KpiName);
+      kpis[kpiName as KpiName] = await this.getKpiValue(userId, kpiName as KpiName);
     }
 
     return kpis as Record<KpiName, number>;

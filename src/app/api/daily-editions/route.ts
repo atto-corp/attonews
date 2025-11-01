@@ -1,34 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AuthService } from '../../services/auth.service';
-import { AbilitiesService } from '../../services/abilities.service';
+import { withAuth } from '../../utils/auth';
 
-// GET /api/daily-editions - Get daily editions (limited for non-Reader users)
-export const GET = withRedis(async (request: NextRequest, redis) => {
-  // Check authentication and Reader ability
-  let hasReaderAccess = false;
-  const authHeader = request.headers.get('authorization');
+// GET /api/daily-editions - Get daily editions (requires reader permission)
+export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
+  const { searchParams } = new URL(request.url);
+  const limitParam = searchParams.get('limit');
+  let limit = undefined;
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const authService = new AuthService(redis);
-    const user = await authService.getUserFromToken(token);
-
-    if (user) {
-      const abilitiesService = new AbilitiesService();
-      hasReaderAccess = abilitiesService.userIsReader(user);
+  if (limitParam) {
+    const parsed = parseInt(limitParam, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      limit = parsed;
     }
   }
 
-  // If user is not authenticated or doesn't have Reader ability, limit to 3 results
-  const limit = hasReaderAccess ? undefined : 3;
-  const dailyEditions = await redis.getDailyEditions(limit);
-
+  const dailyEditions = await dataStorage.getDailyEditions(user.id, limit);
   return NextResponse.json(dailyEditions);
-});
+}, { requiredPermission: 'reader' });
 
-// POST /api/daily-editions - Generate a new daily edition (placeholder for now)
-export async function POST() {
+// POST /api/daily-editions - Generate a new daily edition
+export const POST = withAuth(async (request: NextRequest, user, dataStorage) => {
   try {
     // For now, return a message that this feature is not yet implemented
     // In a full implementation, this would call the AI service to generate a new daily edition
@@ -43,4 +34,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+}, { requiredPermission: 'editor' });

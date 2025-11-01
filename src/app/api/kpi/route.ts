@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { ServiceContainer } from '../../services/service-container';
+import { withAuth } from '../../utils/auth';
 
-export async function GET() {
+export const GET = withAuth(async (_request, user, dataStorage) => {
   try {
-    const container = ServiceContainer.getInstance();
+    const container = await import('../../services/service-container').then(m => m.ServiceContainer.getInstance());
     const kpiService = await container.getKpiService();
-    const kpiData = await kpiService.getAllKpis();
+    const kpiData = await kpiService.getAllKpis(user.id);
 
     return NextResponse.json(kpiData);
   } catch (error) {
@@ -15,4 +15,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+}, { requiredRole: 'admin' });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../utils/auth';
 
 // GET /api/events - Get all events (admin only)
-export const GET = withAuth(async (request: NextRequest, user, redis) => {
+export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
   // Parse query parameters
   const { searchParams } = new URL(request.url);
   const limitParam = searchParams.get('limit');
@@ -21,7 +21,7 @@ export const GET = withAuth(async (request: NextRequest, user, redis) => {
   }
 
   // Get all events
-  const events = await redis.getAllEvents(limit);
+  const events = await dataStorage.getAllEvents(user.id, limit);
 
   return NextResponse.json({ events });
 }, { requiredRole: 'admin' });

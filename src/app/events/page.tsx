@@ -28,36 +28,21 @@ interface User {
 
 export default function EventsPage() {
   const [publicEvents, setPublicEvents] = useState<SafeEvent[]>([]);
-  const [adminEvents, setAdminEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminLoading, setAdminLoading] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    fetchPublicEvents();
     checkAuthStatus();
   }, []);
-
-  const fetchPublicEvents = async () => {
-    try {
-      const response = await fetch('/api/events/public');
-      if (!response.ok) {
-        throw new Error('Failed to fetch events');
-      }
-      const eventsData = await response.json();
-      setPublicEvents(eventsData || []);
-    } catch (err) {
-      console.error('Error fetching public events:', err);
-      // Don't set error for public events, just log it
-    }
-  };
 
   const checkAuthStatus = async () => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
+        setError('Authentication required to view events');
         setLoading(false);
         return;
       }
@@ -73,38 +58,40 @@ export default function EventsPage() {
         setCurrentUser(userData.user);
         setIsAdmin(userData.user.role === 'admin');
 
-        if (userData.user.role === 'admin') {
-          await fetchAdminEvents(token);
-        }
+        // Fetch user's events
+        await fetchUserEvents(token);
+      } else {
+        setError('Authentication failed');
       }
     } catch (err) {
       console.error('Auth check failed:', err);
+      setError('Authentication error');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAdminEvents = async (token: string) => {
+  const fetchUserEvents = async (token: string) => {
     try {
-      setAdminLoading(true);
       const eventsResponse = await fetch('/api/events', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!eventsResponse.ok) {
-        throw new Error('Failed to fetch admin events');
+      if (eventsResponse.ok) {
+        const eventsData = await eventsResponse.json();
+        setPublicEvents(eventsData.events || []);
+      } else {
+        setError('Failed to fetch events');
       }
-
-      const eventsData = await eventsResponse.json();
-      setAdminEvents(eventsData.events || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch admin events');
-    } finally {
-      setAdminLoading(false);
+      console.error('Error fetching events:', err);
+      setError('Error loading events');
     }
   };
+
+
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -120,7 +107,7 @@ export default function EventsPage() {
     if (!isAdmin) return;
 
     try {
-      setAdminLoading(true);
+      setOperationLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) {
         setError('Not authenticated');
@@ -139,12 +126,11 @@ export default function EventsPage() {
         throw new Error('Failed to generate events');
       }
 
-      // Refresh both public and admin events
-      await fetchPublicEvents();
-      await fetchAdminEvents(token);
+      // Refresh events
+      await fetchUserEvents(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate events');
-      setAdminLoading(false);
+      setOperationLoading(false);
     }
   };
 
@@ -152,7 +138,7 @@ export default function EventsPage() {
     if (!isAdmin) return;
 
     try {
-      setAdminLoading(true);
+      setOperationLoading(true);
       const token = localStorage.getItem('accessToken');
       if (!token) {
         setError('Not authenticated');
@@ -175,11 +161,10 @@ export default function EventsPage() {
       console.log('Articles generated from events:', result);
 
       // Refresh events (articles are generated from events, so events remain the same)
-      await fetchPublicEvents();
-      if (token) await fetchAdminEvents(token);
+      await fetchUserEvents(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate articles from events');
-      setAdminLoading(false);
+      setOperationLoading(false);
     }
   };
 
@@ -265,19 +250,19 @@ export default function EventsPage() {
               <div className="flex space-x-3">
                 <button
                   onClick={handleGenerateEvents}
-                  disabled={adminLoading}
+                  disabled={operationLoading}
                   className="group relative inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
-                  <span className="relative">Generate Events</span>
+                  <span className="relative">{operationLoading ? 'Generating...' : 'Generate Events'}</span>
                 </button>
                 <button
                   onClick={handleGenerateArticlesFromEvents}
-                  disabled={adminLoading}
+                  disabled={operationLoading}
                   className="group relative inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
-                  <span className="relative">Generate Articles from Events</span>
+                  <span className="relative">{operationLoading ? 'Generating...' : 'Generate Articles from Events'}</span>
                 </button>
               </div>
             </div>
@@ -313,7 +298,7 @@ export default function EventsPage() {
                   </tr>
                 </thead>
                 <tbody className="backdrop-blur-xl bg-white/5 divide-y divide-white/10">
-                  {adminEvents.map((event) => (
+                  {publicEvents.map((event) => (
                     <tr key={event.id} className="hover:bg-white/5 transition-colors duration-200">
                       <td className="px-6 py-4 text-sm font-medium text-white">
                         <div className="font-semibold">{event.title}</div>
@@ -358,7 +343,7 @@ export default function EventsPage() {
               </table>
             </div>
 
-            {adminEvents.length === 0 && (
+            {publicEvents.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-white/70">No events found</p>
                 <p className="text-white/50 text-sm mt-2">Click "Generate Events" to create new events from recent social media data</p>

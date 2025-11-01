@@ -8,21 +8,30 @@ async function debugDailyEdition(): Promise<void> {
     const redisService = await container.getDataStorageService();
     console.log('📡 Connected to Redis via container');
 
-    console.log('\n📊 Checking daily editions...');
-    const dailyEditions = await redisService.getDailyEditions();
-    console.log(`Found ${dailyEditions.length} daily editions`);
+    // Get all users for multi-tenant debugging
+    const users = await redisService.getAllUsers();
+    console.log(`Found ${users.length} users in the system`);
 
-    if (dailyEditions.length > 0) {
-      console.log('\n📝 First daily edition details:');
-      const firstEdition = dailyEditions[0];
-      console.log(`   • ID: ${firstEdition.id}`);
-      console.log(`   • Newspaper: ${firstEdition.newspaperName}`);
-      console.log(`   • Front page: ${firstEdition.frontPageHeadline}`);
-      console.log(`   • Topics: ${firstEdition.topics.length}`);
-      console.log(`   • Editions: ${firstEdition.editions.length}`);
-      console.log(`   • Generation time: ${new Date(firstEdition.generationTime).toISOString()}`);
+    let totalEditions = 0;
+    for (const user of users) {
+      console.log(`\n📊 Checking daily editions for user ${user.id} (${user.email})...`);
+      const dailyEditions = await redisService.getDailyEditions(user.id);
+      console.log(`Found ${dailyEditions.length} daily editions`);
+      totalEditions += dailyEditions.length;
+
+      if (dailyEditions.length > 0) {
+        console.log('\n📝 First daily edition details:');
+        const firstEdition = dailyEditions[0];
+        console.log(`   • ID: ${firstEdition.id}`);
+        console.log(`   • Newspaper: ${firstEdition.newspaperName}`);
+        console.log(`   • Front page: ${firstEdition.frontPageHeadline}`);
+        console.log(`   • Topics: ${firstEdition.topics.length}`);
+        console.log(`   • Editions: ${firstEdition.editions.length}`);
+        console.log(`   • Generation time: ${new Date(firstEdition.generationTime).toISOString()}`);
+      }
     }
 
+    console.log(`\n📈 Total daily editions across all users: ${totalEditions}`);
     console.log('\n🎉 Debug complete');
 
   } catch (error) {

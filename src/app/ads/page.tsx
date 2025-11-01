@@ -20,10 +20,21 @@ const AdsPage: React.FC = () => {
     promptContent: ''
   });
 
-  // Fetch ads from API
+  // Check authentication and fetch ads
   const fetchAds = async () => {
     try {
-      const response = await fetch('/api/ads');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/ads', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch ads');
       const data = await response.json();
       setAds(data);
@@ -46,9 +57,18 @@ const AdsPage: React.FC = () => {
     }
 
     try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+
       const response = await fetch('/api/ads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           name: newAd.name,
           bidPrice: newAd.bidPrice,
@@ -70,9 +90,18 @@ const AdsPage: React.FC = () => {
   // Update ad
   const updateAd = async (id: string, field: keyof AdEntry, value: string | number) => {
     try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/ads/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ [field]: value })
       });
 
@@ -91,8 +120,17 @@ const AdsPage: React.FC = () => {
     if (!confirm('Are you sure you want to delete this ad?')) return;
 
     try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/ads/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) throw new Error('Failed to delete ad');

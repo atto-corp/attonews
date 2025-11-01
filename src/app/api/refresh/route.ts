@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AuthService } from '../../services/auth.service';
+import { ServiceContainer } from '../../services/service-container';
 
-export const POST = withRedis(async (request: NextRequest, redis) => {
+export const POST = async (request: NextRequest) => {
   const body = await request.json();
   const { refreshToken } = body;
 
@@ -13,7 +12,8 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
     );
   }
 
-  const authService = new AuthService(redis);
+  const container = ServiceContainer.getInstance();
+  const authService = await container.getAuthService();
 
   // Refresh the access token
   const newTokens = await authService.refreshAccessToken(refreshToken);
@@ -32,4 +32,4 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
     },
     { status: 200 }
   );
-});
+};

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../../utils/redis';
+import { withAuth } from '../../../utils/auth';
+import { AdEntry } from '../../../models/types';
 
-export const GET = withRedis(async (
+export const GET = withAuth(async (
   request: NextRequest,
-  redis,
+  user,
+  dataStorage,
   context: { params: Promise<{ id: string }> }
 ) => {
   const { id: adId } = await context.params;
 
-  const ad = await redis.getAd(adId);
+  const ad = await dataStorage.getAd(user.id, adId);
   if (!ad) {
     return NextResponse.json(
       { error: 'Ad not found' },
@@ -18,17 +20,18 @@ export const GET = withRedis(async (
   return NextResponse.json(ad);
 });
 
-export const PUT = withRedis(async (
+export const PUT = withAuth(async (
   request: NextRequest,
-  redis,
+  user,
+  dataStorage,
   context: { params: Promise<{ id: string }> }
 ) => {
   const { id: adId } = await context.params;
   const body = await request.json();
-  const { name, bidPrice, promptContent, userId } = body;
+  const { name, bidPrice, promptContent } = body;
 
   // Check if ad exists
-  const existingAd = await redis.getAd(adId);
+  const existingAd = await dataStorage.getAd(user.id, adId);
   if (!existingAd) {
     return NextResponse.json(
       { error: 'Ad not found' },
@@ -37,28 +40,28 @@ export const PUT = withRedis(async (
   }
 
   // Update the ad
-  const updates: Partial<typeof existingAd> = {};
+  const updates: Partial<Omit<AdEntry, 'id'>> = {};
   if (name !== undefined) updates.name = name;
   if (bidPrice !== undefined) updates.bidPrice = parseFloat(bidPrice);
   if (promptContent !== undefined) updates.promptContent = promptContent;
-  if (userId !== undefined) updates.userId = userId;
 
-  await redis.updateAd(adId, updates);
+  await dataStorage.updateAd(user.id, adId, updates);
 
   // Get the updated ad
-  const updatedAd = await redis.getAd(adId);
+  const updatedAd = await dataStorage.getAd(user.id, adId);
   return NextResponse.json(updatedAd);
 });
 
-export const DELETE = withRedis(async (
+export const DELETE = withAuth(async (
   request: NextRequest,
-  redis,
+  user,
+  dataStorage,
   context: { params: Promise<{ id: string }> }
 ) => {
   const { id: adId } = await context.params;
 
   // Check if ad exists
-  const existingAd = await redis.getAd(adId);
+  const existingAd = await dataStorage.getAd(user.id, adId);
   if (!existingAd) {
     return NextResponse.json(
       { error: 'Ad not found' },
@@ -66,6 +69,6 @@ export const DELETE = withRedis(async (
     );
   }
 
-  await redis.deleteAd(adId);
+  await dataStorage.deleteAd(user.id, adId);
   return NextResponse.json({ message: 'Ad deleted successfully' });
 });

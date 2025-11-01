@@ -1,4 +1,4 @@
-import { Reporter, Article, Event, REDIS_KEYS } from '../models/types';
+import { Reporter, Article, Event, REDIS_KEYS, UserAIConfig } from '../models/types';
 import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { dailyEditionSchema, reporterArticleSchema, eventGenerationResponseSchema } from '../models/schemas';
@@ -9,38 +9,52 @@ import { join } from 'path';
 import { fetchLatestMessages } from './bluesky.service';
 
 export class AIService {
-  private openai: OpenAI;
-  private modelName: string = 'gpt-5-nano';
   private dataStorageService: IDataStorageService;
 
   constructor(dataStorageService: IDataStorageService) {
     this.dataStorageService = dataStorageService;
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
-
-    this.openai = new OpenAI({
-      apiKey: apiKey,
-    });
-
-    // Initialize modelName from Redis with default
-    this.initializeModelName();
   }
 
-  private async initializeModelName(): Promise<void> {
-    try {
-      const storedModelName = await this.dataStorageService.getModelName();
-      this.modelName = storedModelName || 'gpt-5-nano';
-    } catch (error) {
-      console.warn('Failed to fetch modelName from Redis, using default:', error);
-      this.modelName = 'gpt-5-nano';
+  private async getUserConfig(userId: string): Promise<UserAIConfig | null> {
+    return await this.dataStorageService.getUserAIConfig(userId);
+  }
+
+  private async getOpenAIClient(userId: string): Promise<OpenAI> {
+    const userConfig = await this.getUserConfig(userId);
+
+    if (userConfig) {
+      return new OpenAI({
+        apiKey: userConfig.openaiApiKey,
+        baseURL: userConfig.openaiBaseUrl,
+      });
+    } else {
+      // Fallback to environment variables for backward compatibility
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('OPENAI_API_KEY environment variable is required when no user config exists');
+      }
+
+      return new OpenAI({
+        apiKey: apiKey,
+      });
     }
+  }
+
+  private async getModelName(userId: string): Promise<string> {
+    const userConfig = await this.getUserConfig(userId);
+    return userConfig?.modelName || 'gpt-5-nano';
+  }
+
+  private async calculateCost(userId: string, inputTokens: number, outputTokens: number): Promise<number> {
+    const userConfig = await this.getUserConfig(userId);
+    const inputCost = (inputTokens / 1000000) * (userConfig?.inputTokenCost || 0.00015);
+    const outputCost = (outputTokens / 1000000) * (userConfig?.outputTokenCost || 0.0006);
+    return inputCost + outputCost;
   }
 
 
 
-  async generateStructuredArticle(reporter: Reporter): Promise<{response: {
+  async generateStructuredArticle(userId: string, reporter: Reporter): Promise<{response: {
     id: string;
     reporterId: string;
     beat: string;
@@ -67,16 +81,11 @@ export class AIService {
     const beatsList = reporter.beats.join(', ');
 
     try {
-      // Get configurable message slice count from Redis
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count from Redis, using default:', error);
-      }
+      // Get user config
+      const userConfig = await this.getUserConfig(userId);
+
+      // Get configurable message slice count from user config
+      const messageSliceCount = userConfig?.messageSliceCount || 200;
 
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -91,7 +100,7 @@ export class AIService {
       // Fetch the most recent ad from data storage
       let mostRecentAd = null;
       try {
-        mostRecentAd = await this.dataStorageService.getMostRecentAd();
+        mostRecentAd = await this.dataStorageService.getMostRecentAd(userId);
       } catch (error) {
         console.warn('Failed to fetch most recent ad:', error);
         // Continue with article generation even if ad fetch fails
@@ -138,8 +147,10 @@ When generating the article, first scan the social media context for messages re
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+      const openai = await this.getOpenAIClient(userId);
+      const modelName = await this.getModelName(userId);
+      const response = await openai.chat.completions.create({
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -221,7 +232,7 @@ Make the article engaging, factual, and professionally written. Ensure all quote
 
 
 
-  async selectNewsworthyStories(articles: Article[], editorPrompt: string): Promise<{ selectedArticles: Article[]; fullPrompt: string }> {
+  async selectNewsworthyStories(userId: string, articles: Article[], editorPrompt: string): Promise<{ selectedArticles: Article[]; fullPrompt: string }> {
     if (articles.length === 0) return { selectedArticles: [], fullPrompt: '' };
 
     try {
@@ -239,8 +250,10 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+      const openai = await this.getOpenAIClient(userId);
+      const modelName = await this.getModelName(userId);
+      const response = await openai.chat.completions.create({
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -254,7 +267,7 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
       });
 
       // Track KPI usage
-      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService);
+      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService, userId);
 
       const selectedIndices = response.choices[0]?.message?.content?.trim()
         .split(',')
@@ -288,7 +301,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
   }
 
 
-  async selectNotableEditions(editions: Array<{id: string; articles: Array<{headline: string; body: string}>}>, editorPrompt: string): Promise<{
+  async selectNotableEditions(userId: string, editions: Array<{id: string; articles: Array<{headline: string; body: string}>}>, editorPrompt: string): Promise<{
     content: {
       frontPageHeadline: string;
       frontPageArticle: string;
@@ -333,8 +346,10 @@ Make the content engaging, balanced, and professionally written. Focus on creati
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+      const openai = await this.getOpenAIClient(userId);
+      const modelName = await this.getModelName(userId);
+      const response = await openai.chat.completions.create({
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -345,11 +360,11 @@ Make the content engaging, balanced, and professionally written. Focus on creati
             content: userPrompt
           }
         ],
-        response_format: zodResponseFormat(dailyEditionSchema, "reporter_article")
+        response_format: zodResponseFormat(reporterArticleSchema, "reporter_article")
       });
 
       // Track KPI usage
-      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService);
+      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService, userId);
 
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
@@ -401,7 +416,7 @@ User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive 
     }
   }
 
-  async generateEvents(reporter: Reporter, lastEvents: Event[]): Promise<{
+  async generateEvents(userId: string, reporter: Reporter, lastEvents: Event[]): Promise<{
     events: Array<{
       index?: number | null;
       title: string;
@@ -423,15 +438,8 @@ User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive 
         : 'No previous events available.';
 
       // Get configurable message slice count
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count for events, using default:', error);
-      }
+      const userConfig = await this.getUserConfig(userId);
+      const messageSliceCount = userConfig?.messageSliceCount || 200;
 
       // Fetch recent social media messages
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -473,12 +481,14 @@ Instructions:
 - Prioritize events that represent ongoing stories or important developments within your beats
 - Return up to 5 events maximum
 - IMPORTANT: Always include messageIds and potentialMessageIds arrays for each event, even if empty
- `;
+  `;
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+      const openai = await this.getOpenAIClient(userId);
+      const modelName = await this.getModelName(userId);
+      const response = await openai.chat.completions.create({
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -493,7 +503,7 @@ Instructions:
       });
 
       // Track KPI usage
-      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService);
+      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService, userId);
 
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
@@ -518,7 +528,7 @@ Instructions:
     }
   }
 
-  async generateArticlesFromEvents(reporter: Reporter): Promise<{response: {
+  async generateArticlesFromEvents(userId: string, reporter: Reporter): Promise<{response: {
     id: string;
     reporterId: string;
     beat: string;
@@ -546,10 +556,10 @@ Instructions:
 
     try {
       // Get reporter's 5 latest events
-      const latestEvents = await this.dataStorageService.getEventsByReporter(reporter.id, 5);
+      const latestEvents = await this.dataStorageService.getEventsByReporter(userId, reporter.id, 5);
 
       // Get reporter's 5 latest articles for context
-      const latestArticles = await this.dataStorageService.getArticlesByReporter(reporter.id, 5);
+      const latestArticles = await this.dataStorageService.getArticlesByReporter(userId, reporter.id, 5);
 
       // Format events for the prompt
       const eventsContext = latestEvents.length > 0
@@ -566,15 +576,8 @@ Instructions:
         : 'No previous articles available for this reporter.';
 
       // Get configurable message slice count
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count from Redis, using default:', error);
-      }
+      const userConfig = await this.getUserConfig(userId);
+      const messageSliceCount = userConfig?.messageSliceCount || 200;
 
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -626,8 +629,10 @@ When generating the article, first review your recent articles to avoid repetiti
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+      const openai = await this.getOpenAIClient(userId);
+      const modelName = await this.getModelName(userId);
+      const response = await openai.chat.completions.create({
+        model: modelName,
         messages: [
           {
             role: 'system',
@@ -641,8 +646,18 @@ When generating the article, first review your recent articles to avoid repetiti
         response_format: zodResponseFormat(reporterArticleSchema, "reporter_article")
       });
 
-      // Track KPI usage
-      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService);
+      // Track usage for this user
+      const cost = await this.calculateCost(userId, response.usage?.prompt_tokens || 0, response.usage?.completion_tokens || 0);
+      await this.dataStorageService.logUsage(
+        userId,
+        1,
+        response.usage?.prompt_tokens || 0,
+        response.usage?.completion_tokens || 0,
+        cost
+      );
+
+      // Track global KPIs
+      await KpiService.incrementKpisFromOpenAIResponse(response, this.dataStorageService, userId);
 
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {

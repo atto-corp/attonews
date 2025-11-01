@@ -29,6 +29,32 @@ export default function AccountPage() {
   const [hasReporter, setHasReporter] = useState(false);
   const [hasEditor, setHasEditor] = useState(false);
 
+  // AI Configuration state
+  const [aiConfig, setAiConfig] = useState({
+    openaiApiKey: '',
+    openaiBaseUrl: '',
+    modelName: '',
+    inputTokenCost: 0,
+    outputTokenCost: 0,
+    messageSliceCount: 0,
+    articleGenerationPeriodMinutes: 0,
+    eventGenerationPeriodMinutes: 0,
+    editionGenerationPeriodMinutes: 0
+  });
+  const [aiConfigLoading, setAiConfigLoading] = useState(false);
+  const [aiConfigSaving, setAiConfigSaving] = useState(false);
+
+  // Usage state
+  const [usageStats, setUsageStats] = useState({
+    totalApiCalls: 0,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    totalCost: 0,
+    lastUpdated: 0
+  });
+  const [usageHistory, setUsageHistory] = useState<any[]>([]);
+  const [usageLoading, setUsageLoading] = useState(false);
+
   const checkAuthAndLoadUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('accessToken');
@@ -64,6 +90,13 @@ export default function AccountPage() {
   useEffect(() => {
     checkAuthAndLoadUser();
   }, [checkAuthAndLoadUser]);
+
+  useEffect(() => {
+    if (user) {
+      loadAiConfig();
+      loadUsage();
+    }
+  }, [user]);
 
   const loadAccountInfo = async () => {
     // Placeholder - in a real app, this would fetch from an API
@@ -117,6 +150,53 @@ export default function AccountPage() {
     }
   };
 
+  const loadAiConfig = async () => {
+    setAiConfigLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch('/api/config/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const config = await response.json();
+        setAiConfig(config);
+      }
+    } catch (error) {
+      console.error('Failed to load AI config:', error);
+    } finally {
+      setAiConfigLoading(false);
+    }
+  };
+
+  const loadUsage = async () => {
+    setUsageLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch('/api/usage/user?history=true&days=30', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsageStats(data.current);
+        setUsageHistory(data.history || []);
+      }
+    } catch (error) {
+      console.error('Failed to load usage:', error);
+    } finally {
+      setUsageLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -127,6 +207,34 @@ export default function AccountPage() {
       alert('Failed to save account information.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAiConfig = async () => {
+    setAiConfigSaving(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch('/api/config/user', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(aiConfig)
+      });
+
+      if (response.ok) {
+        alert('AI configuration saved successfully!');
+      } else {
+        alert('Failed to save AI configuration.');
+      }
+    } catch (error) {
+      console.error('Failed to save AI config:', error);
+      alert('Failed to save AI configuration.');
+    } finally {
+      setAiConfigSaving(false);
     }
   };
 
@@ -367,9 +475,219 @@ export default function AccountPage() {
                   />
                 </div>
               </div>
-            </div>
+             </div>
 
-            {/* Account Activity */}
+              {/* AI Configuration */}
+              <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+                <h2 className="text-lg font-semibold text-white mb-4">AI Configuration</h2>
+                {aiConfigLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+                    <p className="mt-2 text-white/80">Loading AI configuration...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label htmlFor="openaiApiKey" className="block text-sm font-medium text-white/90 mb-2">
+                          OpenAI API Key
+                        </label>
+                        <input
+                          type="password"
+                          id="openaiApiKey"
+                          value={aiConfig.openaiApiKey}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, openaiApiKey: e.target.value }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="Enter your OpenAI API key"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="openaiBaseUrl" className="block text-sm font-medium text-white/90 mb-2">
+                          OpenAI Base URL
+                        </label>
+                        <input
+                          type="url"
+                          id="openaiBaseUrl"
+                          value={aiConfig.openaiBaseUrl}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, openaiBaseUrl: e.target.value }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="https://api.openai.com/v1"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="modelName" className="block text-sm font-medium text-white/90 mb-2">
+                          Model Name
+                        </label>
+                        <input
+                          type="text"
+                          id="modelName"
+                          value={aiConfig.modelName}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, modelName: e.target.value }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="gpt-4"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="inputTokenCost" className="block text-sm font-medium text-white/90 mb-2">
+                          Input Token Cost ($ per 1K tokens)
+                        </label>
+                        <input
+                          type="number"
+                          id="inputTokenCost"
+                          value={aiConfig.inputTokenCost}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, inputTokenCost: parseFloat(e.target.value) || 0 }))}
+                          step="0.01"
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="outputTokenCost" className="block text-sm font-medium text-white/90 mb-2">
+                          Output Token Cost ($ per 1K tokens)
+                        </label>
+                        <input
+                          type="number"
+                          id="outputTokenCost"
+                          value={aiConfig.outputTokenCost}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, outputTokenCost: parseFloat(e.target.value) || 0 }))}
+                          step="0.01"
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="messageSliceCount" className="block text-sm font-medium text-white/90 mb-2">
+                          Message Slice Count
+                        </label>
+                        <input
+                          type="number"
+                          id="messageSliceCount"
+                          value={aiConfig.messageSliceCount}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, messageSliceCount: parseInt(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="10"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label htmlFor="articleGenerationPeriodMinutes" className="block text-sm font-medium text-white/90 mb-2">
+                          Article Generation Period (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          id="articleGenerationPeriodMinutes"
+                          value={aiConfig.articleGenerationPeriodMinutes}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, articleGenerationPeriodMinutes: parseInt(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="60"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="eventGenerationPeriodMinutes" className="block text-sm font-medium text-white/90 mb-2">
+                          Event Generation Period (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          id="eventGenerationPeriodMinutes"
+                          value={aiConfig.eventGenerationPeriodMinutes}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, eventGenerationPeriodMinutes: parseInt(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="30"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="editionGenerationPeriodMinutes" className="block text-sm font-medium text-white/90 mb-2">
+                          Edition Generation Period (minutes)
+                        </label>
+                        <input
+                          type="number"
+                          id="editionGenerationPeriodMinutes"
+                          value={aiConfig.editionGenerationPeriodMinutes}
+                          onChange={(e) => setAiConfig(prev => ({ ...prev, editionGenerationPeriodMinutes: parseInt(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-300"
+                          placeholder="1440"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t border-white/20">
+                      <button
+                        onClick={handleSaveAiConfig}
+                        disabled={aiConfigSaving}
+                        className="group relative inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
+                        <span className="relative">{aiConfigSaving ? 'Saving...' : 'Save AI Config'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Usage Dashboard */}
+              <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+                <h2 className="text-lg font-semibold text-white mb-4">Usage Dashboard</h2>
+                {usageLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+                    <p className="mt-2 text-white/80">Loading usage statistics...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="text-sm text-white/70">API Calls</div>
+                        <div className="text-2xl font-bold text-white">{usageStats.totalApiCalls.toLocaleString()}</div>
+                      </div>
+                      <div className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="text-sm text-white/70">Input Tokens</div>
+                        <div className="text-2xl font-bold text-white">{usageStats.totalInputTokens.toLocaleString()}</div>
+                      </div>
+                      <div className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="text-sm text-white/70">Output Tokens</div>
+                        <div className="text-2xl font-bold text-white">{usageStats.totalOutputTokens.toLocaleString()}</div>
+                      </div>
+                      <div className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10">
+                        <div className="text-sm text-white/70">Total Cost</div>
+                        <div className="text-2xl font-bold text-white">${usageStats.totalCost.toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    {usageHistory.length > 0 && (
+                      <div>
+                        <h3 className="text-md font-medium text-white mb-3">Recent Usage (Last 30 Days)</h3>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {usageHistory.slice(0, 10).map((entry, index) => (
+                            <div key={index} className="flex justify-between items-center py-2 px-3 backdrop-blur-xl bg-white/5 rounded-lg border border-white/10">
+                              <div className="text-sm text-white/80">
+                                {new Date(entry.lastUpdated).toLocaleDateString()}
+                              </div>
+                              <div className="text-sm text-white">
+                                {entry.totalApiCalls} calls • ${entry.totalCost.toFixed(2)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-white/50 text-center">
+                      Last updated: {usageStats.lastUpdated ? new Date(usageStats.lastUpdated).toLocaleString() : 'Never'}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+             {/* Account Activity */}
             <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
               <h2 className="text-lg font-semibold text-white mb-4">Account Activity</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

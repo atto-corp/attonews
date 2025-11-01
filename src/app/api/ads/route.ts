@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
+import { withAuth } from '../../utils/auth';
 import { AdEntry } from '../../models/types';
 
-export const GET = withRedis(async (_request: NextRequest, redis) => {
-  const ads = await redis.getAllAds();
+export const GET = withAuth(async (_request: NextRequest, user, dataStorage) => {
+  const ads = await dataStorage.getAllAds(user.id);
   return NextResponse.json(ads);
 });
 
-export const POST = withRedis(async (request: NextRequest, redis) => {
+export const POST = withAuth(async (request: NextRequest, user, dataStorage) => {
   const body = await request.json();
   const { name, bidPrice, promptContent } = body;
 
@@ -18,15 +18,14 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
     );
   }
 
-  const adId = await redis.generateId('ad');
+  const adId = await dataStorage.generateId('ad');
   const ad: AdEntry = {
     id: adId,
-    userId: '1', // Placeholder user ID as requested
     name,
     bidPrice: parseFloat(bidPrice),
     promptContent
   };
 
-  await redis.saveAd(ad);
+  await dataStorage.saveAd(user.id, ad);
   return NextResponse.json(ad, { status: 201 });
 });

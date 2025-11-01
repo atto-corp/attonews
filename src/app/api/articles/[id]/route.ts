@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../../utils/redis';
+import { withAuth } from '../../../utils/auth';
 
-export const GET = withRedis(async (
+export const GET = withAuth(async (
   request: NextRequest,
-  redis,
+  user,
+  dataStorage,
   context: { params: Promise<{ id: string }> }
 ) => {
   const { id: articleId } = await context.params;
@@ -15,7 +16,7 @@ export const GET = withRedis(async (
     );
   }
 
-  const article = await redis.getArticle(articleId);
+  const article = await dataStorage.getArticle(user.id, articleId);
 
   if (!article) {
     return NextResponse.json(

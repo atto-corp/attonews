@@ -7,10 +7,12 @@ async function testAdFetching() {
     const container = ServiceContainer.getInstance();
     const redis = await container.getDataStorageService();
 
+    // Use a test user ID for multi-tenant testing
+    const testUserId = 'test-user-123';
+
     // Create test ads with different timestamps
     const ad1 = {
       id: await redis.generateId('ad'),
-      userId: '1',
       name: 'First Advertisement',
       bidPrice: 5.00,
       promptContent: 'First ad content'
@@ -21,19 +23,18 @@ async function testAdFetching() {
 
     const ad2 = {
       id: await redis.generateId('ad'),
-      userId: '1',
       name: 'Second Advertisement',
       bidPrice: 10.00,
       promptContent: 'Second ad content - this should be the most recent'
     };
 
-    await redis.saveAd(ad1);
-    await redis.saveAd(ad2);
+    await redis.saveAd(testUserId, ad1);
+    await redis.saveAd(testUserId, ad2);
 
-    console.log('Created ads:', ad1.id, ad2.id);
+    console.log('Created ads for user', testUserId, ':', ad1.id, ad2.id);
 
     // Test getting most recent ad
-    const mostRecentAd = await redis.getMostRecentAd();
+    const mostRecentAd = await redis.getMostRecentAd(testUserId);
 
     if (mostRecentAd) {
       console.log('Most recent ad ID:', mostRecentAd.id);

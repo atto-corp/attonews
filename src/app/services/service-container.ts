@@ -1,4 +1,4 @@
-import { RedisDataStorageService } from './redis-data-storage.service';
+import { RedisDataStorageMultiTenantService } from '../../services/redis-data-storage-multi-tenant.service';
 import { IDataStorageService } from './data-storage.interface';
 import { AuthService } from './auth.service';
 import { ReporterService } from './reporter.service';
@@ -30,7 +30,7 @@ export class ServiceContainer {
 
   async getDataStorageService(): Promise<IDataStorageService> {
     if (!this.dataStorageService) {
-      this.dataStorageService = new RedisDataStorageService();
+      this.dataStorageService = new RedisDataStorageMultiTenantService();
       await this.dataStorageService.connect();
     }
     return this.dataStorageService;

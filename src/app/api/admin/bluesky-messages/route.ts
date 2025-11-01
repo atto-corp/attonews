@@ -3,11 +3,11 @@ import { withAuth } from '../../../utils/auth';
 import { fetchLatestMessages } from '../../../services/bluesky.service';
 
 // GET /api/admin/bluesky-messages - Get Bluesky messages (admin only)
-export const GET = withAuth(async (request: NextRequest, user, redis) => {
+export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
   // Get message count from editor settings
   let messageCount = 50; // Default fallback
   try {
-    const editor = await redis.getEditor();
+    const editor = await dataStorage.getEditor(user.id);
     if (editor) {
       messageCount = editor.messageSliceCount;
     }

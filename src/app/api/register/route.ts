@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AuthService } from '../../services/auth.service';
+import { ServiceContainer } from '../../services/service-container';
 import { registerRequestSchema } from '../../models/schemas';
 
-export const POST = withRedis(async (request: NextRequest, redis) => {
+export const POST = async (request: NextRequest) => {
   const body = await request.json();
 
   // Validate request body
@@ -17,7 +16,8 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
 
   const { email, password } = validationResult.data;
 
-  const authService = new AuthService(redis);
+  const container = ServiceContainer.getInstance();
+  const authService = await container.getAuthService();
 
   // Register user
   const user = await authService.registerUser(email, password);
@@ -38,4 +38,4 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
     },
     { status: 201 }
   );
-});
+};

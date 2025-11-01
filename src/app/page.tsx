@@ -54,9 +54,9 @@ export default function Home() {
     checkAuthStatus();
   }, []);
 
-  // Fetch daily editions on component mount
+  // Check auth status on component mount
   useEffect(() => {
-    fetchDailyEditions();
+    checkAuthStatus();
   }, []);
 
   // Load header collapse state from localStorage
@@ -101,6 +101,8 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+        // Fetch daily editions after successful auth
+        fetchDailyEditions();
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -111,7 +113,18 @@ export default function Home() {
 
   const fetchDailyEditions = async () => {
     try {
-      const response = await fetch('/api/daily-editions');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setMessage('Please log in to view daily editions');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/daily-editions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setDailyEditions(data);

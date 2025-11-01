@@ -122,7 +122,7 @@ interface MongoJobStatus {
   lastSuccess?: number;
 }
 
-export class MongoDBDataStorageService implements IDataStorageService {
+export class MongoDBDataStorageService {
   private client: MongoClient;
   private db: Db | null = null;
   private readonly dbName = 'newsroom';
@@ -208,7 +208,7 @@ export class MongoDBDataStorageService implements IDataStorageService {
   }
 
   // Editor operations
-  async saveEditor(editor: Editor): Promise<void> {
+  async saveEditor(userId: string, editor: Editor): Promise<void> {
     if (!this.editorsCollection) throw new Error('Database not connected');
 
     const mongoEditor: MongoEditor = {
@@ -219,7 +219,7 @@ export class MongoDBDataStorageService implements IDataStorageService {
     await this.editorsCollection.replaceOne({}, mongoEditor, { upsert: true });
   }
 
-  async getEditor(): Promise<Editor | null> {
+  async getEditor(userId: string): Promise<Editor | null> {
     if (!this.editorsCollection) throw new Error('Database not connected');
 
     const mongoEditor = await this.editorsCollection.findOne({});
@@ -599,12 +599,12 @@ export class MongoDBDataStorageService implements IDataStorageService {
   }
 
   // Ad operations
-  async saveAd(ad: AdEntry): Promise<void> {
+  async saveAd(userId: string, ad: AdEntry): Promise<void> {
     if (!this.adsCollection) throw new Error('Database not connected');
 
     const mongoAd: MongoAd = {
       _id: ad.id,
-      userId: ad.userId,
+      userId: userId,
       name: ad.name,
       bidPrice: ad.bidPrice,
       promptContent: ad.promptContent
@@ -636,14 +636,13 @@ export class MongoDBDataStorageService implements IDataStorageService {
 
     return {
       id: mongoAd._id,
-      userId: mongoAd.userId,
       name: mongoAd.name,
       bidPrice: mongoAd.bidPrice,
       promptContent: mongoAd.promptContent
     };
   }
 
-  async getAd(adId: string): Promise<AdEntry | null> {
+  async getAd(userId: string, adId: string): Promise<AdEntry | null> {
     if (!this.adsCollection) throw new Error('Database not connected');
 
     const mongoAd = await this.adsCollection.findOne({ _id: adId });
@@ -651,7 +650,6 @@ export class MongoDBDataStorageService implements IDataStorageService {
 
     return {
       id: mongoAd._id,
-      userId: mongoAd.userId,
       name: mongoAd.name,
       bidPrice: mongoAd.bidPrice,
       promptContent: mongoAd.promptContent
@@ -857,8 +855,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
   }
 
   // Utility methods
-  async getModelName(): Promise<string | null> {
-    const editor = await this.getEditor();
+  async getModelName(userId: string): Promise<string | null> {
+    const editor = await this.getEditor(userId);
     return editor?.modelName || null;
   }
 

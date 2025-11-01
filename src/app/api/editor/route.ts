@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../utils/auth';
-import { withRedis } from '../../utils/redis';
 
 // GET /api/editor - Get current editor data
-export const GET = withRedis(async (_request: NextRequest, redis) => {
-  const editor = await redis.getEditor();
+export const GET = withAuth(async (_request: NextRequest, user, dataStorage) => {
+  const editor = await dataStorage.getEditor(user.id);
 
   return NextResponse.json({
     bio: editor?.bio || '',
@@ -20,10 +19,10 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
     editionGenerationPeriodMinutes: editor?.editionGenerationPeriodMinutes || 180,
     lastEditionGenerationTime: editor?.lastEditionGenerationTime || null
   });
-});
+}, { requiredPermission: 'editor' });
 
 // PUT /api/editor - Update editor data
-export const PUT = withAuth(async (request: NextRequest, user, redis) => {
+export const PUT = withAuth(async (request: NextRequest, user, dataStorage) => {
   const body = await request.json();
   const { bio, prompt, modelName, messageSliceCount, inputTokenCost, outputTokenCost, articleGenerationPeriodMinutes, eventGenerationPeriodMinutes, editionGenerationPeriodMinutes } = body;
 
@@ -76,7 +75,7 @@ export const PUT = withAuth(async (request: NextRequest, user, redis) => {
     );
   }
 
-  await redis.saveEditor({
+  await dataStorage.saveEditor(user.id, {
     bio,
     prompt,
     modelName,

@@ -24,7 +24,7 @@ export const POST = withAuth(async (
   const reporterService = await container.getReporterService();
 
   // Get current reporter
-  const reporter = await redis.getReporter(reporterId);
+  const reporter = await redis.getReporter(user.id, reporterId);
   if (!reporter) {
     return NextResponse.json(
       { error: 'Reporter not found' },
@@ -34,7 +34,7 @@ export const POST = withAuth(async (
 
   // Toggle the enabled status
   const newEnabledStatus = !reporter.enabled;
-  const updatedReporter = await reporterService.updateReporter(reporterId, { enabled: newEnabledStatus });
+  const updatedReporter = await reporterService.updateReporter(user.id, reporterId, { enabled: newEnabledStatus });
 
   if (!updatedReporter) {
     return NextResponse.json(

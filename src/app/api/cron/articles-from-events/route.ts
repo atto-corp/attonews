@@ -20,49 +20,72 @@ export async function GET(_request: NextRequest) {
     const redis = await container.getDataStorageService();
     const reporterService = await container.getReporterService();
 
-    // Check if we should skip generation based on time constraints
-    const editor = await redis.getEditor();
+    // Get all users
+    const users = await redis.getAllUsers();
+    console.log(`[${new Date().toISOString()}] Found ${users.length} users to process`);
+
     const currentTime = Date.now();
+    let totalArticlesGenerated = 0;
+    const userResults: { [userId: string]: { articles: number; skipped: boolean; reason?: string } } = {};
 
-    if (editor?.lastArticleGenerationTime && editor?.articleGenerationPeriodMinutes) {
-      const timeSinceLastGeneration = (currentTime - editor.lastArticleGenerationTime) / (1000 * 60); // Convert to minutes
-      const requiredInterval = editor.articleGenerationPeriodMinutes;
+    // Process each user
+    for (const user of users) {
+      try {
+        console.log(`[${new Date().toISOString()}] Processing user ${user.id} (${user.email})`);
 
-      if (timeSinceLastGeneration < requiredInterval) {
-        const remainingMinutes = Math.ceil(requiredInterval - timeSinceLastGeneration);
-        console.log(`[${new Date().toISOString()}] Skipping article generation from events - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${requiredInterval} minutes. ${remainingMinutes} minutes remaining.`);
-        console.log('Article generation from events cron job skipped due to time constraints\n');
+        // Check if we should skip generation based on time constraints for this user
+        const editor = await redis.getEditor(user.id);
 
-        return NextResponse.json({
-          success: true,
-          message: `Article generation from events skipped - ${remainingMinutes} minutes remaining until next allowed generation.`,
-          skipped: true,
-          nextGenerationInMinutes: remainingMinutes
-        });
+        if (editor?.lastArticleGenerationTime && editor?.articleGenerationPeriodMinutes) {
+          const timeSinceLastGeneration = (currentTime - editor.lastArticleGenerationTime) / (1000 * 60); // Convert to minutes
+          const requiredInterval = editor.articleGenerationPeriodMinutes;
+
+          if (timeSinceLastGeneration < requiredInterval) {
+            const remainingMinutes = Math.ceil(requiredInterval - timeSinceLastGeneration);
+            console.log(`[${new Date().toISOString()}] Skipping user ${user.id} - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${requiredInterval} minutes. ${remainingMinutes} minutes remaining.`);
+            userResults[user.id] = { articles: 0, skipped: true, reason: `Time constraint: ${remainingMinutes} minutes remaining` };
+            continue;
+          }
+        }
+
+        try {
+          // Proceed with generation for this user
+          const results = await reporterService.generateArticlesFromEvents(user.id);
+          const userArticles = Object.values(results).reduce((sum, articles) => sum + articles.length, 0);
+          totalArticlesGenerated += userArticles;
+
+          // Update the last generation time for this user
+          if (editor) {
+            const updatedEditor = {
+              ...editor,
+              lastArticleGenerationTime: currentTime
+            };
+            await redis.saveEditor(user.id, updatedEditor);
+            console.log(`[${new Date().toISOString()}] Updated last article generation time to ${new Date(currentTime).toISOString()} for user ${user.id}`);
+          }
+
+          userResults[user.id] = { articles: userArticles, skipped: false };
+          console.log(`[${new Date().toISOString()}] Successfully generated ${userArticles} articles from events for user ${user.id}`);
+
+        } catch (error) {
+          console.error(`[${new Date().toISOString()}] Failed to generate articles from events for user ${user.id}:`, error);
+          userResults[user.id] = { articles: 0, skipped: false, reason: error instanceof Error ? error.message : 'Unknown error' };
+        }
+
+      } catch (error) {
+        console.error(`[${new Date().toISOString()}] Failed to process user ${user.id}:`, error);
+        userResults[user.id] = { articles: 0, skipped: false, reason: error instanceof Error ? error.message : 'Unknown error' };
       }
     }
 
-    // Proceed with generation
-    const results = await reporterService.generateArticlesFromEvents();
-    const totalArticles = Object.values(results).reduce((sum, articles) => sum + articles.length, 0);
-
-    // Update the last generation time
-    if (editor) {
-      const updatedEditor = {
-        ...editor,
-        lastArticleGenerationTime: currentTime
-      };
-      await redis.saveEditor(updatedEditor);
-      console.log(`[${new Date().toISOString()}] Updated last article generation time to ${new Date(currentTime).toISOString()}`);
-    }
-
-    console.log(`[${new Date().toISOString()}] Successfully generated ${totalArticles} articles from events`);
+    console.log(`[${new Date().toISOString()}] Successfully generated ${totalArticlesGenerated} articles from events across all users`);
     console.log('Article generation from events cron job completed successfully\n');
 
     return NextResponse.json({
       success: true,
-      message: `Reporter article generation from events job completed successfully. Generated ${totalArticles} articles.`,
-      totalArticles,
+      message: `Reporter article generation from events job completed successfully. Generated ${totalArticlesGenerated} articles across ${users.length} users.`,
+      totalArticles: totalArticlesGenerated,
+      userResults,
       lastGenerationTime: currentTime
     });
   } catch (error) {

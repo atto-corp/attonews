@@ -73,7 +73,6 @@ export default function EditorPage() {
   useEffect(() => {
     checkAdminStatus();
     fetchEditorData();
-    fetchJobStatus();
     fetchKpiData();
   }, []);
 
@@ -121,7 +120,18 @@ export default function EditorPage() {
 
   const fetchEditorData = async () => {
     try {
-      const response = await fetch('/api/editor');
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setMessage('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/editor', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setEditorData(data);
@@ -219,7 +229,14 @@ export default function EditorPage() {
 
   const fetchKpiData = async () => {
     try {
-      const response = await fetch('/api/kpi');
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch('/api/kpi', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setKpiData(data);
