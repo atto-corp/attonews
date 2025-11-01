@@ -1,0 +1,4 @@
+app:
+  name: "Newsroom"
+  fullName: "AI Newsroom"
+  defaultAdminUserId: "admin"
