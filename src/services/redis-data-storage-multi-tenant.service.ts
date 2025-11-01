@@ -847,4 +847,9 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
     // For now, just mark as completed
     console.log(`Migration to user ${defaultUserId} would be implemented here`);
   }
+
+  async getDefaultAdminUserId(): Promise<string> {
+    const adminUserId = await this.client.get('migration:default_admin_user_id');
+    return adminUserId || 'admin'; // fallback to 'admin' if not set
+  }
 }

@@ -19,7 +19,8 @@ export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
 
   // If user has no editions, fall back to admin user's editions
   if (dailyEditions.length === 0) {
-    dailyEditions = await dataStorage.getDailyEditions('admin', limit);
+    const adminUserId = await dataStorage.getDefaultAdminUserId();
+    dailyEditions = await dataStorage.getDailyEditions(adminUserId, limit);
   }
 
   return NextResponse.json(dailyEditions);

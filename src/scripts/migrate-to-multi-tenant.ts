@@ -8,9 +8,23 @@
 import { RedisDataStorageMultiTenantService } from '../services/redis-data-storage-multi-tenant.service';
 import { REDIS_KEYS } from '../app/models/types';
 import { createClient, RedisClientType } from 'redis';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
 
 async function migrateToMultiTenant() {
   console.log('Starting multi-tenant migration...');
+
+  // Load configuration
+  let config: any = {};
+  try {
+    const configFile = fs.readFileSync('./config.yaml', 'utf8');
+    config = yaml.load(configFile) as any;
+  } catch (error) {
+    console.warn('Could not load config.yaml, using defaults:', error);
+  }
+
+  const DEFAULT_ADMIN_USER_ID = config?.app?.defaultAdminUserId || 'admin';
+  console.log(`Using default admin user ID: ${DEFAULT_ADMIN_USER_ID}`);
 
   const redis = createClient({
     url: 'redis://localhost:6379'
@@ -18,9 +32,6 @@ async function migrateToMultiTenant() {
 
   await redis.connect();
   console.log('Connected to Redis');
-
-  // Define the default admin user ID
-  const DEFAULT_ADMIN_USER_ID = 'admin';
 
   try {
     // Check if migration has already been run
@@ -191,11 +202,11 @@ async function migrateToMultiTenant() {
       });
 
       for (const editionId of editionIds) {
-        const stories = await redis.get(REDIS_KEYS.LEGACY_EDITION_STORIES(editionId));
+        const stories = await redis.sMembers(REDIS_KEYS.LEGACY_EDITION_STORIES(editionId));
         const time = await redis.get(REDIS_KEYS.LEGACY_EDITION_TIME(editionId));
         const prompt = await redis.get(REDIS_KEYS.LEGACY_EDITION_PROMPT(editionId));
 
-        if (stories) editionMulti.set(REDIS_KEYS.USER_EDITION_STORIES(DEFAULT_ADMIN_USER_ID, editionId), stories);
+        if (stories.length > 0) editionMulti.set(REDIS_KEYS.USER_EDITION_STORIES(DEFAULT_ADMIN_USER_ID, editionId), JSON.stringify(stories));
         if (time) editionMulti.set(REDIS_KEYS.USER_EDITION_TIME(DEFAULT_ADMIN_USER_ID, editionId), time);
         if (prompt) editionMulti.set(REDIS_KEYS.USER_EDITION_PROMPT(DEFAULT_ADMIN_USER_ID, editionId), prompt);
       }
@@ -214,11 +225,11 @@ async function migrateToMultiTenant() {
       });
 
       for (const dailyEditionId of dailyEditionIds) {
-        const editions = await redis.get(REDIS_KEYS.LEGACY_DAILY_EDITION_EDITIONS(dailyEditionId));
+        const editions = await redis.sMembers(REDIS_KEYS.LEGACY_DAILY_EDITION_EDITIONS(dailyEditionId));
         const time = await redis.get(REDIS_KEYS.LEGACY_DAILY_EDITION_TIME(dailyEditionId));
         const prompt = await redis.get(REDIS_KEYS.LEGACY_DAILY_EDITION_PROMPT(dailyEditionId));
 
-        if (editions) dailyEditionMulti.set(REDIS_KEYS.USER_DAILY_EDITION_EDITIONS(DEFAULT_ADMIN_USER_ID, dailyEditionId), editions);
+        if (editions.length > 0) dailyEditionMulti.set(REDIS_KEYS.USER_DAILY_EDITION_EDITIONS(DEFAULT_ADMIN_USER_ID, dailyEditionId), JSON.stringify(editions));
         if (time) dailyEditionMulti.set(REDIS_KEYS.USER_DAILY_EDITION_TIME(DEFAULT_ADMIN_USER_ID, dailyEditionId), time);
         if (prompt) dailyEditionMulti.set(REDIS_KEYS.USER_DAILY_EDITION_PROMPT(DEFAULT_ADMIN_USER_ID, dailyEditionId), prompt);
       }

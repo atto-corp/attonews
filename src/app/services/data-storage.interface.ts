@@ -103,4 +103,5 @@ export interface IDataStorageService {
 
   // Migration utilities
   migrateLegacyDataToUser(defaultUserId: string): Promise<void>;
+  getDefaultAdminUserId(): Promise<string>;
 }
