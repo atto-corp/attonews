@@ -775,7 +775,6 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
   }>> {
     // This is a simplified implementation. In a real system, you'd want to scan for all usage keys
     // and filter by date range. For now, return empty array.
-    // @ts-expect-error - Method not fully implemented yet
     return [];
   }
 
@@ -808,21 +807,21 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
   }
 
   // KPI operations (global)
-  async getKpiValue(kpiName: string): Promise<number> {
-    const value = await (this.client.get(REDIS_KEYS.KPI_VALUE(kpiName)) as Promise<string | null>);
+  async getKpiValue(userId: string, kpiName: string): Promise<number> {
+    const value = await (this.client.get(REDIS_KEYS.USER_KPI_VALUE(userId, kpiName)) as Promise<string | null>);
     return parseFloat(String(value || '0'));
   }
 
-  async setKpiValue(kpiName: string, value: number): Promise<void> {
+  async setKpiValue(userId: string, kpiName: string, value: number): Promise<void> {
     const multi = this.client.multi();
-    multi.set(REDIS_KEYS.KPI_VALUE(kpiName), value.toString());
-    multi.set(REDIS_KEYS.KPI_LAST_UPDATED(kpiName), Date.now().toString());
+    multi.set(REDIS_KEYS.USER_KPI_VALUE(userId, kpiName), value.toString());
+    multi.set(REDIS_KEYS.USER_KPI_LAST_UPDATED(userId, kpiName), Date.now().toString());
     await multi.exec();
   }
 
-  async incrementKpiValue(kpiName: string, increment: number): Promise<void> {
-    const currentValue = await this.getKpiValue(kpiName);
-    await this.setKpiValue(kpiName, currentValue + increment);
+  async incrementKpiValue(userId: string, kpiName: string, increment: number): Promise<void> {
+    const currentValue = await this.getKpiValue(userId, kpiName);
+    await this.setKpiValue(userId, kpiName, currentValue + increment);
   }
 
   // Utility methods

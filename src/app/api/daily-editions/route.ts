@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../utils/auth';
 
-// GET /api/daily-editions - Get daily editions (requires reader permission)
+// GET /api/daily-editions - Get daily editions with admin fallback (requires reader permission)
 export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
   const { searchParams } = new URL(request.url);
   const limitParam = searchParams.get('limit');
@@ -14,7 +14,14 @@ export const GET = withAuth(async (request: NextRequest, user, dataStorage) => {
     }
   }
 
-  const dailyEditions = await dataStorage.getDailyEditions(user.id, limit);
+  // First try to get user's own daily editions
+  let dailyEditions = await dataStorage.getDailyEditions(user.id, limit);
+
+  // If user has no editions, fall back to admin user's editions
+  if (dailyEditions.length === 0) {
+    dailyEditions = await dataStorage.getDailyEditions('admin', limit);
+  }
+
   return NextResponse.json(dailyEditions);
 }, { requiredPermission: 'reader' });
 

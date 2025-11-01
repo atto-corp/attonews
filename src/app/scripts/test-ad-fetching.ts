@@ -13,6 +13,7 @@ async function testAdFetching() {
     // Create test ads with different timestamps
     const ad1 = {
       id: await redis.generateId('ad'),
+      userId: testUserId,
       name: 'First Advertisement',
       bidPrice: 5.00,
       promptContent: 'First ad content'
@@ -23,6 +24,7 @@ async function testAdFetching() {
 
     const ad2 = {
       id: await redis.generateId('ad'),
+      userId: testUserId,
       name: 'Second Advertisement',
       bidPrice: 10.00,
       promptContent: 'Second ad content - this should be the most recent'

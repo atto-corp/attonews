@@ -17,6 +17,7 @@ async function testAdIntegration() {
 
     const testAd = {
       id: await redis.generateId('ad'),
+      userId: testUserId,
       name: 'Test Advertisement',
       bidPrice: 10.50,
       promptContent: 'This is a test advertisement that should appear in the article prompt every 20 messages.'
@@ -28,6 +29,7 @@ async function testAdIntegration() {
     // Create another ad to test most recent functionality
     const newerAd = {
       id: await redis.generateId('ad'),
+      userId: testUserId,
       name: 'Newer Test Advertisement',
       bidPrice: 15.75,
       promptContent: 'This is the most recent advertisement that should be used in article generation.'

@@ -5,7 +5,7 @@
  * This script moves all existing global data to a default admin user
  */
 
-import { RedisDataStorageService } from '../app/services/redis-data-storage.service';
+import { RedisDataStorageMultiTenantService } from '../services/redis-data-storage-multi-tenant.service';
 import { REDIS_KEYS } from '../app/models/types';
 import { createClient, RedisClientType } from 'redis';
 

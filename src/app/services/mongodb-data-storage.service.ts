@@ -636,6 +636,7 @@ export class MongoDBDataStorageService {
 
     return {
       id: mongoAd._id,
+      userId: mongoAd.userId,
       name: mongoAd.name,
       bidPrice: mongoAd.bidPrice,
       promptContent: mongoAd.promptContent
@@ -650,6 +651,7 @@ export class MongoDBDataStorageService {
 
     return {
       id: mongoAd._id,
+      userId: mongoAd.userId,
       name: mongoAd.name,
       bidPrice: mongoAd.bidPrice,
       promptContent: mongoAd.promptContent

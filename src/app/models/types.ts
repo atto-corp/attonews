@@ -78,6 +78,7 @@ export interface Event {
 
 export interface AdEntry {
   id: string;
+  userId: string;
   name: string;
   bidPrice: number;
   promptContent: string;

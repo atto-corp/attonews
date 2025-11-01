@@ -21,6 +21,7 @@ export const POST = withAuth(async (request: NextRequest, user, dataStorage) => 
   const adId = await dataStorage.generateId('ad');
   const ad: AdEntry = {
     id: adId,
+    userId: user.id,
     name,
     bidPrice: parseFloat(bidPrice),
     promptContent
