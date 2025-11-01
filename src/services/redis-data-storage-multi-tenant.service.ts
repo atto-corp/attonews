@@ -187,20 +187,22 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
 
   // Reporter operations (user-scoped)
   async saveReporter(userId: string, reporter: Reporter): Promise<void> {
+    const effectiveUserId = await this.getEffectiveUserId(userId);
     const multi = this.client.multi();
-    multi.sAdd(REDIS_KEYS.USER_REPORTERS(userId), reporter.id);
-    multi.sAdd(REDIS_KEYS.USER_REPORTER_BEATS(userId, reporter.id), reporter.beats);
-    multi.set(REDIS_KEYS.USER_REPORTER_PROMPT(userId, reporter.id), reporter.prompt);
-    multi.set(REDIS_KEYS.USER_REPORTER_ENABLED(userId, reporter.id), reporter.enabled.toString());
+    multi.sAdd(REDIS_KEYS.USER_REPORTERS(effectiveUserId), reporter.id);
+    multi.sAdd(REDIS_KEYS.USER_REPORTER_BEATS(effectiveUserId, reporter.id), reporter.beats);
+    multi.set(REDIS_KEYS.USER_REPORTER_PROMPT(effectiveUserId, reporter.id), reporter.prompt);
+    multi.set(REDIS_KEYS.USER_REPORTER_ENABLED(effectiveUserId, reporter.id), reporter.enabled.toString());
     await multi.exec();
   }
 
   async getAllReporters(userId: string): Promise<Reporter[]> {
-    const reporterIds = await this.client.sMembers(REDIS_KEYS.USER_REPORTERS(userId));
+    const effectiveUserId = await this.getEffectiveUserId(userId);
+    const reporterIds = await this.client.sMembers(REDIS_KEYS.USER_REPORTERS(effectiveUserId));
     const reporters: Reporter[] = [];
 
     for (const reporterId of reporterIds) {
-      const reporter = await this.getReporter(userId, reporterId);
+      const reporter = await this.getReporter(effectiveUserId, reporterId);
       if (reporter) {
         reporters.push(reporter);
       }
@@ -210,10 +212,11 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
   }
 
   async getReporter(userId: string, id: string): Promise<Reporter | null> {
+    const effectiveUserId = await this.getEffectiveUserId(userId);
     const [beats, prompt, enabled] = await Promise.all([
-      this.client.sMembers(REDIS_KEYS.USER_REPORTER_BEATS(userId, id)),
-      this.client.get(REDIS_KEYS.USER_REPORTER_PROMPT(userId, id)) as Promise<string | null>,
-      this.client.get(REDIS_KEYS.USER_REPORTER_ENABLED(userId, id)) as Promise<string | null>
+      this.client.sMembers(REDIS_KEYS.USER_REPORTER_BEATS(effectiveUserId, id)),
+      this.client.get(REDIS_KEYS.USER_REPORTER_PROMPT(effectiveUserId, id)) as Promise<string | null>,
+      this.client.get(REDIS_KEYS.USER_REPORTER_ENABLED(effectiveUserId, id)) as Promise<string | null>
     ]);
 
     if (!prompt) {
@@ -846,6 +849,11 @@ export class RedisDataStorageMultiTenantService implements IDataStorageService {
     // This would implement the migration logic from the migration script
     // For now, just mark as completed
     console.log(`Migration to user ${defaultUserId} would be implemented here`);
+  }
+
+  async getEffectiveUserId(userId: string): Promise<string> {
+    const user = await this.getUserById(userId);
+    return user?.role === 'admin' ? 'admin' : userId;
   }
 
   async getDefaultAdminUserId(): Promise<string> {
