@@ -148,7 +148,8 @@ const AdsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Pricing Section */}
+        {/* Pricing Section - commented out */}
+        {false && (
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8 mb-8 relative overflow-hidden">
           {/* Sheen effect */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-pulse"></div>
@@ -182,6 +183,7 @@ const AdsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        )}
 
       {error && (
         <div className="backdrop-blur-sm bg-red-500/20 border border-red-400/30 rounded-xl p-4 mb-6 relative z-10">
