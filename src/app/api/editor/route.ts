@@ -13,6 +13,7 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
     messageSliceCount: editor?.messageSliceCount || 200,
     inputTokenCost: editor?.inputTokenCost || 0.050,
     outputTokenCost: editor?.outputTokenCost || 0.400,
+    baseUrl: editor?.baseUrl || '',
     articleGenerationPeriodMinutes: editor?.articleGenerationPeriodMinutes || 15,
     lastArticleGenerationTime: editor?.lastArticleGenerationTime || null,
     eventGenerationPeriodMinutes: editor?.eventGenerationPeriodMinutes || 30,
@@ -25,11 +26,18 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
 // PUT /api/editor - Update editor data
 export const PUT = withAuth(async (request: NextRequest, user, redis) => {
   const body = await request.json();
-  const { bio, prompt, modelName, messageSliceCount, inputTokenCost, outputTokenCost, articleGenerationPeriodMinutes, eventGenerationPeriodMinutes, editionGenerationPeriodMinutes } = body;
+  const { bio, prompt, modelName, messageSliceCount, inputTokenCost, outputTokenCost, baseUrl, articleGenerationPeriodMinutes, eventGenerationPeriodMinutes, editionGenerationPeriodMinutes } = body;
 
   if (typeof bio !== 'string' || typeof prompt !== 'string' || typeof modelName !== 'string') {
     return NextResponse.json(
       { error: 'Bio, prompt, and modelName must be strings' },
+      { status: 400 }
+    );
+  }
+
+  if (baseUrl !== undefined && typeof baseUrl !== 'string') {
+    return NextResponse.json(
+      { error: 'baseUrl must be a string if provided' },
       { status: 400 }
     );
   }
@@ -83,6 +91,7 @@ export const PUT = withAuth(async (request: NextRequest, user, redis) => {
     messageSliceCount,
     inputTokenCost,
     outputTokenCost,
+    baseUrl: baseUrl || undefined,
     articleGenerationPeriodMinutes,
     eventGenerationPeriodMinutes,
     editionGenerationPeriodMinutes
@@ -95,6 +104,7 @@ export const PUT = withAuth(async (request: NextRequest, user, redis) => {
     messageSliceCount,
     inputTokenCost,
     outputTokenCost,
+    baseUrl: baseUrl || '',
     articleGenerationPeriodMinutes,
     eventGenerationPeriodMinutes,
     editionGenerationPeriodMinutes,

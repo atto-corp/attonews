@@ -11,6 +11,7 @@ interface EditorData {
   messageSliceCount: number;
   inputTokenCost: number;
   outputTokenCost: number;
+  baseUrl: string;
   articleGenerationPeriodMinutes: number;
   lastArticleGenerationTime: number | null;
   eventGenerationPeriodMinutes: number;
@@ -52,6 +53,7 @@ export default function EditorPage() {
     messageSliceCount: 200,
     inputTokenCost: 0.050,
     outputTokenCost: 0.400,
+    baseUrl: '',
     articleGenerationPeriodMinutes: 15,
     lastArticleGenerationTime: null,
     eventGenerationPeriodMinutes: 30,
@@ -350,27 +352,49 @@ export default function EditorPage() {
                <h2 className="text-2xl font-semibold text-white/90">AI Model Configuration</h2>
              </div>
              <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
-               {/* Model Name */}
-               <div>
-                 <label className="block text-sm font-medium text-white/80 mb-2">
-                   Model Name
-                 </label>
-                 <input
-                   type="text"
-                   value={editorData.modelName}
-                   onChange={(e) => setEditorData({ ...editorData, modelName: e.target.value })}
-                   placeholder="Enter AI model name (e.g., gpt-5-nano)"
-                   className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
-                     isAdmin
-                       ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
-                       : 'bg-white/5 cursor-not-allowed opacity-60'
-                   }`}
-                   readOnly={!isAdmin}
-                 />
-                 <p className="text-sm text-white/70 mt-2">
-                   Specify the AI model to use for content generation. This setting affects all AI operations in the newsroom.
-                 </p>
-               </div>
+                {/* Model Name */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editorData.modelName}
+                    onChange={(e) => setEditorData({ ...editorData, modelName: e.target.value })}
+                    placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                    className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                      isAdmin
+                        ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                        : 'bg-white/5 cursor-not-allowed opacity-60'
+                    }`}
+                    readOnly={!isAdmin}
+                  />
+                  <p className="text-sm text-white/70 mt-2">
+                    Specify the AI model to use for content generation. This setting affects all AI operations in the newsroom.
+                  </p>
+                </div>
+
+                {/* Base URL */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    OpenAI API Base URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editorData.baseUrl}
+                    onChange={(e) => setEditorData({ ...editorData, baseUrl: e.target.value })}
+                    placeholder="https://api.openai.com/v1 (leave empty for default)"
+                    className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                      isAdmin
+                        ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                        : 'bg-white/5 cursor-not-allowed opacity-60'
+                    }`}
+                    readOnly={!isAdmin}
+                  />
+                  <p className="text-sm text-white/70 mt-2">
+                    Custom base URL for OpenAI API requests. Leave empty to use the default OpenAI API. Useful for custom endpoints or proxies.
+                  </p>
+                </div>
 
                {/* Input Token Cost */}
                <div>
