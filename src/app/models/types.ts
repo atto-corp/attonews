@@ -5,6 +5,7 @@ export interface Editor {
   messageSliceCount: number;
   inputTokenCost: number;
   outputTokenCost: number;
+  baseUrl?: string; // Optional base URL for OpenAI API requests
   articleGenerationPeriodMinutes: number;
   lastArticleGenerationTime?: number; // milliseconds since epoch, optional for backward compatibility
   eventGenerationPeriodMinutes: number;
@@ -114,6 +115,7 @@ EDITOR_PROMPT: 'editor:prompt',
 EDITOR_MESSAGE_SLICE_COUNT: 'editor:message_slice_count',
 INPUT_TOKEN_COST: 'editor:input_token_cost',
 OUTPUT_TOKEN_COST: 'editor:output_token_cost',
+BASE_URL: 'editor:base_url',
   ARTICLE_GENERATION_PERIOD_MINUTES: 'article_generation:period_minutes',
   LAST_ARTICLE_GENERATION_TIME: 'article_generation:last_time',
   EVENT_GENERATION_PERIOD_MINUTES: 'event_generation:period_minutes',
