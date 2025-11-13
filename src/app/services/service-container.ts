@@ -1,4 +1,5 @@
 import { RedisDataStorageService } from './redis-data-storage.service';
+import { PostgreSQLDataStorageService } from './postgresql-data-storage.service';
 import { IDataStorageService } from './data-storage.interface';
 import { AuthService } from './auth.service';
 import { ReporterService } from './reporter.service';
@@ -30,7 +31,17 @@ export class ServiceContainer {
 
   async getDataStorageService(): Promise<IDataStorageService> {
     if (!this.dataStorageService) {
-      this.dataStorageService = new RedisDataStorageService();
+      // Check environment variable to determine which storage backend to use
+      const storageBackend = process.env.DATA_STORAGE_BACKEND || 'redis';
+
+      if (storageBackend === 'postgres' || storageBackend === 'postgresql') {
+        console.log('Using PostgreSQL data storage backend');
+        this.dataStorageService = new PostgreSQLDataStorageService();
+      } else {
+        console.log('Using Redis data storage backend');
+        this.dataStorageService = new RedisDataStorageService();
+      }
+
       await this.dataStorageService.connect();
     }
     return this.dataStorageService;

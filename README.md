@@ -42,7 +42,7 @@ All users can freely access recent content without registration. Visit the follo
 
 - **Frontend**: Next.js 14 with TypeScript, Tailwind CSS
 - **Backend**: Next.js API routes
-- **Database**: Redis
+- **Database**: Redis (default) or PostgreSQL
 - **AI Integration**: OpenAI API for content generation
 - **Scheduling**: Node-cron for automated tasks
 - **Styling**: Tailwind CSS with Geist font
@@ -50,7 +50,8 @@ All users can freely access recent content without registration. Visit the follo
 ## Prerequisites
 
 - Node.js 18+
-- Redis server running on `redis://localhost:6379`
+- Redis server running on `redis://localhost:6379` (default database)
+- PostgreSQL server (optional, for PostgreSQL backend)
 - OpenAI API key (set as environment variable)
 
 ## Getting Started
@@ -61,11 +62,27 @@ All users can freely access recent content without registration. Visit the follo
    ```
 
 2. **Set up environment variables**:
-   Create a `.env.local` file with:
-   ```
-   NEWSROOM_ADMIN_PASS=your_admin_password
-   OPENAI_API_KEY=your_openai_api_key
-   ```
+    Create a `.env.local` file with:
+    ```
+    NEWSROOM_ADMIN_PASS=your_admin_password
+    OPENAI_API_KEY=your_openai_api_key
+    DATA_STORAGE_BACKEND=redis  # or 'postgres' for PostgreSQL
+    POSTGRES_URL=postgresql://localhost:5432/newsroom  # Only needed for PostgreSQL
+    ```
+
+3. **Database Configuration**:
+
+    **Redis (Default)**:
+    - Ensure Redis is running on `redis://localhost:6379`
+    - Set `DATA_STORAGE_BACKEND=redis` (or omit for default)
+
+    **PostgreSQL (Optional)**:
+    - Install and start PostgreSQL server
+    - Create a database named `newsroom`
+    - Set `DATA_STORAGE_BACKEND=postgres`
+    - Set `POSTGRES_URL` to your PostgreSQL connection string
+    - Run schema creation: `npx ts-node src/scripts/create-postgres-schema.ts`
+    - Migrate data from Redis: `npx ts-node src/scripts/migrate-redis-to-postgres.ts`
 
 3. **Populate initial data**:
    ```bash
@@ -86,6 +103,11 @@ All users can freely access recent content without registration. Visit the follo
 - `npm run start` - Start production server
 - `npm run populate` - Populate initial data (editor and reporters)
 - `npm run populate-daily` - Populate initial daily edition
+
+### Database Scripts
+
+- `npx ts-node src/scripts/create-postgres-schema.ts` - Create PostgreSQL database schema
+- `npx ts-node src/scripts/migrate-redis-to-postgres.ts` - Migrate data from Redis to PostgreSQL
 
 ## API Endpoints
 
