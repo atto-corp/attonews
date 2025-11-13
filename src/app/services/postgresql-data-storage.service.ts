@@ -337,8 +337,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
     try {
       const query = `
-        INSERT INTO articles (id, reporter_id, headline, body, generation_time, prompt, message_ids, message_texts)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO articles (id, reporter_id, headline, body, generation_time, prompt, message_ids, message_texts, model_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ON CONFLICT (id) DO UPDATE SET
           reporter_id = EXCLUDED.reporter_id,
           headline = EXCLUDED.headline,
@@ -346,7 +346,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           generation_time = EXCLUDED.generation_time,
           prompt = EXCLUDED.prompt,
           message_ids = EXCLUDED.message_ids,
-          message_texts = EXCLUDED.message_texts
+          message_texts = EXCLUDED.message_texts,
+          model_name = EXCLUDED.model_name
       `;
 
       const values = [
@@ -357,7 +358,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         article.generationTime,
         article.prompt,
         JSON.stringify(article.messageIds),
-        JSON.stringify(article.messageTexts)
+        JSON.stringify(article.messageTexts),
+        article.modelName
       ];
 
       await client.query(query, values);
@@ -388,7 +390,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         prompt: row.prompt,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -414,7 +417,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         prompt: row.prompt,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -439,7 +443,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         prompt: row.prompt,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -462,7 +467,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         prompt: row.prompt,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       };
     } finally {
       client.release();
@@ -532,7 +538,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         where: row.location,
         when: row.event_time,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -560,7 +567,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         where: row.location,
         when: row.event_time,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -588,7 +596,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         where: row.location,
         when: row.event_time,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -613,7 +622,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         where: row.location,
         when: row.event_time,
         messageIds: row.message_ids,
-        messageTexts: row.message_texts
+        messageTexts: row.message_texts,
+        modelName: row.model_name
       };
     } finally {
       client.release();
@@ -674,7 +684,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         id: row.id,
         stories: row.stories,
         generationTime: row.generation_time,
-        prompt: row.prompt
+        prompt: row.prompt,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -693,7 +704,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         id: row.id,
         stories: row.stories,
         generationTime: row.generation_time,
-        prompt: row.prompt
+        prompt: row.prompt,
+        modelName: row.model_name
       };
     } finally {
       client.release();
@@ -760,7 +772,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           negative: row.model_feedback_negative
         },
         topics: row.topics,
-        prompt: row.prompt
+        prompt: row.prompt,
+        modelName: row.model_name
       }));
     } finally {
       client.release();
@@ -787,7 +800,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           negative: row.model_feedback_negative
         },
         topics: row.topics,
-        prompt: row.prompt
+        prompt: row.prompt,
+        modelName: row.model_name
       };
     } finally {
       client.release();

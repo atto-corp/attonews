@@ -15,6 +15,7 @@ export const dailyEditionSchema = z.object({
     })),
     modelFeedbackAboutThePrompt: z.object({positive: z.string(), negative: z.string()}),
     // newspaperName: z.string(),
+    modelName: z.string(),
 });
 
 export const reporterArticleSchema = z.object({
@@ -35,7 +36,8 @@ export const reporterArticleSchema = z.object({
         factualAccuracy: z.string()
     }),
     socialMediaSummary: z.string(),
-    potentialMessageIds: z.array(z.number()).describe("The indexes of potentially related social media messages")
+    potentialMessageIds: z.array(z.number()).describe("The indexes of potentially related social media messages"),
+    modelName: z.string()
 });
 
 export const reporterResponseSchema = z.object({
@@ -82,7 +84,8 @@ export const eventGenerationResponseSchema = z.object({
         where: z.string().nullable().optional().describe("Where the event took place, if known"),
         when: z.string().nullable().optional().describe("Date and time the event took place, if known"),
         messageIds: z.array(z.number()).optional().default([]).describe("The indexes of the social media messages used to create or update this event"),
-        potentialMessageIds: z.array(z.number()).optional().default([]).describe("The indexes of potentially related social media messages")
+        potentialMessageIds: z.array(z.number()).optional().default([]).describe("The indexes of potentially related social media messages"),
+        modelName: z.string()
     })).max(5) // Max 5 events
 });
 

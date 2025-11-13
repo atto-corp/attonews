@@ -196,6 +196,8 @@ export class RedisDataStorageService implements IDataStorageService {
     multi.set(REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId), JSON.stringify(article.messageIds));
     console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId), JSON.stringify(article.messageTexts));
     multi.set(REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId), JSON.stringify(article.messageTexts));
+    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_MODEL_NAME(articleId), article.modelName);
+    multi.set(REDIS_KEYS.ARTICLE_MODEL_NAME(articleId), article.modelName);
 
     await multi.exec();
   }
@@ -272,13 +274,14 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getArticle(articleId: string): Promise<Article | null> {
-    const [headline, body, timeStr, prompt, messageIdsJson, messageTextsJson] = await Promise.all([
+    const [headline, body, timeStr, prompt, messageIdsJson, messageTextsJson, modelName] = await Promise.all([
       this.client.get(REDIS_KEYS.ARTICLE_HEADLINE(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_BODY(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_TIME(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_PROMPT(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId)),
-      this.client.get(REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId))
+      this.client.get(REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId)),
+      this.client.get(REDIS_KEYS.ARTICLE_MODEL_NAME(articleId))
     ]);
 
     if (!headline || !body || !timeStr) return null;
@@ -318,7 +321,8 @@ export class RedisDataStorageService implements IDataStorageService {
       generationTime: parseInt(timeStr),
       prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
       messageIds,
-      messageTexts
+      messageTexts,
+      modelName: modelName || 'gpt-5-nano' // Default for backward compatibility
     };
   }
 
@@ -371,6 +375,8 @@ export class RedisDataStorageService implements IDataStorageService {
     multi.set(REDIS_KEYS.EVENT_MESSAGE_IDS(eventId), JSON.stringify(event.messageIds || []));
     console.log('Redis Write: SET', REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId), JSON.stringify(event.messageTexts || []));
     multi.set(REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId), JSON.stringify(event.messageTexts || []));
+    console.log('Redis Write: SET', REDIS_KEYS.EVENT_MODEL_NAME(eventId), event.modelName);
+    multi.set(REDIS_KEYS.EVENT_MODEL_NAME(eventId), event.modelName);
 
     await multi.exec();
   }
@@ -462,7 +468,7 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getEvent(eventId: string): Promise<Event | null> {
-    const [title, createdTimeStr, updatedTimeStr, factsJson, where, when, messageIdsJson, messageTextsJson] = await Promise.all([
+    const [title, createdTimeStr, updatedTimeStr, factsJson, where, when, messageIdsJson, messageTextsJson, modelName] = await Promise.all([
       this.client.get(REDIS_KEYS.EVENT_TITLE(eventId)),
       this.client.get(REDIS_KEYS.EVENT_CREATED_TIME(eventId)),
       this.client.get(REDIS_KEYS.EVENT_UPDATED_TIME(eventId)),
@@ -470,7 +476,8 @@ export class RedisDataStorageService implements IDataStorageService {
       this.client.get(REDIS_KEYS.EVENT_WHERE(eventId)),
       this.client.get(REDIS_KEYS.EVENT_WHEN(eventId)),
       this.client.get(REDIS_KEYS.EVENT_MESSAGE_IDS(eventId)),
-      this.client.get(REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId))
+      this.client.get(REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId)),
+      this.client.get(REDIS_KEYS.EVENT_MODEL_NAME(eventId))
     ]);
 
     if (!title || !createdTimeStr || !updatedTimeStr || !factsJson) return null;
@@ -522,7 +529,8 @@ export class RedisDataStorageService implements IDataStorageService {
       where: where || undefined,
       when: when || undefined,
       messageIds,
-      messageTexts
+      messageTexts,
+      modelName: modelName || 'gpt-5-nano' // Default for backward compatibility
     };
   }
 
@@ -583,6 +591,8 @@ export class RedisDataStorageService implements IDataStorageService {
     multi.set(REDIS_KEYS.EDITION_TIME(editionId), edition.generationTime.toString());
     console.log('Redis Write: SET', REDIS_KEYS.EDITION_PROMPT(editionId), edition.prompt);
     multi.set(REDIS_KEYS.EDITION_PROMPT(editionId), edition.prompt);
+    console.log('Redis Write: SET', REDIS_KEYS.EDITION_MODEL_NAME(editionId), edition.modelName);
+    multi.set(REDIS_KEYS.EDITION_MODEL_NAME(editionId), edition.modelName);
 
     await multi.exec();
   }
@@ -603,10 +613,11 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getNewspaperEdition(editionId: string): Promise<NewspaperEdition | null> {
-    const [stories, timeStr, prompt] = await Promise.all([
+    const [stories, timeStr, prompt, modelName] = await Promise.all([
       this.client.sMembers(REDIS_KEYS.EDITION_STORIES(editionId)),
       this.client.get(REDIS_KEYS.EDITION_TIME(editionId)),
-      this.client.get(REDIS_KEYS.EDITION_PROMPT(editionId))
+      this.client.get(REDIS_KEYS.EDITION_PROMPT(editionId)),
+      this.client.get(REDIS_KEYS.EDITION_MODEL_NAME(editionId))
     ]);
 
     if (!timeStr) return null;
@@ -615,7 +626,8 @@ export class RedisDataStorageService implements IDataStorageService {
       id: editionId,
       stories: stories || [],
       generationTime: parseInt(timeStr),
-      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)'
+      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
+      modelName: modelName || 'gpt-5-nano' // Default for backward compatibility
     };
   }
 
@@ -663,6 +675,8 @@ export class RedisDataStorageService implements IDataStorageService {
     multi.set(`daily_edition:${dailyEditionId}:topics`, JSON.stringify(dailyEdition.topics));
     console.log('Redis Write: SET', REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId), dailyEdition.prompt);
     multi.set(REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId), dailyEdition.prompt);
+    console.log('Redis Write: SET', REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId), dailyEdition.modelName);
+    multi.set(REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId), dailyEdition.modelName);
 
     await multi.exec();
   }
@@ -694,7 +708,8 @@ export class RedisDataStorageService implements IDataStorageService {
       modelFeedbackPositive,
       modelFeedbackNegative,
       topicsJson,
-      prompt
+      prompt,
+      modelName
     ] = await Promise.all([
       this.client.sMembers(REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId)),
       this.client.get(REDIS_KEYS.DAILY_EDITION_TIME(dailyEditionId)),
@@ -704,7 +719,8 @@ export class RedisDataStorageService implements IDataStorageService {
       this.client.get(`daily_edition:${dailyEditionId}:model_feedback_positive`),
       this.client.get(`daily_edition:${dailyEditionId}:model_feedback_negative`),
       this.client.get(`daily_edition:${dailyEditionId}:topics`),
-      this.client.get(REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId))
+      this.client.get(REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId)),
+      this.client.get(REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId))
     ]);
 
     if (!timeStr) return null;
@@ -732,7 +748,8 @@ export class RedisDataStorageService implements IDataStorageService {
         negative: modelFeedbackNegative || ''
       },
       topics,
-      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)'
+      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
+      modelName: modelName || 'gpt-5-nano' // Default for backward compatibility
     };
   }
 

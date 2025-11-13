@@ -52,7 +52,8 @@ export class ReporterService {
           generationTime: structuredArticle.response.generationTime,
           prompt: structuredArticle.prompt,
           messageIds: structuredArticle.response.messageIds || [],
-          messageTexts: messageTexts
+          messageTexts: messageTexts,
+          modelName: structuredArticle.response.modelName
         };
         articles.push(article);
         console.log(`Generated article: "${article.headline}"`);
@@ -235,7 +236,8 @@ export class ReporterService {
               where: aiEvent.where || existingEvent.where,
               when: aiEvent.when || existingEvent.when,
               messageIds: aiEvent.messageIds || [],
-              messageTexts: messageTexts
+              messageTexts: messageTexts,
+              modelName: aiEvent.modelName
             };
             await this.dataStorageService.saveEvent(updatedEvent);
           }
@@ -252,7 +254,8 @@ export class ReporterService {
             where: aiEvent.where || undefined,
             when: aiEvent.when || undefined,
             messageIds: aiEvent.messageIds || [],
-            messageTexts: messageTexts
+            messageTexts: messageTexts,
+            modelName: aiEvent.modelName
           };
 
           await this.dataStorageService.saveEvent(newEvent);
@@ -358,7 +361,8 @@ export class ReporterService {
           generationTime: structuredArticle.response.generationTime,
           prompt: structuredArticle.prompt,
           messageIds: structuredArticle.response.messageIds || [],
-          messageTexts: messageTexts
+          messageTexts: messageTexts,
+          modelName: structuredArticle.response.modelName
         };
 
         await this.dataStorageService.saveArticle(article);

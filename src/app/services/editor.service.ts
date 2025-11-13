@@ -56,7 +56,8 @@ export class EditorService {
       id: editionId,
       stories: selectedArticles.map(article => article.id),
       generationTime: Date.now(),
-      prompt: fullPrompt
+      prompt: fullPrompt,
+      modelName: this.aiService.getModelName()
     };
 
     // Save the edition
@@ -130,7 +131,8 @@ export class EditorService {
       topics: dailyEditionContent.topics,
       modelFeedbackAboutThePrompt: dailyEditionContent.modelFeedbackAboutThePrompt,
       newspaperName: (d => `${d.toLocaleDateString('en-US',{weekday: 'long'})}, ${d.getMonth() + 1}/${d.getDate()}`)(new Date()),//dailyEditionContent.newspaperName,
-      prompt: fullPrompt
+      prompt: fullPrompt,
+      modelName: this.aiService.getModelName()
     };
 
     // Save the daily edition

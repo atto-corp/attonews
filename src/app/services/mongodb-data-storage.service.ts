@@ -43,6 +43,7 @@ interface MongoArticle {
   prompt: string;
   messageIds: number[];
   messageTexts: string[];
+  modelName: string;
 }
 
 interface MongoEvent {
@@ -56,6 +57,7 @@ interface MongoEvent {
   when?: string;
   messageIds?: number[];
   messageTexts?: string[];
+  modelName: string;
 }
 
 interface MongoNewspaperEdition {
@@ -63,6 +65,7 @@ interface MongoNewspaperEdition {
   stories: string[];
   generationTime: number;
   prompt: string;
+  modelName: string;
 }
 
 interface MongoDailyEdition {
@@ -87,6 +90,7 @@ interface MongoDailyEdition {
   };
   newspaperName: string;
   prompt: string;
+  modelName: string;
 }
 
 interface MongoAd {
@@ -281,7 +285,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       generationTime: article.generationTime,
       prompt: article.prompt,
       messageIds: article.messageIds,
-      messageTexts: article.messageTexts
+      messageTexts: article.messageTexts,
+      modelName: article.modelName
     };
 
     await this.articlesCollection.replaceOne({ _id: article.id }, mongoArticle, { upsert: true });
@@ -305,7 +310,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       generationTime: mongo.generationTime,
       prompt: mongo.prompt,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -326,7 +332,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       generationTime: mongo.generationTime,
       prompt: mongo.prompt,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -347,7 +354,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       generationTime: mongo.generationTime,
       prompt: mongo.prompt,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -365,7 +373,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       generationTime: mongoArticle.generationTime,
       prompt: mongoArticle.prompt,
       messageIds: mongoArticle.messageIds,
-      messageTexts: mongoArticle.messageTexts
+      messageTexts: mongoArticle.messageTexts,
+      modelName: mongoArticle.modelName
     };
   }
 
@@ -383,7 +392,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       where: event.where,
       when: event.when,
       messageIds: event.messageIds,
-      messageTexts: event.messageTexts
+      messageTexts: event.messageTexts,
+      modelName: event.modelName
     };
 
     await this.eventsCollection.replaceOne({ _id: event.id }, mongoEvent, { upsert: true });
@@ -409,7 +419,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       where: mongo.where,
       when: mongo.when,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -432,7 +443,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       where: mongo.where,
       when: mongo.when,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -455,7 +467,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       where: mongo.where,
       when: mongo.when,
       messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
     }));
   }
 
@@ -475,7 +488,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       where: mongoEvent.where,
       when: mongoEvent.when,
       messageIds: mongoEvent.messageIds,
-      messageTexts: mongoEvent.messageTexts
+      messageTexts: mongoEvent.messageTexts,
+      modelName: mongoEvent.modelName
     };
   }
 
@@ -501,7 +515,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       _id: edition.id,
       stories: edition.stories,
       generationTime: edition.generationTime,
-      prompt: edition.prompt
+      prompt: edition.prompt,
+      modelName: edition.modelName
     };
 
     await this.newspaperEditionsCollection.replaceOne({ _id: edition.id }, mongoEdition, { upsert: true });
@@ -520,7 +535,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       id: mongo._id,
       stories: mongo.stories,
       generationTime: mongo.generationTime,
-      prompt: mongo.prompt
+      prompt: mongo.prompt,
+      modelName: mongo.modelName
     }));
   }
 
@@ -534,7 +550,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       id: mongoEdition._id,
       stories: mongoEdition.stories,
       generationTime: mongoEdition.generationTime,
-      prompt: mongoEdition.prompt
+      prompt: mongoEdition.prompt,
+      modelName: mongoEdition.modelName
     };
   }
 
@@ -551,7 +568,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       topics: dailyEdition.topics,
       modelFeedbackAboutThePrompt: dailyEdition.modelFeedbackAboutThePrompt,
       newspaperName: dailyEdition.newspaperName,
-      prompt: dailyEdition.prompt
+      prompt: dailyEdition.prompt,
+      modelName: dailyEdition.modelName
     };
 
     await this.dailyEditionsCollection.replaceOne({ _id: dailyEdition.id }, mongoDailyEdition, { upsert: true });
@@ -575,7 +593,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       topics: mongo.topics,
       modelFeedbackAboutThePrompt: mongo.modelFeedbackAboutThePrompt,
       newspaperName: mongo.newspaperName,
-      prompt: mongo.prompt
+      prompt: mongo.prompt,
+      modelName: mongo.modelName
     }));
   }
 
@@ -594,7 +613,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
       topics: mongoDailyEdition.topics,
       modelFeedbackAboutThePrompt: mongoDailyEdition.modelFeedbackAboutThePrompt,
       newspaperName: mongoDailyEdition.newspaperName,
-      prompt: mongoDailyEdition.prompt
+      prompt: mongoDailyEdition.prompt,
+      modelName: mongoDailyEdition.modelName
     };
   }
 

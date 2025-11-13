@@ -59,6 +59,10 @@ export class AIService {
     }
   }
 
+  getModelName(): string {
+    return this.modelName;
+  }
+
 
 
   async generateStructuredArticle(reporter: Reporter): Promise<{response: {
@@ -80,6 +84,7 @@ export class AIService {
     socialMediaSummary: string;
     messageIds: number[];
     potentialMessageIds: number[];
+    modelName: string;
   }, prompt: string,
     messages: string[];
 }> {
@@ -179,24 +184,25 @@ When generating the article, first scan the social media context for messages re
         throw new Error('No response content from AI service');
       }
 
-      // Save the entire AI response to JSON file
-      try {
-        const responseFilePath = join(process.cwd(), 'api_responses', `article_${generationTime}.json`);
-        await writeFile(responseFilePath, JSON.stringify(response, null, 2));
-      } catch (error) {
-        console.warn('Failed to save AI response to file:', error);
-        // Continue with article generation even if file save fails
-      }
+       // Save the entire AI response to JSON file
+       try {
+         const responseFilePath = join(process.cwd(), 'api_responses', `article_${generationTime}.json`);
+         await writeFile(responseFilePath, JSON.stringify(response, null, 2));
+       } catch (error) {
+         console.warn('Failed to save AI response to file:', error);
+         // Continue with article generation even if file save fails
+       }
 
-      const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
+       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
 
-      // Add generated fields
-      parsedResponse.id = articleId;
-      parsedResponse.reporterId = reporter.id;
-      parsedResponse.generationTime = generationTime;
-      parsedResponse.wordCount = parsedResponse.body.split(' ').length;
+       // Add generated fields
+       parsedResponse.id = articleId;
+       parsedResponse.reporterId = reporter.id;
+       parsedResponse.generationTime = generationTime;
+       parsedResponse.wordCount = parsedResponse.body.split(' ').length;
+       parsedResponse.modelName = this.modelName;
 
-      return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+       return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating structured article:', error);
       // Return fallback structured article
@@ -232,9 +238,10 @@ Make the article engaging, factual, and professionally written. Ensure all quote
           sourceDiversity: 'Limited source diversity due to breaking news nature',
           factualAccuracy: 'Information based on preliminary reports'
         },
-        socialMediaSummary: `Breaking: Major developments in ${fallbackBeat} sector capturing widespread attention. Stay tuned for updates! #${fallbackBeat.replace(/\s+/g, '')}News`,
-        messageIds: [],potentialMessageIds:[], // No tweets used in fallback,
-      }, messages:[], prompt:fallbackPrompt};
+         socialMediaSummary: `Breaking: Major developments in ${fallbackBeat} sector capturing widespread attention. Stay tuned for updates! #${fallbackBeat.replace(/\s+/g, '')}News`,
+         messageIds: [],potentialMessageIds:[], // No tweets used in fallback,
+         modelName: this.modelName
+       }, messages:[], prompt:fallbackPrompt};
     }
   }
 
@@ -431,6 +438,7 @@ User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive 
       when?: string | null;
       messageIds: number[];
       potentialMessageIds: number[];
+      modelName: string;
     }>;
     fullPrompt: string;
     messages: string[];
@@ -521,13 +529,19 @@ Instructions:
         throw new Error('No response content from AI service for events');
       }
 
-      const parsedResponse = eventGenerationResponseSchema.parse(JSON.parse(content));
+       const parsedResponse = eventGenerationResponseSchema.parse(JSON.parse(content));
 
-      return {
-        events: parsedResponse.events,
-        fullPrompt,
-        messages: socialMediaMessages.map(x => x.text)
-      };
+       // Add modelName to each event
+       const eventsWithModelName = parsedResponse.events.map(event => ({
+         ...event,
+         modelName: this.modelName
+       }));
+
+       return {
+         events: eventsWithModelName,
+         fullPrompt,
+         messages: socialMediaMessages.map(x => x.text)
+       };
     } catch (error) {
       console.error('Error generating events:', error);
       // Return empty events on error
@@ -558,6 +572,7 @@ Instructions:
     socialMediaSummary: string;
     messageIds: number[];
     potentialMessageIds: number[];
+    modelName: string;
   }, prompt: string,
     messages: string[];
 } | null> {
@@ -681,13 +696,14 @@ When generating the article, first review your recent articles to avoid repetiti
 
       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
 
-      // Add generated fields
-      parsedResponse.id = articleId;
-      parsedResponse.reporterId = reporter.id;
-      parsedResponse.generationTime = generationTime;
-      parsedResponse.wordCount = parsedResponse.body.split(' ').length;
+       // Add generated fields
+       parsedResponse.id = articleId;
+       parsedResponse.reporterId = reporter.id;
+       parsedResponse.generationTime = generationTime;
+       parsedResponse.wordCount = parsedResponse.body.split(' ').length;
+       parsedResponse.modelName = this.modelName;
 
-      return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+       return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating article from events:', error);
       return null;

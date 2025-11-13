@@ -70,7 +70,8 @@ async function createSchema() {
         generation_time BIGINT NOT NULL,
         prompt TEXT NOT NULL,
         message_ids JSONB NOT NULL DEFAULT '[]',
-        message_texts JSONB NOT NULL DEFAULT '[]'
+        message_texts JSONB NOT NULL DEFAULT '[]',
+        model_name TEXT NOT NULL DEFAULT 'gpt-5-nano'
       )
     `);
 
@@ -87,7 +88,8 @@ async function createSchema() {
         location TEXT,
         event_time TEXT,
         message_ids JSONB,
-        message_texts JSONB
+        message_texts JSONB,
+        model_name TEXT NOT NULL DEFAULT 'gpt-5-nano'
       )
     `);
 
@@ -98,7 +100,8 @@ async function createSchema() {
         id TEXT PRIMARY KEY,
         stories JSONB NOT NULL DEFAULT '[]',
         generation_time BIGINT NOT NULL,
-        prompt TEXT NOT NULL
+        prompt TEXT NOT NULL,
+        model_name TEXT NOT NULL DEFAULT 'gpt-5-nano'
       )
     `);
 
@@ -115,7 +118,8 @@ async function createSchema() {
         model_feedback_positive TEXT NOT NULL,
         model_feedback_negative TEXT NOT NULL,
         topics JSONB NOT NULL DEFAULT '[]',
-        prompt TEXT NOT NULL
+        prompt TEXT NOT NULL,
+        model_name TEXT NOT NULL DEFAULT 'gpt-5-nano'
       )
     `);
 

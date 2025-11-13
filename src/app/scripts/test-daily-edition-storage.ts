@@ -32,7 +32,8 @@ async function testDailyEditionStorage(): Promise<void> {
         positive: 'Test feedback - positive aspects noted.',
         negative: 'Test feedback - some areas for improvement.'
       },
-      prompt: 'Test prompt for daily edition generation'
+      prompt: 'Test prompt for daily edition generation',
+      modelName: 'gpt-5-nano'
     };
 
     console.log('📝 Storing test daily edition...');
