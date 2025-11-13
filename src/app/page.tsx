@@ -189,17 +189,17 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex-1">
-                 <h2 className="text-xl font-bold text-white/90 mb-3">
-                   Welcome to {appFullName}
-                 </h2>
+                 <h2 className="text-lg font-bold text-white/90 mb-3">
+                    Welcome to {appFullName}
+                  </h2>
                 <div className="text-white/80 space-y-3">
-                  <p className="text-base leading-relaxed">
+                  <p className="text-sm leading-relaxed">
                     Each article in our newsroom is sourced from real messages on the Bluesky social media platform's firehose - a continuous stream of public posts and conversations.
                   </p>
-                  <p className="text-base leading-relaxed">
+                  <p className="text-sm leading-relaxed">
                     Every article clearly states which specific social media messages were used to write and inform the content, ensuring transparency about our AI-powered reporting process.
                   </p>
-                  <p className="text-base leading-relaxed">
+                  <p className="text-sm leading-relaxed">
                     Check out the new Events feature, where you can explore list-of-facts style event coverage sourced from real Bluesky conversations.
                   </p>
                 </div>
@@ -210,10 +210,10 @@ export default function Home() {
 
         {/* Page Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white/90 mb-2">
+          <h1 className="text-3xl font-bold text-white/90 mb-2">
             Daily Edition
           </h1>
-            <p className="text-white/70 text-lg">
+            <p className="text-white/70 text-base">
               Read today's comprehensive newspaper edition
             </p>
         </div>
@@ -240,7 +240,7 @@ export default function Home() {
             {/* Edition Selector */}
             <div className="lg:col-span-1">
               <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl">
-                <h2 className="text-xl font-semibold text-white/90 mb-4">Available Editions</h2>
+                <h2 className="text-lg font-semibold text-white/90 mb-4">Available Editions</h2>
                 <div className="space-y-2">
                   {dailyEditions.map((edition) => (
                     <button
@@ -275,14 +275,14 @@ export default function Home() {
                   <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
                     <div className="border-b border-white/20 pb-6 mb-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-3xl font-bold text-white/90">
+                        <h2 className="text-2xl font-bold text-white/90">
                           {selectedEdition.newspaperName || 'Daily Edition'}
                         </h2>
                         <span className="text-sm text-white/70">
                           {formatDate(selectedEdition.generationTime)}
                         </span>
                       </div>
-                      <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
+                      <h1 className="text-3xl font-bold text-white mb-4 leading-tight">
                         {selectedEdition.frontPageHeadline}
                       </h1>
                     </div>
@@ -296,7 +296,7 @@ export default function Home() {
 
                   {/* Topics */}
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-white/90">Today's Stories</h2>
+                    <h2 className="text-xl font-bold text-white/90">Today's Stories</h2>
                     {selectedEdition.topics.map((topic, index) => (
                       <div key={index} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
                         <div className="mb-4">
@@ -306,11 +306,11 @@ export default function Home() {
                                 {index + 1}
                               </span>
                             </div>
-                            <span className="px-3 py-1 backdrop-blur-sm bg-white/10 border border-white/20 text-white/80 rounded-full text-sm font-medium">
+                            <span className="px-3 py-1 backdrop-blur-sm bg-white/10 border border-white/20 text-white/80 rounded-full text-xs font-medium">
                               {topic.name}
                             </span>
                           </div>
-                          <h3 className="text-2xl font-bold text-white/90 mb-2">
+                          <h3 className="text-xl font-bold text-white/90 mb-2">
                             {topic.headline}
                           </h3>
                           <p className="text-sm text-white/70 italic">
@@ -362,7 +362,7 @@ export default function Home() {
                   {/* Model Feedback */}
                   {user?.role === 'admin' && selectedEdition.modelFeedbackAboutThePrompt.positive && (
                     <div className="backdrop-blur-xl sparkly-bg border border-white/20 rounded-2xl p-8 shadow-2xl">
-                      <h2 className="text-2xl font-bold text-white/90 mb-6">Editorial Notes</h2>
+                      <h2 className="text-xl font-bold text-white/90 mb-6">Editorial Notes</h2>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <h3 className="text-lg font-semibold text-green-300 mb-3">What Worked Well</h3>
@@ -379,7 +379,7 @@ export default function Home() {
                    {/* Generation Prompt */}
                    <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
                      <div className="flex items-center gap-2 mb-6 relative group">
-                       <h2 className="text-2xl font-bold text-white/90">Generation Prompt</h2>
+                        <h2 className="text-xl font-bold text-white/90">Generation Prompt</h2>
                        <div className="relative group">
                          <svg className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help" fill="currentColor" viewBox="0 0 20 20">
                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />

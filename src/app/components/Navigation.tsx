@@ -88,7 +88,7 @@ export default function Navigation() {
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-12">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -98,7 +98,7 @@ export default function Navigation() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12h.01M11 12h.01M15 12h.01M7 16h.01M11 16h.01M15 16h.01" />
                 </svg>
               </div>
-               <span className="text-xl font-bold text-slate-800">{appFullName}</span>
+                <span className="text-base font-bold text-slate-800">{appFullName}</span>
             </Link>
           </div>
 
@@ -158,19 +158,19 @@ export default function Navigation() {
               <>
                 <Link
                   href="/users"
-                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-xs font-medium transition-colors"
                 >
                   Users
                 </Link>
                 <Link
                   href="/admin/bluesky-messages"
-                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-xs font-medium transition-colors"
                 >
                   Bluesky Messages
                 </Link>
                 <Link
                   href="/editor"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
                 >
                   Editor Settings
                 </Link>
@@ -293,14 +293,14 @@ export default function Navigation() {
                <Link
                  href="/users"
                  onClick={closeMobileMenu}
-                 className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                 className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
                >
                  Users
                </Link>
                <Link
                  href="/admin/bluesky-messages"
                  onClick={closeMobileMenu}
-                 className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                 className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
                >
                  Bluesky Messages
                </Link>
@@ -330,7 +330,7 @@ export default function Navigation() {
               <Link
                 href="/login"
                 onClick={closeMobileMenu}
-                className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Login
               </Link>
