@@ -1,3 +1,34 @@
+// JWT utility functions
+interface JWTPayload {
+  exp: number;
+  iat: number;
+  userId: string;
+  email: string;
+  role: string;
+}
+
+function decodeJWT(token: string): JWTPayload | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Failed to decode JWT:', error);
+    return null;
+  }
+}
+
+function isTokenExpired(token: string): boolean {
+  const decoded = decodeJWT(token);
+  if (!decoded) return true;
+
+  const currentTime = Math.floor(Date.now() / 1000);
+  return decoded.exp < currentTime;
+}
+
 export class ApiService {
   private static instance: ApiService;
   private baseURL: string;
@@ -34,8 +65,20 @@ export class ApiService {
       return false;
     }
 
+    // Only refresh if token is actually expired or about to expire (within 5 minutes)
+    if (!isTokenExpired(accessToken)) {
+      const decoded = decodeJWT(accessToken);
+      if (decoded) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = decoded.exp - currentTime;
+        // If token expires in more than 5 minutes, don't refresh yet
+        if (timeUntilExpiry > 300) {
+          return false;
+        }
+      }
+    }
+
     try {
-      // Check if access token is expired (simple check - you might want to decode JWT)
       const response = await fetch('/api/refresh', {
         method: 'POST',
         headers: {
@@ -50,13 +93,15 @@ export class ApiService {
         localStorage.setItem('refreshToken', data.tokens.refreshToken);
         return true;
       } else {
-        // JWT verification unsuccessful - remove stored tokens
-        this.logout();
+        // JWT verification unsuccessful - remove stored tokens and redirect
+        this.handleAuthFailure();
+        return false;
       }
     } catch (error) {
       console.error('Token refresh failed:', error);
-      // JWT verification unsuccessful - remove stored tokens
-      this.logout();
+      // JWT verification unsuccessful - remove stored tokens and redirect
+      this.handleAuthFailure();
+      return false;
     }
 
     return false;
@@ -67,6 +112,10 @@ export class ApiService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+
+    // Proactively refresh token if needed before making the request
+    await this.refreshTokenIfNeeded();
+
     const headers = {
       ...this.getAuthHeaders(),
       ...options.headers,
@@ -77,7 +126,7 @@ export class ApiService {
       headers,
     });
 
-    // If unauthorized, try to refresh token
+    // If still unauthorized after proactive refresh, try one more refresh (in case of race condition)
     if (response.status === 401) {
       const refreshed = await this.refreshTokenIfNeeded();
       if (refreshed) {
@@ -90,6 +139,10 @@ export class ApiService {
           ...options,
           headers: newHeaders,
         });
+      } else {
+        // Refresh failed - authentication is invalid, redirect to login
+        this.handleAuthFailure();
+        throw new Error('Authentication failed - redirecting to login');
       }
     }
 
@@ -125,6 +178,13 @@ export class ApiService {
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+  }
+
+  private handleAuthFailure(): void {
+    console.log('Authentication failed - clearing tokens and redirecting to login');
+    this.logout();
+    // Use window.location for full page redirect to ensure clean state
+    window.location.href = '/login';
   }
 
   isAuthenticated(): boolean {
