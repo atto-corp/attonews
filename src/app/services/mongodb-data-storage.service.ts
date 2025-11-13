@@ -16,7 +16,11 @@ interface MongoEditor {
   _id: ObjectId;
   bio: string;
   prompt: string;
-  modelName: string;
+  modelName: string; // Legacy field for backward compatibility
+  articleModelName: string;
+  eventModelName: string;
+  storySelectionModelName: string;
+  editionSelectionModelName: string;
   messageSliceCount: number;
   inputTokenCost: number;
   outputTokenCost: number;

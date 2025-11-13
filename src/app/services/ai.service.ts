@@ -65,7 +65,7 @@ export class AIService {
 
 
 
-  async generateStructuredArticle(reporter: Reporter): Promise<{response: {
+  async generateStructuredArticle(reporter: Reporter, modelName?: string): Promise<{response: {
     id: string;
     reporterId: string;
     beat: string;
@@ -167,7 +167,7 @@ When generating the article, first scan the social media context for messages re
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+        model: modelName || this.modelName,
         messages: [
           {
             role: 'system',
@@ -195,18 +195,18 @@ When generating the article, first scan the social media context for messages re
          // Continue with article generation even if file save fails
        }
 
-        const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
+       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
 
-        // Add generated fields
-        parsedResponse.id = articleId;
-        parsedResponse.reporterId = reporter.id;
-        parsedResponse.generationTime = generationTime;
-        parsedResponse.wordCount = parsedResponse.body.split(' ').length;
-        parsedResponse.modelName = this.modelName;
-        parsedResponse.inputTokenCount = response.usage?.prompt_tokens;
-        parsedResponse.outputTokenCount = response.usage?.completion_tokens;
+         // Add generated fields
+         parsedResponse.id = articleId;
+         parsedResponse.reporterId = reporter.id;
+         parsedResponse.generationTime = generationTime;
+         parsedResponse.wordCount = parsedResponse.body!.split(' ').length;
+         parsedResponse.modelName = modelName || this.modelName;
+         parsedResponse.inputTokenCount = response.usage?.prompt_tokens;
+         parsedResponse.outputTokenCount = response.usage?.completion_tokens;
 
-        return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+         return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating structured article:', error);
       // Return fallback structured article
@@ -255,8 +255,8 @@ Make the article engaging, factual, and professionally written. Ensure all quote
 
 
 
-  async selectNewsworthyStories(articles: Article[], editorPrompt: string): Promise<{ selectedArticles: Article[]; fullPrompt: string; inputTokenCount?: number; outputTokenCount?: number }> {
-    if (articles.length === 0) return { selectedArticles: [], fullPrompt: '' };
+  async selectNewsworthyStories(articles: Article[], editorPrompt: string, modelName?: string): Promise<{ selectedArticles: Article[]; fullPrompt: string; modelName: string; inputTokenCount?: number; outputTokenCount?: number }> {
+    if (articles.length === 0) return { selectedArticles: [], fullPrompt: '', modelName: modelName || this.modelName };
 
     try {
       const articlesText = articles.map((article, index) =>
@@ -274,7 +274,7 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+        model: modelName || this.modelName,
         messages: [
           {
             role: 'system',
@@ -301,10 +301,10 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         const maxStories = Math.min(5, articles.length);
         const numStories = Math.floor(Math.random() * (maxStories - minStories + 1)) + minStories;
         const shuffled = [...articles].sort(() => 0.5 - Math.random());
-        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
       }
 
-      return { selectedArticles: selectedIndices.map(index => articles[index]), fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+      return { selectedArticles: selectedIndices.map(index => articles[index]), fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error selecting newsworthy stories:', error);
       // Fallback to random selection
@@ -317,6 +317,7 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
 User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
+        modelName: modelName || this.modelName,
         inputTokenCount: 0,
         outputTokenCount: 0
       };
@@ -324,7 +325,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
   }
 
 
-  async selectNotableEditions(editions: Array<{id: string; articles: Array<{headline: string; body: string}>}>, editorPrompt: string): Promise<{
+  async selectNotableEditions(editions: Array<{id: string; articles: Array<{headline: string; body: string}>}>, editorPrompt: string, modelName?: string): Promise<{
     content: {
       frontPageHeadline: string;
       frontPageArticle: string;
@@ -338,9 +339,14 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         skepticalComment: string;
         gullibleComment: string;
       }>;
-      modelFeedbackAboutThePrompt: { positive: string; negative: string };
+      modelFeedbackAboutThePrompt: {
+        positive: string;
+        negative: string;
+      };
+      newspaperName: string;
     };
     fullPrompt: string;
+    modelName: string;
     inputTokenCount?: number;
     outputTokenCount?: number;
   }> {
@@ -372,7 +378,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+        model: modelName || this.modelName,
         messages: [
           {
             role: 'system',
@@ -383,7 +389,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
             content: userPrompt
           }
         ],
-        response_format: zodResponseFormat(dailyEditionSchema, "reporter_article")
+        response_format: zodResponseFormat(reporterArticleSchema, "reporter_article")
       });
 
       // Track KPI usage
@@ -394,17 +400,17 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         throw new Error('No response content from AI service');
       }
 
-      const parsedResponse = dailyEditionSchema.parse(JSON.parse(content));
+       const parsedResponse = dailyEditionSchema.parse(JSON.parse(content)) as any;
 
-      // Validate the response structure
-      if (!parsedResponse.frontPageHeadline ||
-          !parsedResponse.frontPageArticle ||
-          !Array.isArray(parsedResponse.topics) ||
-          !parsedResponse.modelFeedbackAboutThePrompt) {
-        throw new Error('Invalid response structure from AI service');
-      }
+       // Validate the response structure
+       if (!parsedResponse.frontPageHeadline ||
+           !parsedResponse.frontPageArticle ||
+           !Array.isArray(parsedResponse.topics) ||
+           !parsedResponse.modelFeedbackAboutThePrompt) {
+         throw new Error('Invalid response structure from AI service');
+       }
 
-      return { content: parsedResponse, fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+        return { content: parsedResponse, fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error generating daily edition:', error);
       // Return a fallback structure
@@ -435,13 +441,14 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         fullPrompt: `System: You are a newspaper editor creating a comprehensive daily edition. Based on the available newspaper editions, create a structured daily newspaper with front page content, multiple topics, and editorial feedback. Create engaging, professional content that synthesizes the available editions into a cohesive daily newspaper.
 
 User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive daily newspaper edition based on these available newspaper editions.`,
+        modelName: modelName || this.modelName,
         inputTokenCount: 0,
         outputTokenCount: 0
       };
     }
   }
 
-  async generateEvents(reporter: Reporter, lastEvents: Event[]): Promise<{
+  async generateEvents(reporter: Reporter, lastEvents: Event[], modelName?: string): Promise<{
     events: Array<{
       index?: number | null;
       title: string;
@@ -451,6 +458,8 @@ User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive 
       messageIds: number[];
       potentialMessageIds: number[];
       modelName: string;
+      inputTokenCount?: number;
+      outputTokenCount?: number;
     }>;
     fullPrompt: string;
     messages: string[];
@@ -519,7 +528,7 @@ Instructions:
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+        model: modelName || this.modelName,
         messages: [
           {
             role: 'system',
@@ -544,9 +553,9 @@ Instructions:
        const parsedResponse = eventGenerationResponseSchema.parse(JSON.parse(content));
 
         // Add modelName and token counts to each event
-        const eventsWithModelName = parsedResponse.events.map(event => ({
+        const eventsWithModelName = (parsedResponse.events as any[]).map(event => ({
           ...event,
-          modelName: this.modelName,
+          modelName: modelName || this.modelName,
           inputTokenCount: response.usage?.prompt_tokens,
           outputTokenCount: response.usage?.completion_tokens
         }));
@@ -567,7 +576,7 @@ Instructions:
     }
   }
 
-  async generateArticlesFromEvents(reporter: Reporter): Promise<{response: {
+  async generateArticlesFromEvents(reporter: Reporter, modelName?: string): Promise<{response: {
     id: string;
     reporterId: string;
     beat: string;
@@ -677,7 +686,7 @@ When generating the article, first review your recent articles to avoid repetiti
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const response = await this.openai.chat.completions.create({
-        model: this.modelName,
+        model: modelName || this.modelName,
         messages: [
           {
             role: 'system',
@@ -708,16 +717,16 @@ When generating the article, first review your recent articles to avoid repetiti
         // Continue with article generation even if file save fails
       }
 
-      const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
+       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
 
-       // Add generated fields
-       parsedResponse.id = articleId;
-       parsedResponse.reporterId = reporter.id;
-       parsedResponse.generationTime = generationTime;
-       parsedResponse.wordCount = parsedResponse.body.split(' ').length;
-       parsedResponse.modelName = this.modelName;
+        // Add generated fields
+        parsedResponse.id = articleId;
+        parsedResponse.reporterId = reporter.id;
+        parsedResponse.generationTime = generationTime;
+        parsedResponse.wordCount = parsedResponse.body!.split(' ').length;
+        parsedResponse.modelName = modelName || this.modelName;
 
-       return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+        return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating article from events:', error);
       return null;

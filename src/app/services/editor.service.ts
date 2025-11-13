@@ -43,9 +43,10 @@ export class EditorService {
     }
 
     // Use AI to select newsworthy stories
-    const { selectedArticles, fullPrompt, inputTokenCount, outputTokenCount } = await this.aiService.selectNewsworthyStories(
+    const { selectedArticles, fullPrompt, modelName, inputTokenCount, outputTokenCount } = await this.aiService.selectNewsworthyStories(
       allRecentArticles,
-      editor.prompt
+      editor.prompt,
+      editor.storySelectionModelName
     );
 
     console.log(`Selected ${selectedArticles.length} newsworthy stories for the edition`);
@@ -57,7 +58,7 @@ export class EditorService {
       stories: selectedArticles.map(article => article.id),
       generationTime: Date.now(),
       prompt: fullPrompt,
-      modelName: this.aiService.getModelName(),
+      modelName: modelName,
       inputTokenCount,
       outputTokenCount
     };
@@ -114,9 +115,10 @@ export class EditorService {
     );
 
     // Use AI to generate comprehensive daily edition content
-    const { content: dailyEditionContent, fullPrompt, inputTokenCount, outputTokenCount } = await this.aiService.selectNotableEditions(
+    const { content: dailyEditionContent, fullPrompt, modelName, inputTokenCount, outputTokenCount } = await this.aiService.selectNotableEditions(
       detailedEditions,
-      editor.prompt
+      editor.prompt,
+      editor.editionSelectionModelName
     );
 
     console.log(`Generated comprehensive daily edition with ${dailyEditionContent.topics.length} topics`);
@@ -134,7 +136,7 @@ export class EditorService {
       modelFeedbackAboutThePrompt: dailyEditionContent.modelFeedbackAboutThePrompt,
       newspaperName: (d => `${d.toLocaleDateString('en-US',{weekday: 'long'})}, ${d.getMonth() + 1}/${d.getDate()}`)(new Date()),//dailyEditionContent.newspaperName,
       prompt: fullPrompt,
-      modelName: this.aiService.getModelName(),
+      modelName: modelName,
       inputTokenCount,
       outputTokenCount
     };

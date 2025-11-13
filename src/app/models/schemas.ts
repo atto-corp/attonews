@@ -38,8 +38,8 @@ export const reporterArticleSchema = z.object({
     socialMediaSummary: z.string(),
     potentialMessageIds: z.array(z.number()).describe("The indexes of potentially related social media messages"),
     modelName: z.string(),
-    inputTokenCount: z.number().optional(),
-    outputTokenCount: z.number().optional()
+    inputTokenCount: z.number().nullable(),
+    outputTokenCount: z.number().nullable()
 });
 
 export const reporterResponseSchema = z.object({
@@ -88,8 +88,8 @@ export const eventGenerationResponseSchema = z.object({
         messageIds: z.array(z.number()).optional().default([]).describe("The indexes of the social media messages used to create or update this event"),
         potentialMessageIds: z.array(z.number()).optional().default([]).describe("The indexes of potentially related social media messages"),
         modelName: z.string(),
-        inputTokenCount: z.number().optional(),
-        outputTokenCount: z.number().optional()
+        inputTokenCount: z.number().nullable(),
+        outputTokenCount: z.number().nullable()
     })).max(5) // Max 5 events
 });
 

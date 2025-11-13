@@ -49,6 +49,14 @@ export class RedisDataStorageService implements IDataStorageService {
     multi.set(REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
     console.log('Redis Write: SET', REDIS_KEYS.MODEL_NAME, editor.modelName);
     multi.set(REDIS_KEYS.MODEL_NAME, editor.modelName);
+    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME, editor.articleModelName);
+    multi.set(REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME, editor.articleModelName);
+    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_EVENT_MODEL_NAME, editor.eventModelName);
+    multi.set(REDIS_KEYS.EDITOR_EVENT_MODEL_NAME, editor.eventModelName);
+    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME, editor.storySelectionModelName);
+    multi.set(REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME, editor.storySelectionModelName);
+    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME, editor.editionSelectionModelName);
+    multi.set(REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME, editor.editionSelectionModelName);
     console.log('Redis Write: SET', REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
     multi.set(REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
     console.log('Redis Write: SET', REDIS_KEYS.INPUT_TOKEN_COST, editor.inputTokenCost.toString());
@@ -81,10 +89,14 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getEditor(): Promise<Editor | null> {
-    const [bio, prompt, modelName, messageSliceCountStr, inputTokenCostStr, outputTokenCostStr, baseUrl, articleGenerationPeriodMinutesStr, lastArticleGenerationTimeStr, eventGenerationPeriodMinutesStr, lastEventGenerationTimeStr, editionGenerationPeriodMinutesStr, lastEditionGenerationTimeStr] = await Promise.all([
+    const [bio, prompt, modelName, articleModelName, eventModelName, storySelectionModelName, editionSelectionModelName, messageSliceCountStr, inputTokenCostStr, outputTokenCostStr, baseUrl, articleGenerationPeriodMinutesStr, lastArticleGenerationTimeStr, eventGenerationPeriodMinutesStr, lastEventGenerationTimeStr, editionGenerationPeriodMinutesStr, lastEditionGenerationTimeStr] = await Promise.all([
       this.client.get(REDIS_KEYS.EDITOR_BIO),
       this.client.get(REDIS_KEYS.EDITOR_PROMPT),
       this.client.get(REDIS_KEYS.MODEL_NAME),
+      this.client.get(REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME),
+      this.client.get(REDIS_KEYS.EDITOR_EVENT_MODEL_NAME),
+      this.client.get(REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME),
+      this.client.get(REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME),
       this.client.get(REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT),
       this.client.get(REDIS_KEYS.INPUT_TOKEN_COST),
       this.client.get(REDIS_KEYS.OUTPUT_TOKEN_COST),
@@ -103,6 +115,10 @@ export class RedisDataStorageService implements IDataStorageService {
       bio,
       prompt,
       modelName: modelName || 'gpt-5-nano', // Default fallback
+      articleModelName: articleModelName || 'gpt-5-nano', // Default fallback
+      eventModelName: eventModelName || 'gpt-5-nano', // Default fallback
+      storySelectionModelName: storySelectionModelName || 'gpt-5-nano', // Default fallback
+      editionSelectionModelName: editionSelectionModelName || 'gpt-5-nano', // Default fallback
       messageSliceCount: messageSliceCountStr ? parseInt(messageSliceCountStr) : 200, // Default fallback
       inputTokenCost: inputTokenCostStr ? parseFloat(inputTokenCostStr) : 0.050, // Default to $0.050 per 1M tokens
       outputTokenCost: outputTokenCostStr ? parseFloat(outputTokenCostStr) : 0.400, // Default to $0.400 per 1M tokens

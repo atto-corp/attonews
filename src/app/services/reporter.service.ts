@@ -17,17 +17,18 @@ export class ReporterService {
       throw new Error(`Reporter ${reporterId} not found`);
     }
 
-    console.log(`Reporter ${reporterId} covers beats: ${reporter.beats.join(', ')}`);
+    // Get editor configuration for model settings
+    const editor = await this.dataStorageService.getEditor();
+    if (!editor) {
+      throw new Error('Editor configuration not found');
+    }
 
-    // Generate articles based on beats
-    const articles: Article[] = [];
-
-    // Generate 1 article per reporter
     const numArticles = 1;
+    const articles: Article[] = [];
 
     for (let i = 0; i < numArticles; i++) {
       try {
-        const structuredArticle = await this.aiService.generateStructuredArticle(reporter);
+        const structuredArticle = await this.aiService.generateStructuredArticle(reporter, editor.articleModelName);
 
         // Check if messageIds is empty - if so, skip generating and saving this article
         if (!structuredArticle.response.messageIds || structuredArticle.response.messageIds.length === 0) {
@@ -200,6 +201,12 @@ export class ReporterService {
       throw new Error(`Reporter ${reporterId} not found`);
     }
 
+    // Get editor configuration for model settings
+    const editor = await this.dataStorageService.getEditor();
+    if (!editor) {
+      throw new Error('Editor configuration not found');
+    }
+
     console.log(`Reporter ${reporterId}: Generating events for beats: ${reporter.beats.join(', ')}`);
 
     // Get last 5 events for this reporter
@@ -207,7 +214,7 @@ export class ReporterService {
     console.log(`Reporter ${reporterId}: Found ${lastEvents.length} previous events`);
 
     // Generate events using AI service
-    const eventGenerationResult = await this.aiService.generateEvents(reporter, lastEvents);
+    const eventGenerationResult = await this.aiService.generateEvents(reporter, lastEvents, editor.eventModelName);
 
     const generatedEvents: Event[] = [];
     const now = Date.now();
@@ -319,6 +326,12 @@ export class ReporterService {
   async generateArticlesFromEvents(): Promise<{ [reporterId: string]: Article[] }> {
     console.log('Starting article generation from events for all reporters...');
 
+    // Get editor configuration for model settings
+    const editor = await this.dataStorageService.getEditor();
+    if (!editor) {
+      throw new Error('Editor configuration not found');
+    }
+
     // Get all reporters
     const reporters = await this.dataStorageService.getAllReporters();
     if (reporters.length === 0) {
@@ -339,7 +352,7 @@ export class ReporterService {
     // Generate articles from events for each enabled reporter
     for (const reporter of enabledReporters) {
       try {
-        const structuredArticle = await this.aiService.generateArticlesFromEvents(reporter);
+        const structuredArticle = await this.aiService.generateArticlesFromEvents(reporter, editor.articleModelName);
         if (!structuredArticle) { continue; } // no article generated, that's fine
 
         // Check if messageIds is empty - if so, skip generating and saving this article

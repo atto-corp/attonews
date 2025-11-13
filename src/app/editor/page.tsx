@@ -8,6 +8,10 @@ interface EditorData {
   bio: string;
   prompt: string;
   modelName: string;
+  articleModelName: string;
+  eventModelName: string;
+  storySelectionModelName: string;
+  editionSelectionModelName: string;
   messageSliceCount: number;
   inputTokenCost: number;
   outputTokenCost: number;
@@ -50,6 +54,10 @@ export default function EditorPage() {
     bio: '',
     prompt: '',
     modelName: '',
+    articleModelName: '',
+    eventModelName: '',
+    storySelectionModelName: '',
+    editionSelectionModelName: '',
     messageSliceCount: 200,
     inputTokenCost: 0.050,
     outputTokenCost: 0.400,
@@ -351,28 +359,94 @@ export default function EditorPage() {
                </div>
                <h2 className="text-2xl font-semibold text-white/90">AI Model Configuration</h2>
              </div>
-             <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
-                {/* Model Name */}
-                <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">
-                    Model Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editorData.modelName}
-                    onChange={(e) => setEditorData({ ...editorData, modelName: e.target.value })}
-                    placeholder="Enter AI model name (e.g., gpt-5-nano)"
-                    className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
-                      isAdmin
-                        ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
-                        : 'bg-white/5 cursor-not-allowed opacity-60'
-                    }`}
-                    readOnly={!isAdmin}
-                  />
-                  <p className="text-sm text-white/70 mt-2">
-                    Specify the AI model to use for content generation. This setting affects all AI operations in the newsroom.
-                  </p>
-                </div>
+              <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+                 {/* Article Generation Model */}
+                 <div>
+                   <label className="block text-sm font-medium text-white/80 mb-2">
+                     Article Generation Model
+                   </label>
+                   <input
+                     type="text"
+                     value={editorData.articleModelName}
+                     onChange={(e) => setEditorData({ ...editorData, articleModelName: e.target.value })}
+                     placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                     className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                       isAdmin
+                         ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                         : 'bg-white/5 cursor-not-allowed opacity-60'
+                     }`}
+                     readOnly={!isAdmin}
+                   />
+                   <p className="text-sm text-white/70 mt-2">
+                     AI model used for generating news articles from social media data.
+                   </p>
+                 </div>
+
+                 {/* Event Generation Model */}
+                 <div>
+                   <label className="block text-sm font-medium text-white/80 mb-2">
+                     Event Generation Model
+                   </label>
+                   <input
+                     type="text"
+                     value={editorData.eventModelName}
+                     onChange={(e) => setEditorData({ ...editorData, eventModelName: e.target.value })}
+                     placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                     className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                       isAdmin
+                         ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                         : 'bg-white/5 cursor-not-allowed opacity-60'
+                     }`}
+                     readOnly={!isAdmin}
+                   />
+                   <p className="text-sm text-white/70 mt-2">
+                     AI model used for identifying and tracking news events from social media.
+                   </p>
+                 </div>
+
+                 {/* Story Selection Model */}
+                 <div>
+                   <label className="block text-sm font-medium text-white/80 mb-2">
+                     Story Selection Model
+                   </label>
+                   <input
+                     type="text"
+                     value={editorData.storySelectionModelName}
+                     onChange={(e) => setEditorData({ ...editorData, storySelectionModelName: e.target.value })}
+                     placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                     className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                       isAdmin
+                         ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                         : 'bg-white/5 cursor-not-allowed opacity-60'
+                     }`}
+                     readOnly={!isAdmin}
+                   />
+                   <p className="text-sm text-white/70 mt-2">
+                     AI model used for selecting the most newsworthy stories for newspaper editions.
+                   </p>
+                 </div>
+
+                 {/* Edition Selection Model */}
+                 <div>
+                   <label className="block text-sm font-medium text-white/80 mb-2">
+                     Edition Selection Model
+                   </label>
+                   <input
+                     type="text"
+                     value={editorData.editionSelectionModelName}
+                     onChange={(e) => setEditorData({ ...editorData, editionSelectionModelName: e.target.value })}
+                     placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                     className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                       isAdmin
+                         ? 'focus:ring-2 focus:ring-white/50 focus:border-white/30'
+                         : 'bg-white/5 cursor-not-allowed opacity-60'
+                     }`}
+                     readOnly={!isAdmin}
+                   />
+                   <p className="text-sm text-white/70 mt-2">
+                     AI model used for selecting and compiling newspaper editions into daily editions.
+                   </p>
+                 </div>
 
                 {/* Base URL */}
                 <div>

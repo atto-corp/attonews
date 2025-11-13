@@ -60,6 +60,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           bio TEXT NOT NULL,
           prompt TEXT NOT NULL,
           model_name TEXT NOT NULL DEFAULT 'gpt-5-nano',
+          article_model_name TEXT NOT NULL DEFAULT 'gpt-5-nano',
+          event_model_name TEXT NOT NULL DEFAULT 'gpt-5-nano',
+          story_selection_model_name TEXT NOT NULL DEFAULT 'gpt-5-nano',
+          edition_selection_model_name TEXT NOT NULL DEFAULT 'gpt-5-nano',
           message_slice_count INTEGER NOT NULL,
           input_token_cost DECIMAL(10,6) NOT NULL,
           output_token_cost DECIMAL(10,6) NOT NULL,
@@ -219,15 +223,20 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     try {
       const query = `
         INSERT INTO editors (
-          bio, prompt, model_name, message_slice_count, input_token_cost, output_token_cost,
+          bio, prompt, model_name, article_model_name, event_model_name, story_selection_model_name, edition_selection_model_name,
+          message_slice_count, input_token_cost, output_token_cost,
           article_generation_period_minutes, last_article_generation_time,
           event_generation_period_minutes, last_event_generation_time,
           edition_generation_period_minutes, last_edition_generation_time
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         ON CONFLICT (id) DO UPDATE SET
           bio = EXCLUDED.bio,
           prompt = EXCLUDED.prompt,
           model_name = EXCLUDED.model_name,
+          article_model_name = EXCLUDED.article_model_name,
+          event_model_name = EXCLUDED.event_model_name,
+          story_selection_model_name = EXCLUDED.story_selection_model_name,
+          edition_selection_model_name = EXCLUDED.edition_selection_model_name,
           message_slice_count = EXCLUDED.message_slice_count,
           input_token_cost = EXCLUDED.input_token_cost,
           output_token_cost = EXCLUDED.output_token_cost,
@@ -244,6 +253,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         editor.bio,
         editor.prompt,
         editor.modelName,
+        editor.articleModelName,
+        editor.eventModelName,
+        editor.storySelectionModelName,
+        editor.editionSelectionModelName,
         editor.messageSliceCount,
         editor.inputTokenCost,
         editor.outputTokenCost,
@@ -273,6 +286,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         bio: row.bio,
         prompt: row.prompt,
         modelName: row.model_name,
+        articleModelName: row.article_model_name,
+        eventModelName: row.event_model_name,
+        storySelectionModelName: row.story_selection_model_name,
+        editionSelectionModelName: row.edition_selection_model_name,
         messageSliceCount: row.message_slice_count,
         inputTokenCost: row.input_token_cost,
         outputTokenCost: row.output_token_cost,

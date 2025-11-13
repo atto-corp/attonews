@@ -10,6 +10,10 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
     bio: editor?.bio || '',
     prompt: editor?.prompt || '',
     modelName: editor?.modelName || 'gpt-5-nano',
+    articleModelName: editor?.articleModelName || 'gpt-5-nano',
+    eventModelName: editor?.eventModelName || 'gpt-5-nano',
+    storySelectionModelName: editor?.storySelectionModelName || 'gpt-5-nano',
+    editionSelectionModelName: editor?.editionSelectionModelName || 'gpt-5-nano',
     messageSliceCount: editor?.messageSliceCount || 200,
     inputTokenCost: editor?.inputTokenCost || 0.050,
     outputTokenCost: editor?.outputTokenCost || 0.400,
@@ -26,11 +30,13 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
 // PUT /api/editor - Update editor data
 export const PUT = withAuth(async (request: NextRequest, user, redis) => {
   const body = await request.json();
-  const { bio, prompt, modelName, messageSliceCount, inputTokenCost, outputTokenCost, baseUrl, articleGenerationPeriodMinutes, eventGenerationPeriodMinutes, editionGenerationPeriodMinutes } = body;
+  const { bio, prompt, modelName, articleModelName, eventModelName, storySelectionModelName, editionSelectionModelName, messageSliceCount, inputTokenCost, outputTokenCost, baseUrl, articleGenerationPeriodMinutes, eventGenerationPeriodMinutes, editionGenerationPeriodMinutes } = body;
 
-  if (typeof bio !== 'string' || typeof prompt !== 'string' || typeof modelName !== 'string') {
+  if (typeof bio !== 'string' || typeof prompt !== 'string' || typeof modelName !== 'string' ||
+      typeof articleModelName !== 'string' || typeof eventModelName !== 'string' ||
+      typeof storySelectionModelName !== 'string' || typeof editionSelectionModelName !== 'string') {
     return NextResponse.json(
-      { error: 'Bio, prompt, and modelName must be strings' },
+      { error: 'Bio, prompt, modelName, and all model names must be strings' },
       { status: 400 }
     );
   }
@@ -88,6 +94,10 @@ export const PUT = withAuth(async (request: NextRequest, user, redis) => {
     bio,
     prompt,
     modelName,
+    articleModelName,
+    eventModelName,
+    storySelectionModelName,
+    editionSelectionModelName,
     messageSliceCount,
     inputTokenCost,
     outputTokenCost,
@@ -101,6 +111,10 @@ export const PUT = withAuth(async (request: NextRequest, user, redis) => {
     bio,
     prompt,
     modelName,
+    articleModelName,
+    eventModelName,
+    storySelectionModelName,
+    editionSelectionModelName,
     messageSliceCount,
     inputTokenCost,
     outputTokenCost,
