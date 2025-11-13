@@ -31,6 +31,8 @@ export interface Article {
   messageIds: number[]; // Indices of social media messages used
   messageTexts: string[]; // Text content of the messages that were used
   modelName: string; // The AI model used to generate this article
+  inputTokenCount?: number; // Number of input tokens used in the API call
+  outputTokenCount?: number; // Number of output tokens used in the API call
 }
 
 export interface NewspaperEdition {
@@ -39,6 +41,8 @@ export interface NewspaperEdition {
   generationTime: number; // milliseconds since epoch
   prompt: string; // The full prompt used to generate this edition
   modelName: string; // The AI model used to generate this edition
+  inputTokenCount?: number; // Number of input tokens used in the API call
+  outputTokenCount?: number; // Number of output tokens used in the API call
 }
 
 export interface DailyEdition {
@@ -65,6 +69,8 @@ export interface DailyEdition {
   newspaperName: string;
   prompt: string; // The full prompt used to generate this daily edition
   modelName: string; // The AI model used to generate this daily edition
+  inputTokenCount?: number; // Number of input tokens used in the API call
+  outputTokenCount?: number; // Number of output tokens used in the API call
 }
 
 export interface Event {
@@ -79,6 +85,8 @@ export interface Event {
   messageIds?: number[]; // Indices of social media messages used
   messageTexts?: string[]; // Text content of the messages that were used
   modelName: string; // The AI model used to generate this event
+  inputTokenCount?: number; // Number of input tokens used in the API call
+  outputTokenCount?: number; // Number of output tokens used in the API call
 }
 
 export interface AdEntry {
@@ -139,23 +147,29 @@ BASE_URL: 'editor:base_url',
   ARTICLE_BODY: (articleId: string) => `article:${articleId}:body`,
   ARTICLE_TIME: (articleId: string) => `article:${articleId}:time`,
   ARTICLE_PROMPT: (articleId: string) => `article:${articleId}:prompt`,
-  ARTICLE_MESSAGE_IDS: (articleId: string) => `article:${articleId}:message_ids`,
-  ARTICLE_MESSAGE_TEXTS: (articleId: string) => `article:${articleId}:message_texts`,
-  ARTICLE_MODEL_NAME: (articleId: string) => `article:${articleId}:model_name`,
+   ARTICLE_MESSAGE_IDS: (articleId: string) => `article:${articleId}:message_ids`,
+   ARTICLE_MESSAGE_TEXTS: (articleId: string) => `article:${articleId}:message_texts`,
+   ARTICLE_MODEL_NAME: (articleId: string) => `article:${articleId}:model_name`,
+   ARTICLE_INPUT_TOKEN_COUNT: (articleId: string) => `article:${articleId}:input_token_count`,
+   ARTICLE_OUTPUT_TOKEN_COUNT: (articleId: string) => `article:${articleId}:output_token_count`,
 
   // Newspaper Editions
   EDITIONS: 'editions',
-  EDITION_STORIES: (editionId: string) => `edition:${editionId}:stories`,
-  EDITION_TIME: (editionId: string) => `edition:${editionId}:time`,
-  EDITION_PROMPT: (editionId: string) => `edition:${editionId}:prompt`,
-  EDITION_MODEL_NAME: (editionId: string) => `edition:${editionId}:model_name`,
+   EDITION_STORIES: (editionId: string) => `edition:${editionId}:stories`,
+   EDITION_TIME: (editionId: string) => `edition:${editionId}:time`,
+   EDITION_PROMPT: (editionId: string) => `edition:${editionId}:prompt`,
+   EDITION_MODEL_NAME: (editionId: string) => `edition:${editionId}:model_name`,
+   EDITION_INPUT_TOKEN_COUNT: (editionId: string) => `edition:${editionId}:input_token_count`,
+   EDITION_OUTPUT_TOKEN_COUNT: (editionId: string) => `edition:${editionId}:output_token_count`,
 
   // Daily Editions
   DAILY_EDITIONS: 'daily_editions',
-  DAILY_EDITION_EDITIONS: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:editions`,
-  DAILY_EDITION_TIME: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:time`,
-  DAILY_EDITION_PROMPT: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:prompt`,
-  DAILY_EDITION_MODEL_NAME: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:model_name`,
+   DAILY_EDITION_EDITIONS: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:editions`,
+   DAILY_EDITION_TIME: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:time`,
+   DAILY_EDITION_PROMPT: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:prompt`,
+   DAILY_EDITION_MODEL_NAME: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:model_name`,
+   DAILY_EDITION_INPUT_TOKEN_COUNT: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:input_token_count`,
+   DAILY_EDITION_OUTPUT_TOKEN_COUNT: (dailyEditionId: string) => `daily_edition:${dailyEditionId}:output_token_count`,
 
   // Events
   EVENTS_BY_REPORTER: (reporterId: string) => `events:${reporterId}`,
@@ -165,9 +179,11 @@ BASE_URL: 'editor:base_url',
   EVENT_FACTS: (eventId: string) => `event:${eventId}:facts`,
   EVENT_WHERE: (eventId: string) => `event:${eventId}:where`,
   EVENT_WHEN: (eventId: string) => `event:${eventId}:when`,
-  EVENT_MESSAGE_IDS: (eventId: string) => `event:${eventId}:message_ids`,
-  EVENT_MESSAGE_TEXTS: (eventId: string) => `event:${eventId}:message_texts`,
-  EVENT_MODEL_NAME: (eventId: string) => `event:${eventId}:model_name`,
+   EVENT_MESSAGE_IDS: (eventId: string) => `event:${eventId}:message_ids`,
+   EVENT_MESSAGE_TEXTS: (eventId: string) => `event:${eventId}:message_texts`,
+   EVENT_MODEL_NAME: (eventId: string) => `event:${eventId}:model_name`,
+   EVENT_INPUT_TOKEN_COUNT: (eventId: string) => `event:${eventId}:input_token_count`,
+   EVENT_OUTPUT_TOKEN_COUNT: (eventId: string) => `event:${eventId}:output_token_count`,
 
   // Ads
   ADS: 'ads',

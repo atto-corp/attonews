@@ -92,7 +92,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           generation_time BIGINT NOT NULL,
           prompt TEXT NOT NULL,
           message_ids JSONB NOT NULL DEFAULT '[]',
-          message_texts JSONB NOT NULL DEFAULT '[]'
+          message_texts JSONB NOT NULL DEFAULT '[]',
+          model_name TEXT DEFAULT 'gpt-5-nano',
+          input_token_count INTEGER,
+          output_token_count INTEGER
         )
       `);
 
@@ -108,7 +111,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           location TEXT,
           event_time TEXT,
           message_ids JSONB,
-          message_texts JSONB
+          message_texts JSONB,
+          model_name TEXT DEFAULT 'gpt-5-nano',
+          input_token_count INTEGER,
+          output_token_count INTEGER
         )
       `);
 
@@ -118,7 +124,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           id TEXT PRIMARY KEY,
           stories JSONB NOT NULL DEFAULT '[]',
           generation_time BIGINT NOT NULL,
-          prompt TEXT NOT NULL
+          prompt TEXT NOT NULL,
+          model_name TEXT DEFAULT 'gpt-5-nano',
+          input_token_count INTEGER,
+          output_token_count INTEGER
         )
       `);
 
@@ -134,7 +143,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           model_feedback_positive TEXT NOT NULL,
           model_feedback_negative TEXT NOT NULL,
           topics JSONB NOT NULL DEFAULT '[]',
-          prompt TEXT NOT NULL
+          prompt TEXT NOT NULL,
+          model_name TEXT DEFAULT 'gpt-5-nano',
+          input_token_count INTEGER,
+          output_token_count INTEGER
         )
       `);
 
@@ -337,8 +349,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
     try {
       const query = `
-        INSERT INTO articles (id, reporter_id, headline, body, generation_time, prompt, message_ids, message_texts, model_name)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO articles (id, reporter_id, headline, body, generation_time, prompt, message_ids, message_texts, model_name, input_token_count, output_token_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ON CONFLICT (id) DO UPDATE SET
           reporter_id = EXCLUDED.reporter_id,
           headline = EXCLUDED.headline,
@@ -347,7 +359,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           prompt = EXCLUDED.prompt,
           message_ids = EXCLUDED.message_ids,
           message_texts = EXCLUDED.message_texts,
-          model_name = EXCLUDED.model_name
+          model_name = EXCLUDED.model_name,
+          input_token_count = EXCLUDED.input_token_count,
+          output_token_count = EXCLUDED.output_token_count
       `;
 
       const values = [
@@ -359,7 +373,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         article.prompt,
         JSON.stringify(article.messageIds),
         JSON.stringify(article.messageTexts),
-        article.modelName
+        article.modelName,
+        article.inputTokenCount,
+        article.outputTokenCount
       ];
 
       await client.query(query, values);
@@ -380,19 +396,21 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       `;
 
       const values = limit ? [reporterId, limit] : [reporterId];
-      const result = await client.query(query, values);
+       const result = await client.query(query, values);
 
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        headline: row.headline,
-        body: row.body,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      }));
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         reporterId: row.reporter_id,
+         headline: row.headline,
+         body: row.body,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -408,18 +426,20 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         ${limit ? 'LIMIT $1' : ''}
       `;
 
-      const result = await client.query(query, limit ? [limit] : []);
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        headline: row.headline,
-        body: row.body,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      }));
+       const result = await client.query(query, limit ? [limit] : []);
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         reporterId: row.reporter_id,
+         headline: row.headline,
+         body: row.body,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -435,17 +455,19 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         ORDER BY generation_time DESC
       `, [reporterId, startTime, endTime]);
 
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        headline: row.headline,
-        body: row.body,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      }));
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         reporterId: row.reporter_id,
+         headline: row.headline,
+         body: row.body,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -458,18 +480,20 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const result = await client.query('SELECT * FROM articles WHERE id = $1', [articleId]);
       if (result.rows.length === 0) return null;
 
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        reporterId: row.reporter_id,
-        headline: row.headline,
-        body: row.body,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      };
+       const row = result.rows[0];
+       return {
+         id: row.id,
+         reporterId: row.reporter_id,
+         headline: row.headline,
+         body: row.body,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       };
     } finally {
       client.release();
     }
@@ -481,8 +505,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
     try {
       const query = `
-        INSERT INTO events (id, reporter_id, title, created_time, updated_time, facts, location, event_time, message_ids, message_texts)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO events (id, reporter_id, title, created_time, updated_time, facts, location, event_time, message_ids, message_texts, model_name, input_token_count, output_token_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT (id) DO UPDATE SET
           reporter_id = EXCLUDED.reporter_id,
           title = EXCLUDED.title,
@@ -492,7 +516,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           location = EXCLUDED.location,
           event_time = EXCLUDED.event_time,
           message_ids = EXCLUDED.message_ids,
-          message_texts = EXCLUDED.message_texts
+          message_texts = EXCLUDED.message_texts,
+          model_name = EXCLUDED.model_name,
+          input_token_count = EXCLUDED.input_token_count,
+          output_token_count = EXCLUDED.output_token_count
       `;
 
       const values = [
@@ -505,7 +532,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         event.where,
         event.when,
         JSON.stringify(event.messageIds || []),
-        JSON.stringify(event.messageTexts || [])
+        JSON.stringify(event.messageTexts || []),
+        event.modelName,
+        event.inputTokenCount,
+        event.outputTokenCount
       ];
 
       await client.query(query, values);
@@ -526,21 +556,23 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       `;
 
       const values = limit ? [reporterId, limit] : [reporterId];
-      const result = await client.query(query, values);
+       const result = await client.query(query, values);
 
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        title: row.title,
-        createdTime: row.created_time,
-        updatedTime: row.updated_time,
-        facts: row.facts,
-        where: row.location,
-        when: row.event_time,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      }));
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         reporterId: row.reporter_id,
+         title: row.title,
+         createdTime: row.created_time,
+         updatedTime: row.updated_time,
+         facts: row.facts,
+         where: row.location,
+         when: row.event_time,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -568,7 +600,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         when: row.event_time,
         messageIds: row.message_ids,
         messageTexts: row.message_texts,
-        modelName: row.model_name
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
       }));
     } finally {
       client.release();
@@ -597,7 +631,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         when: row.event_time,
         messageIds: row.message_ids,
         messageTexts: row.message_texts,
-        modelName: row.model_name
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
       }));
     } finally {
       client.release();
@@ -611,20 +647,22 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const result = await client.query('SELECT * FROM events WHERE id = $1', [eventId]);
       if (result.rows.length === 0) return null;
 
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        reporterId: row.reporter_id,
-        title: row.title,
-        createdTime: row.created_time,
-        updatedTime: row.updated_time,
-        facts: row.facts,
-        where: row.location,
-        when: row.event_time,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name
-      };
+       const row = result.rows[0];
+       return {
+         id: row.id,
+         reporterId: row.reporter_id,
+         title: row.title,
+         createdTime: row.created_time,
+         updatedTime: row.updated_time,
+         facts: row.facts,
+         where: row.location,
+         when: row.event_time,
+         messageIds: row.message_ids,
+         messageTexts: row.message_texts,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       };
     } finally {
       client.release();
     }
@@ -650,19 +688,25 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
     try {
       const query = `
-        INSERT INTO newspaper_editions (id, stories, generation_time, prompt)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO newspaper_editions (id, stories, generation_time, prompt, model_name, input_token_count, output_token_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (id) DO UPDATE SET
           stories = EXCLUDED.stories,
           generation_time = EXCLUDED.generation_time,
-          prompt = EXCLUDED.prompt
+          prompt = EXCLUDED.prompt,
+          model_name = EXCLUDED.model_name,
+          input_token_count = EXCLUDED.input_token_count,
+          output_token_count = EXCLUDED.output_token_count
       `;
 
       await client.query(query, [
         edition.id,
         JSON.stringify(edition.stories),
         edition.generationTime,
-        edition.prompt
+        edition.prompt,
+        edition.modelName,
+        edition.inputTokenCount,
+        edition.outputTokenCount
       ]);
     } finally {
       client.release();
@@ -679,14 +723,16 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         ${limit ? 'LIMIT $1' : ''}
       `;
 
-      const result = await client.query(query, limit ? [limit] : []);
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        stories: row.stories,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        modelName: row.model_name
-      }));
+       const result = await client.query(query, limit ? [limit] : []);
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         stories: row.stories,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -699,14 +745,16 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const result = await client.query('SELECT * FROM newspaper_editions WHERE id = $1', [editionId]);
       if (result.rows.length === 0) return null;
 
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        stories: row.stories,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        modelName: row.model_name
-      };
+       const row = result.rows[0];
+       return {
+         id: row.id,
+         stories: row.stories,
+         generationTime: row.generation_time,
+         prompt: row.prompt,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       };
     } finally {
       client.release();
     }
@@ -718,8 +766,8 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
     try {
       const query = `
-        INSERT INTO daily_editions (id, editions, generation_time, front_page_headline, front_page_article, newspaper_name, model_feedback_positive, model_feedback_negative, topics, prompt)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        INSERT INTO daily_editions (id, editions, generation_time, front_page_headline, front_page_article, newspaper_name, model_feedback_positive, model_feedback_negative, topics, prompt, model_name, input_token_count, output_token_count)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         ON CONFLICT (id) DO UPDATE SET
           editions = EXCLUDED.editions,
           generation_time = EXCLUDED.generation_time,
@@ -729,7 +777,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           model_feedback_positive = EXCLUDED.model_feedback_positive,
           model_feedback_negative = EXCLUDED.model_feedback_negative,
           topics = EXCLUDED.topics,
-          prompt = EXCLUDED.prompt
+          prompt = EXCLUDED.prompt,
+          model_name = EXCLUDED.model_name,
+          input_token_count = EXCLUDED.input_token_count,
+          output_token_count = EXCLUDED.output_token_count
       `;
 
       await client.query(query, [
@@ -742,7 +793,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         dailyEdition.modelFeedbackAboutThePrompt.positive,
         dailyEdition.modelFeedbackAboutThePrompt.negative,
         JSON.stringify(dailyEdition.topics),
-        dailyEdition.prompt
+        dailyEdition.prompt,
+        dailyEdition.modelName,
+        dailyEdition.inputTokenCount,
+        dailyEdition.outputTokenCount
       ]);
     } finally {
       client.release();
@@ -759,22 +813,24 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         ${limit ? 'LIMIT $1' : ''}
       `;
 
-      const result = await client.query(query, limit ? [limit] : []);
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        editions: row.editions,
-        generationTime: row.generation_time,
-        frontPageHeadline: row.front_page_headline,
-        frontPageArticle: row.front_page_article,
-        newspaperName: row.newspaper_name,
-        modelFeedbackAboutThePrompt: {
-          positive: row.model_feedback_positive,
-          negative: row.model_feedback_negative
-        },
-        topics: row.topics,
-        prompt: row.prompt,
-        modelName: row.model_name
-      }));
+       const result = await client.query(query, limit ? [limit] : []);
+       return result.rows.map((row: any) => ({
+         id: row.id,
+         editions: row.editions,
+         generationTime: row.generation_time,
+         frontPageHeadline: row.front_page_headline,
+         frontPageArticle: row.front_page_article,
+         newspaperName: row.newspaper_name,
+         modelFeedbackAboutThePrompt: {
+           positive: row.model_feedback_positive,
+           negative: row.model_feedback_negative
+         },
+         topics: row.topics,
+         prompt: row.prompt,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       }));
     } finally {
       client.release();
     }
@@ -787,22 +843,24 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const result = await client.query('SELECT * FROM daily_editions WHERE id = $1', [dailyEditionId]);
       if (result.rows.length === 0) return null;
 
-      const row = result.rows[0];
-      return {
-        id: row.id,
-        editions: row.editions,
-        generationTime: row.generation_time,
-        frontPageHeadline: row.front_page_headline,
-        frontPageArticle: row.front_page_article,
-        newspaperName: row.newspaper_name,
-        modelFeedbackAboutThePrompt: {
-          positive: row.model_feedback_positive,
-          negative: row.model_feedback_negative
-        },
-        topics: row.topics,
-        prompt: row.prompt,
-        modelName: row.model_name
-      };
+       const row = result.rows[0];
+       return {
+         id: row.id,
+         editions: row.editions,
+         generationTime: row.generation_time,
+         frontPageHeadline: row.front_page_headline,
+         frontPageArticle: row.front_page_article,
+         newspaperName: row.newspaper_name,
+         modelFeedbackAboutThePrompt: {
+           positive: row.model_feedback_positive,
+           negative: row.model_feedback_negative
+         },
+         topics: row.topics,
+         prompt: row.prompt,
+         modelName: row.model_name,
+         inputTokenCount: row.input_token_count,
+         outputTokenCount: row.output_token_count
+       };
     } finally {
       client.release();
     }

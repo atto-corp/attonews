@@ -85,6 +85,8 @@ export class AIService {
     messageIds: number[];
     potentialMessageIds: number[];
     modelName: string;
+    inputTokenCount?: number;
+    outputTokenCount?: number;
   }, prompt: string,
     messages: string[];
 }> {
@@ -193,16 +195,18 @@ When generating the article, first scan the social media context for messages re
          // Continue with article generation even if file save fails
        }
 
-       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
+        const parsedResponse = reporterArticleSchema.parse(JSON.parse(content));
 
-       // Add generated fields
-       parsedResponse.id = articleId;
-       parsedResponse.reporterId = reporter.id;
-       parsedResponse.generationTime = generationTime;
-       parsedResponse.wordCount = parsedResponse.body.split(' ').length;
-       parsedResponse.modelName = this.modelName;
+        // Add generated fields
+        parsedResponse.id = articleId;
+        parsedResponse.reporterId = reporter.id;
+        parsedResponse.generationTime = generationTime;
+        parsedResponse.wordCount = parsedResponse.body.split(' ').length;
+        parsedResponse.modelName = this.modelName;
+        parsedResponse.inputTokenCount = response.usage?.prompt_tokens;
+        parsedResponse.outputTokenCount = response.usage?.completion_tokens;
 
-       return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+        return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating structured article:', error);
       // Return fallback structured article
@@ -238,9 +242,11 @@ Make the article engaging, factual, and professionally written. Ensure all quote
           sourceDiversity: 'Limited source diversity due to breaking news nature',
           factualAccuracy: 'Information based on preliminary reports'
         },
-         socialMediaSummary: `Breaking: Major developments in ${fallbackBeat} sector capturing widespread attention. Stay tuned for updates! #${fallbackBeat.replace(/\s+/g, '')}News`,
-         messageIds: [],potentialMessageIds:[], // No tweets used in fallback,
-         modelName: this.modelName
+          socialMediaSummary: `Breaking: Major developments in ${fallbackBeat} sector capturing widespread attention. Stay tuned for updates! #${fallbackBeat.replace(/\s+/g, '')}News`,
+          messageIds: [],potentialMessageIds:[], // No tweets used in fallback,
+          modelName: this.modelName,
+          inputTokenCount: 0,
+          outputTokenCount: 0
        }, messages:[], prompt:fallbackPrompt};
     }
   }
@@ -249,7 +255,7 @@ Make the article engaging, factual, and professionally written. Ensure all quote
 
 
 
-  async selectNewsworthyStories(articles: Article[], editorPrompt: string): Promise<{ selectedArticles: Article[]; fullPrompt: string }> {
+  async selectNewsworthyStories(articles: Article[], editorPrompt: string): Promise<{ selectedArticles: Article[]; fullPrompt: string; inputTokenCount?: number; outputTokenCount?: number }> {
     if (articles.length === 0) return { selectedArticles: [], fullPrompt: '' };
 
     try {
@@ -295,10 +301,10 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         const maxStories = Math.min(5, articles.length);
         const numStories = Math.floor(Math.random() * (maxStories - minStories + 1)) + minStories;
         const shuffled = [...articles].sort(() => 0.5 - Math.random());
-        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt };
+        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
       }
 
-      return { selectedArticles: selectedIndices.map(index => articles[index]), fullPrompt };
+      return { selectedArticles: selectedIndices.map(index => articles[index]), fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error selecting newsworthy stories:', error);
       // Fallback to random selection
@@ -310,7 +316,9 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         selectedArticles: shuffled.slice(0, numStories),
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
-User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`
+User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
+        inputTokenCount: 0,
+        outputTokenCount: 0
       };
     }
   }
@@ -333,6 +341,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       modelFeedbackAboutThePrompt: { positive: string; negative: string };
     };
     fullPrompt: string;
+    inputTokenCount?: number;
+    outputTokenCount?: number;
   }> {
     if (editions.length === 0) {
       throw new Error('No editions available for daily edition generation');
@@ -394,7 +404,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         throw new Error('Invalid response structure from AI service');
       }
 
-      return { content: parsedResponse, fullPrompt };
+      return { content: parsedResponse, fullPrompt, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error generating daily edition:', error);
       // Return a fallback structure
@@ -424,7 +434,9 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         content: fallbackContent,
         fullPrompt: `System: You are a newspaper editor creating a comprehensive daily edition. Based on the available newspaper editions, create a structured daily newspaper with front page content, multiple topics, and editorial feedback. Create engaging, professional content that synthesizes the available editions into a cohesive daily newspaper.
 
-User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive daily newspaper edition based on these available newspaper editions.`
+User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive daily newspaper edition based on these available newspaper editions.`,
+        inputTokenCount: 0,
+        outputTokenCount: 0
       };
     }
   }
@@ -531,17 +543,19 @@ Instructions:
 
        const parsedResponse = eventGenerationResponseSchema.parse(JSON.parse(content));
 
-       // Add modelName to each event
-       const eventsWithModelName = parsedResponse.events.map(event => ({
-         ...event,
-         modelName: this.modelName
-       }));
+        // Add modelName and token counts to each event
+        const eventsWithModelName = parsedResponse.events.map(event => ({
+          ...event,
+          modelName: this.modelName,
+          inputTokenCount: response.usage?.prompt_tokens,
+          outputTokenCount: response.usage?.completion_tokens
+        }));
 
-       return {
-         events: eventsWithModelName,
-         fullPrompt,
-         messages: socialMediaMessages.map(x => x.text)
-       };
+        return {
+          events: eventsWithModelName,
+          fullPrompt,
+          messages: socialMediaMessages.map(x => x.text)
+        };
     } catch (error) {
       console.error('Error generating events:', error);
       // Return empty events on error

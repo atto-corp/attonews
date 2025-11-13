@@ -237,7 +237,9 @@ export class ReporterService {
               when: aiEvent.when || existingEvent.when,
               messageIds: aiEvent.messageIds || [],
               messageTexts: messageTexts,
-              modelName: aiEvent.modelName
+              modelName: aiEvent.modelName,
+              inputTokenCount: aiEvent.inputTokenCount,
+              outputTokenCount: aiEvent.outputTokenCount
             };
             await this.dataStorageService.saveEvent(updatedEvent);
           }
@@ -255,7 +257,9 @@ export class ReporterService {
             when: aiEvent.when || undefined,
             messageIds: aiEvent.messageIds || [],
             messageTexts: messageTexts,
-            modelName: aiEvent.modelName
+            modelName: aiEvent.modelName,
+            inputTokenCount: aiEvent.inputTokenCount,
+            outputTokenCount: aiEvent.outputTokenCount
           };
 
           await this.dataStorageService.saveEvent(newEvent);
