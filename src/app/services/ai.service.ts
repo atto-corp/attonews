@@ -277,15 +277,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         newsStoryFirstParagraph: string;
         newsStorySecondParagraph: string;
         oneLineSummary: string;
-        supportingSocialMediaMessage: string;
-        skepticalComment: string;
-        gullibleComment: string;
       }>;
-      modelFeedbackAboutThePrompt: {
-        positive: string;
-        negative: string;
-      };
-      newspaperName: string;
     };
     fullPrompt: string;
     modelName: string;
@@ -340,8 +332,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       if (
         !parsedResponse.frontPageHeadline ||
         !parsedResponse.frontPageArticle ||
-        !Array.isArray(parsedResponse.topics) ||
-        !parsedResponse.modelFeedbackAboutThePrompt
+        !Array.isArray(parsedResponse.topics)
       ) {
         throw new Error("Invalid response structure from AI service");
       }

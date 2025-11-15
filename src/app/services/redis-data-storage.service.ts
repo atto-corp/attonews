@@ -1103,35 +1103,39 @@ export class RedisDataStorageService implements IDataStorageService {
       `daily_edition:${dailyEditionId}:front_page_article`,
       dailyEdition.frontPageArticle
     );
-    console.log(
-      "Redis Write: SET",
-      `daily_edition:${dailyEditionId}:newspaper_name`,
-      dailyEdition.newspaperName
-    );
-    multi.set(
-      `daily_edition:${dailyEditionId}:newspaper_name`,
-      dailyEdition.newspaperName
-    );
+    if (dailyEdition.newspaperName) {
+      console.log(
+        "Redis Write: SET",
+        `daily_edition:${dailyEditionId}:newspaper_name`,
+        dailyEdition.newspaperName
+      );
+      multi.set(
+        `daily_edition:${dailyEditionId}:newspaper_name`,
+        dailyEdition.newspaperName
+      );
+    }
 
     // Store model feedback
-    console.log(
-      "Redis Write: SET",
-      `daily_edition:${dailyEditionId}:model_feedback_positive`,
-      dailyEdition.modelFeedbackAboutThePrompt.positive
-    );
-    multi.set(
-      `daily_edition:${dailyEditionId}:model_feedback_positive`,
-      dailyEdition.modelFeedbackAboutThePrompt.positive
-    );
-    console.log(
-      "Redis Write: SET",
-      `daily_edition:${dailyEditionId}:model_feedback_negative`,
-      dailyEdition.modelFeedbackAboutThePrompt.negative
-    );
-    multi.set(
-      `daily_edition:${dailyEditionId}:model_feedback_negative`,
-      dailyEdition.modelFeedbackAboutThePrompt.negative
-    );
+    if (dailyEdition.modelFeedbackAboutThePrompt) {
+      console.log(
+        "Redis Write: SET",
+        `daily_edition:${dailyEditionId}:model_feedback_positive`,
+        dailyEdition.modelFeedbackAboutThePrompt.positive
+      );
+      multi.set(
+        `daily_edition:${dailyEditionId}:model_feedback_positive`,
+        dailyEdition.modelFeedbackAboutThePrompt.positive
+      );
+      console.log(
+        "Redis Write: SET",
+        `daily_edition:${dailyEditionId}:model_feedback_negative`,
+        dailyEdition.modelFeedbackAboutThePrompt.negative
+      );
+      multi.set(
+        `daily_edition:${dailyEditionId}:model_feedback_negative`,
+        dailyEdition.modelFeedbackAboutThePrompt.negative
+      );
+    }
 
     // Store topics as JSON
     console.log(
@@ -1261,11 +1265,14 @@ export class RedisDataStorageService implements IDataStorageService {
       generationTime: parseInt(timeStr),
       frontPageHeadline: frontPageHeadline || "",
       frontPageArticle: frontPageArticle || "",
-      newspaperName: newspaperName || "Daily Gazette",
-      modelFeedbackAboutThePrompt: {
-        positive: modelFeedbackPositive || "",
-        negative: modelFeedbackNegative || ""
-      },
+      newspaperName: newspaperName || undefined,
+      modelFeedbackAboutThePrompt:
+        modelFeedbackPositive || modelFeedbackNegative
+          ? {
+              positive: modelFeedbackPositive || "",
+              negative: modelFeedbackNegative || ""
+            }
+          : undefined,
       topics,
       prompt:
         prompt ||

@@ -9,9 +9,9 @@ interface Topic {
   newsStoryFirstParagraph: string;
   newsStorySecondParagraph: string;
   oneLineSummary: string;
-  supportingSocialMediaMessage: string;
-  skepticalComment: string;
-  gullibleComment: string;
+  supportingSocialMediaMessage?: string;
+  skepticalComment?: string;
+  gullibleComment?: string;
 }
 
 interface DailyEdition {
@@ -20,9 +20,9 @@ interface DailyEdition {
   generationTime: number;
   frontPageHeadline: string;
   frontPageArticle: string;
-  newspaperName: string;
+  newspaperName?: string;
   topics: Topic[];
-  modelFeedbackAboutThePrompt: {
+  modelFeedbackAboutThePrompt?: {
     positive: string;
     negative: string;
   };
@@ -288,7 +288,7 @@ export default function Home() {
                           </p>
                         </div>
 
-                        {/* Social Media & Comments */}
+                        {/* Social Media & Comments
                         <div className="border-t border-white/20 pt-6 space-y-4">
                           <div>
                             <h4 className="text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
@@ -335,14 +335,14 @@ export default function Home() {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
                     ))}
                   </div>
 
                   {/* Model Feedback */}
                   {user?.role === "admin" &&
-                    selectedEdition.modelFeedbackAboutThePrompt.positive && (
+                    selectedEdition.modelFeedbackAboutThePrompt?.positive && (
                       <div className="backdrop-blur-xl sparkly-bg border border-white/20 rounded-2xl p-8 shadow-2xl">
                         <h2 className="text-xl font-bold text-white/90 mb-6">
                           Editorial Notes

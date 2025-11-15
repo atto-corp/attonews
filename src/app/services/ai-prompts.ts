@@ -60,7 +60,6 @@ Generate a complete daily edition with:
 1. A compelling front page headline that captures the day's most important story
 2. A detailed front page article (300-500 words)
 3. 3-5 major topics, each with complete news coverage including headlines, two-paragraph stories, social media content, and contrasting viewpoints
-4. Feedback about the editorial prompt (both positive and negative aspects)
 
 Make the content engaging, balanced, and professionally written. Focus on creating a cohesive narrative that connects the various editions into a unified daily newspaper experience.`;
 

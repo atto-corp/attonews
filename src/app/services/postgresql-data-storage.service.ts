@@ -853,9 +853,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         dailyEdition.generationTime,
         dailyEdition.frontPageHeadline,
         dailyEdition.frontPageArticle,
-        dailyEdition.newspaperName,
-        dailyEdition.modelFeedbackAboutThePrompt.positive,
-        dailyEdition.modelFeedbackAboutThePrompt.negative,
+        dailyEdition.newspaperName || null,
+        dailyEdition.modelFeedbackAboutThePrompt?.positive || null,
+        dailyEdition.modelFeedbackAboutThePrompt?.negative || null,
         JSON.stringify(dailyEdition.topics),
         dailyEdition.prompt,
         dailyEdition.modelName,
@@ -884,11 +884,14 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         frontPageHeadline: row.front_page_headline,
         frontPageArticle: row.front_page_article,
-        newspaperName: row.newspaper_name,
-        modelFeedbackAboutThePrompt: {
-          positive: row.model_feedback_positive,
-          negative: row.model_feedback_negative
-        },
+        newspaperName: row.newspaper_name || undefined,
+        modelFeedbackAboutThePrompt:
+          row.model_feedback_positive || row.model_feedback_negative
+            ? {
+                positive: row.model_feedback_positive || "",
+                negative: row.model_feedback_negative || ""
+              }
+            : undefined,
         topics: row.topics,
         prompt: row.prompt,
         modelName: row.model_name,
@@ -917,11 +920,14 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         generationTime: row.generation_time,
         frontPageHeadline: row.front_page_headline,
         frontPageArticle: row.front_page_article,
-        newspaperName: row.newspaper_name,
-        modelFeedbackAboutThePrompt: {
-          positive: row.model_feedback_positive,
-          negative: row.model_feedback_negative
-        },
+        newspaperName: row.newspaper_name || undefined,
+        modelFeedbackAboutThePrompt:
+          row.model_feedback_positive || row.model_feedback_negative
+            ? {
+                positive: row.model_feedback_positive || "",
+                negative: row.model_feedback_negative || ""
+              }
+            : undefined,
         topics: row.topics,
         prompt: row.prompt,
         modelName: row.model_name,

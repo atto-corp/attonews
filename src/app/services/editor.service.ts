@@ -156,12 +156,6 @@ export class EditorService {
       frontPageHeadline: dailyEditionContent.frontPageHeadline,
       frontPageArticle: dailyEditionContent.frontPageArticle,
       topics: dailyEditionContent.topics,
-      modelFeedbackAboutThePrompt:
-        dailyEditionContent.modelFeedbackAboutThePrompt,
-      newspaperName: ((d) =>
-        `${d.toLocaleDateString("en-US", { weekday: "long" })}, ${d.getMonth() + 1}/${d.getDate()}`)(
-        new Date()
-      ), //dailyEditionContent.newspaperName,
       prompt: fullPrompt,
       modelName: modelName,
       inputTokenCount,
@@ -172,7 +166,7 @@ export class EditorService {
     await this.dataStorageService.saveDailyEdition(dailyEdition);
 
     console.log(
-      `Daily edition ${dailyEditionId} generated with comprehensive content for ${dailyEdition.newspaperName}`
+      `Daily edition ${dailyEditionId} generated with comprehensive content${dailyEdition.newspaperName ? ` for ${dailyEdition.newspaperName}` : ""}`
     );
     return dailyEdition;
   }

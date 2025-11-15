@@ -62,15 +62,15 @@ export interface DailyEdition {
     newsStoryFirstParagraph: string;
     newsStorySecondParagraph: string;
     oneLineSummary: string;
-    supportingSocialMediaMessage: string;
-    skepticalComment: string;
-    gullibleComment: string;
+    supportingSocialMediaMessage?: string;
+    skepticalComment?: string;
+    gullibleComment?: string;
   }>;
-  modelFeedbackAboutThePrompt: {
+  modelFeedbackAboutThePrompt?: {
     positive: string;
     negative: string;
   };
-  newspaperName: string;
+  newspaperName?: string;
   prompt: string; // The full prompt used to generate this daily edition
   modelName: string; // The AI model used to generate this daily edition
   inputTokenCount?: number; // Number of input tokens used in the API call

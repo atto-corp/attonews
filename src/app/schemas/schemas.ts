@@ -9,17 +9,9 @@ export const dailyEditionSchema = z.object({
       headline: z.string(),
       newsStoryFirstParagraph: z.string(),
       newsStorySecondParagraph: z.string(),
-      oneLineSummary: z.string(),
-      supportingSocialMediaMessage: z.string(),
-      skepticalComment: z.string(),
-      gullibleComment: z.string()
+      oneLineSummary: z.string()
     })
   ),
-  modelFeedbackAboutThePrompt: z.object({
-    positive: z.string(),
-    negative: z.string()
-  }),
-  // newspaperName: z.string(),
   modelName: z.string()
 });
 
