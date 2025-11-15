@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Event } from "../models/types";
+import { Event } from "../schemas/types";
 
 interface SafeEvent {
   id: string;

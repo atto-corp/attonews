@@ -7,7 +7,7 @@ import {
   Event,
   AdEntry,
   User
-} from "../models/types";
+} from "../schemas/types";
 
 export interface IDataStorageService {
   // Connection management

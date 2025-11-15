@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User } from "../../models/types";
+import { User } from "../../schemas/types";
 
 interface BlueskyMessage {
   did: string;

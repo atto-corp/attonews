@@ -1,5 +1,5 @@
 import { ServiceContainer } from "../services/service-container";
-import { DailyEdition } from "../models/types";
+import { DailyEdition } from "../schemas/types";
 
 async function testDailyEditionStorage(): Promise<void> {
   console.log("🧪 Testing daily edition storage in Redis...\n");

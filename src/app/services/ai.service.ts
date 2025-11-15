@@ -1,10 +1,10 @@
-import { Reporter, Article, Event } from "../models/types";
+import { Reporter, Article, Event } from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import {
   dailyEditionSchema,
   reporterArticleSchema,
   eventGenerationResponseSchema
-} from "../models/schemas";
+} from "../schemas/schemas";
 import { IDataStorageService } from "./data-storage.interface";
 import { KpiService } from "./kpi.service";
 import { fetchLatestMessages } from "./bluesky.service";

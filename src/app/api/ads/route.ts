@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withRedis } from "../../utils/redis";
-import { AdEntry } from "../../models/types";
+import { AdEntry } from "../../schemas/types";
 
 export const GET = withRedis(async (_request: NextRequest, redis) => {
   const ads = await redis.getAllAds();

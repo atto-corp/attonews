@@ -1,4 +1,4 @@
-import { User } from "../models/types";
+import { User } from "../schemas/types";
 
 export class AbilitiesService {
   userIsReader(user: User): boolean {

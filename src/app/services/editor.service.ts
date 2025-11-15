@@ -1,4 +1,4 @@
-import { NewspaperEdition, DailyEdition, Article } from "../models/types";
+import { NewspaperEdition, DailyEdition, Article } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 import { AIService } from "./ai.service";
 

@@ -9,7 +9,7 @@ import {
   AdEntry,
   User,
   REDIS_KEYS
-} from "../models/types";
+} from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
 export class RedisDataStorageService implements IDataStorageService {

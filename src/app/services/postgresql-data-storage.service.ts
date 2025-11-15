@@ -8,7 +8,7 @@ import {
   Event,
   AdEntry,
   User
-} from "../models/types";
+} from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
 export class PostgreSQLDataStorageService implements IDataStorageService {

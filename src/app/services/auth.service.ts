@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User } from "../models/types";
+import { User } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
 export interface AuthTokens {

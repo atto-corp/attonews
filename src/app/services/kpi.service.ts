@@ -1,4 +1,4 @@
-import { KpiName } from "../models/types";
+import { KpiName } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 import OpenAI from "openai";
 

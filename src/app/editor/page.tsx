@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { KpiName } from "../models/types";
+import { KpiName } from "../schemas/types";
 
 interface EditorData {
   bio: string;

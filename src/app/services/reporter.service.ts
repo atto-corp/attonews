@@ -1,4 +1,4 @@
-import { Reporter, Article, Event } from "../models/types";
+import { Reporter, Article, Event } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 import { AIService } from "./ai.service";
 

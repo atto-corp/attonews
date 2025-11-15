@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { User } from "../models/types";
+import { User } from "../schemas/types";
 import { IDataStorageService } from "../services/data-storage.interface";
 import { AuthService } from "../services/auth.service";
 import { AbilitiesService } from "../services/abilities.service";

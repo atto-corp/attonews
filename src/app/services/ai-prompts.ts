@@ -1,4 +1,4 @@
-import { Reporter } from "../models/types";
+import { Reporter } from "../schemas/types";
 
 export class AIPrompts {
   static generateStructuredArticlePrompts(
