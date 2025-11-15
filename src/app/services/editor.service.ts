@@ -205,9 +205,7 @@ export class EditorService {
     return { edition, articles };
   }
 
-  async getDailyEditionWithEditions(
-    dailyEditionId: string
-  ): Promise<{
+  async getDailyEditionWithEditions(dailyEditionId: string): Promise<{
     dailyEdition: DailyEdition;
     editions: NewspaperEdition[];
   } | null> {

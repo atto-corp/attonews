@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import ExpandableSection from "../../components/ExpandableSection";
 
 interface Article {
   id: string;
@@ -178,30 +179,12 @@ export default function ArticlePage() {
           {/* Message Texts Section */}
           {article.messageTexts && article.messageTexts.length > 0 && (
             <div className="mt-8 pt-8 border-t border-slate-200">
-              <button
-                onClick={() => setShowMessages(!showMessages)}
-                className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
+              <ExpandableSection
+                title="Source Messages"
+                expanded={showMessages}
+                onToggle={() => setShowMessages(!showMessages)}
               >
-                <svg
-                  className={`w-4 h-4 mr-2 transition-transform ${showMessages ? "rotate-90" : ""}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-                {showMessages
-                  ? "Hide Source Messages"
-                  : `Show Source Messages (${article.messageTexts.length})`}
-              </button>
-
-              {showMessages && (
-                <div className="mt-4 space-y-4">
+                <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-slate-700">
                     Social Media Messages Used:
                   </h4>
@@ -226,34 +209,18 @@ export default function ArticlePage() {
                     </div>
                   ))}
                 </div>
-              )}
+              </ExpandableSection>
             </div>
           )}
 
           {/* Prompt Section */}
           <div className="mt-8 pt-8 border-t border-slate-200">
-            <button
-              onClick={() => setShowPrompt(!showPrompt)}
-              className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
+            <ExpandableSection
+              title="Prompt"
+              expanded={showPrompt}
+              onToggle={() => setShowPrompt(!showPrompt)}
             >
-              <svg
-                className={`w-4 h-4 mr-2 transition-transform ${showPrompt ? "rotate-90" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-              {showPrompt ? "Hide Prompt" : "Show Prompt"}
-            </button>
-
-            {showPrompt && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="flex items-center gap-2 mb-2 relative group">
                   <h4 className="text-sm font-semibold text-slate-700">
                     AI Generation Prompt:
@@ -282,7 +249,7 @@ export default function ArticlePage() {
                   {article.prompt}
                 </pre>
               </div>
-            )}
+            </ExpandableSection>
           </div>
 
           <div className="mt-8 pt-8 border-t border-slate-200">

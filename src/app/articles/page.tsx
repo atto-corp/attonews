@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import PageContainer from "../../components/PageContainer";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ContentCard from "../../components/ContentCard";
+import PageHeader from "../../components/PageHeader";
+import GradientButton from "../../components/GradientButton";
+import ExpandableSection from "../../components/ExpandableSection";
 
 interface Article {
   id: string;
@@ -181,18 +187,7 @@ function ArticlesContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 flex items-center justify-center relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div
-          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30 relative z-10"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
@@ -231,270 +226,205 @@ function ArticlesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 py-8 px-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-      <div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
-        style={{ animationDelay: "1s" }}
-      ></div>
-      <div className="max-w-4xl mx-auto relative z-10">
-        {/* Header */}
-        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 mb-8 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white/90 mb-2">
-                {reporterId
-                  ? "Articles by Reporter"
-                  : !hasReaderAccess
-                    ? "Latest Articles"
-                    : "All Articles"}
-              </h1>
-              <p className="text-white/70 text-lg">
-                {reporterId
-                  ? `Reporter ${reporterId.split("_")[2] || reporterId} (${articles.length} articles)`
-                  : !hasReaderAccess
-                    ? `Showing the ${articles.length} most recent articles (login with Reader access to see all articles)`
-                    : `Chronological list of all published articles (${articles.length} articles)`}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              {reporterId ? (
-                <Link
-                  href="/reporters"
-                  className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
-                >
-                  ← Back to Reporters
-                </Link>
-              ) : (
-                <Link
-                  href="/"
-                  className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
-                >
-                  ← Back to Daily Edition
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Articles List */}
-        <div className="space-y-6">
-          {articles.length === 0 ? (
-            <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
-              <div className="w-16 h-16 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-white/70"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-white/90 mb-2">
-                No Articles Found
-              </h3>
-              <p className="text-white/70">
-                {reporterId
-                  ? "This reporter hasn't written any articles yet."
-                  : "No articles have been published yet."}
-              </p>
-            </div>
+    <PageContainer>
+      <ContentCard className="p-8 mb-8">
+        <PageHeader
+          title={
+            reporterId
+              ? "Articles by Reporter"
+              : !hasReaderAccess
+                ? "Latest Articles"
+                : "All Articles"
+          }
+          description={
+            reporterId
+              ? `Reporter ${reporterId.split("_")[2] || reporterId} (${articles.length} articles)`
+              : !hasReaderAccess
+                ? `Showing the ${articles.length} most recent articles (login with Reader access to see all articles)`
+                : `Chronological list of all published articles (${articles.length} articles)`
+          }
+        >
+          {reporterId ? (
+            <Link
+              href="/reporters"
+              className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
+            >
+              ← Back to Reporters
+            </Link>
           ) : (
-            articles.map((article) => (
-              <div
-                key={article.id}
-                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl hover:bg-white/15 transition-all duration-300"
+            <Link
+              href="/"
+              className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
+            >
+              ← Back to Daily Edition
+            </Link>
+          )}
+        </PageHeader>
+      </ContentCard>
+
+      {/* Articles List */}
+      <div className="space-y-6">
+        {articles.length === 0 ? (
+          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
+            <div className="w-16 h-16 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-white/70"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <div className="mb-4">
-                  <Link
-                    href={`/articles/${article.id}`}
-                    className="block group"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-white/90 mb-2">
+              No Articles Found
+            </h3>
+            <p className="text-white/70">
+              {reporterId
+                ? "This reporter hasn't written any articles yet."
+                : "No articles have been published yet."}
+            </p>
+          </div>
+        ) : (
+          articles.map((article) => (
+            <div
+              key={article.id}
+              className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl hover:bg-white/15 transition-all duration-300"
+            >
+              <div className="mb-4">
+                <Link href={`/articles/${article.id}`} className="block group">
+                  <h2 className="text-2xl font-bold text-white/90 mb-2 group-hover:text-white transition-colors">
+                    {article.headline}
+                  </h2>
+                </Link>
+                <div className="flex items-center text-sm text-white/70">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <h2 className="text-2xl font-bold text-white/90 mb-2 group-hover:text-white transition-colors">
-                      {article.headline}
-                    </h2>
-                  </Link>
-                  <div className="flex items-center text-sm text-white/70">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    {formatDate(article.generationTime)}
-                  </div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {formatDate(article.generationTime)}
                 </div>
+              </div>
 
-                <div className="prose prose-slate max-w-none">
-                  <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
-                    {article.body}
-                  </p>
-                </div>
+              <div className="prose prose-slate max-w-none">
+                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                  {article.body}
+                </p>
+              </div>
 
-                {/* Source Messages Section */}
-                {article.messageTexts && article.messageTexts.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-white/20">
-                    <button
-                      onClick={() => toggleMessages(article.id)}
-                      className="flex items-center text-sm font-medium text-white/70 hover:text-white transition-colors"
-                    >
-                      <svg
-                        className={`w-4 h-4 mr-2 transition-transform ${expandedMessages.has(article.id) ? "rotate-90" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                      {expandedMessages.has(article.id)
-                        ? "Hide Source Messages"
-                        : `Show Source Messages (${article.messageTexts.length})`}
-                    </button>
-
-                    {expandedMessages.has(article.id) && (
-                      <div className="mt-4 space-y-4">
-                        <h4 className="text-sm font-semibold text-white/90">
-                          Social Media Messages Used:
-                        </h4>
-                        {article.messageTexts.map((message, index) => (
-                          <div
-                            key={index}
-                            className="p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-white/70">
-                                Message {index + 1}
-                              </span>
-                              {article.messageIds &&
-                                article.messageIds[index] && (
-                                  <span className="text-xs text-white/50">
-                                    ID: {article.messageIds[index]}
-                                  </span>
-                                )}
-                            </div>
-                            <div className="text-sm text-white/80 whitespace-pre-wrap">
-                              {message}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Prompt Section */}
+              {/* Source Messages Section */}
+              {article.messageTexts && article.messageTexts.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-white/20">
-                  <button
-                    onClick={() => togglePrompt(article.id)}
-                    className="flex items-center text-sm font-medium text-white/70 hover:text-white transition-colors"
+                  <ExpandableSection
+                    title="Source Messages"
+                    expanded={expandedMessages.has(article.id)}
+                    onToggle={() => toggleMessages(article.id)}
                   >
-                    <svg
-                      className={`w-4 h-4 mr-2 transition-transform ${expandedPrompts.has(article.id) ? "rotate-90" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                    {expandedPrompts.has(article.id)
-                      ? "Hide Prompt"
-                      : "Show Prompt"}
-                  </button>
-
-                  {expandedPrompts.has(article.id) && (
-                    <div className="mt-4 p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2 relative group">
-                        <h4 className="text-sm font-semibold text-white/90">
-                          AI Generation Prompt:
-                        </h4>
-                        <div className="relative group">
-                          <svg
-                            className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                            To ensure full journalistic transparency, this is
-                            the exact prompt given to the AI model to generate
-                            this article. This allows the user to verify that no
-                            funny business has taken place.
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold text-white/90">
+                        Social Media Messages Used:
+                      </h4>
+                      {article.messageTexts.map((message, index) => (
+                        <div
+                          key={index}
+                          className="p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-white/70">
+                              Message {index + 1}
+                            </span>
+                            {article.messageIds &&
+                              article.messageIds[index] && (
+                                <span className="text-xs text-white/50">
+                                  ID: {article.messageIds[index]}
+                                </span>
+                              )}
+                          </div>
+                          <div className="text-sm text-white/80 whitespace-pre-wrap">
+                            {message}
                           </div>
                         </div>
-                      </div>
-                      <pre className="text-xs text-white/70 whitespace-pre-wrap font-mono leading-relaxed">
-                        {article.prompt}
-                      </pre>
+                      ))}
                     </div>
-                  )}
+                  </ExpandableSection>
                 </div>
+              )}
 
-                <div className="mt-6 pt-6 border-t border-white/20">
-                  <div className="flex items-center justify-between text-sm text-white/70">
-                    <span>Article ID: {article.id}</span>
-                    <span>Reporter: {article.reporterId}</span>
+              {/* Prompt Section */}
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <ExpandableSection
+                  title="Prompt"
+                  expanded={expandedPrompts.has(article.id)}
+                  onToggle={() => togglePrompt(article.id)}
+                >
+                  <div className="p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2 relative group">
+                      <h4 className="text-sm font-semibold text-white/90">
+                        AI Generation Prompt:
+                      </h4>
+                      <div className="relative group">
+                        <svg
+                          className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          To ensure full journalistic transparency, this is the
+                          exact prompt given to the AI model to generate this
+                          article. This allows the user to verify that no funny
+                          business has taken place.
+                        </div>
+                      </div>
+                    </div>
+                    <pre className="text-xs text-white/70 whitespace-pre-wrap font-mono leading-relaxed">
+                      {article.prompt}
+                    </pre>
                   </div>
+                </ExpandableSection>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <div className="flex items-center justify-between text-sm text-white/70">
+                  <span>Article ID: {article.id}</span>
+                  <span>Reporter: {article.reporterId}</span>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12 text-white/50">
-          <p>{appName} Articles</p>
-        </div>
+            </div>
+          ))
+        )}
       </div>
-    </div>
+
+      {/* Footer */}
+      <div className="text-center mt-12 text-white/50">
+        <p>{appName} Articles</p>
+      </div>
+    </PageContainer>
   );
 }
 
 export default function ArticlesPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 flex items-center justify-center relative overflow-hidden">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-          <div
-            className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
-            style={{ animationDelay: "1s" }}
-          ></div>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30 relative z-10"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingSpinner />}>
       <ArticlesContent />
     </Suspense>
   );
