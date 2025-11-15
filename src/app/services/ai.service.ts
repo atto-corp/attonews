@@ -166,6 +166,7 @@ When generating the article, first scan the social media context for messages re
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      console.log(`Calling openai article generation with model ${modelName || this.modelName}`);
       const response = await this.openai.chat.completions.create({
         model: modelName || this.modelName,
         messages: [
@@ -209,45 +210,7 @@ When generating the article, first scan the social media context for messages re
          return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating structured article:', error);
-      // Return fallback structured article
-      const fallbackBeat = reporter.beats[0] || 'General News';
-      const fallbackPrompt = `System: You are a professional journalist creating structured news articles. Generate comprehensive, well-researched articles with proper journalistic structure including lead paragraphs, key quotes, sources, and reporter notes. Focus on: ${reporter.prompt}
-
-User: Create a comprehensive news article about recent developments. You have access to these beats: ${beatsList}. Choose one beat from this list and focus your article on a recent development within that chosen beat. Include:
-
-1. A compelling headline
-2. A strong lead paragraph (2-3 sentences)
-3. A detailed body (300-500 words) with context and analysis
-4. 2-4 key quotes from relevant sources
-5. 3-5 credible sources
-6. A brief social media summary (under 280 characters)
-7. Reporter notes on research quality, source diversity, and factual accuracy
-8. beat: Specify which beat from your assigned list you chose for this article
-
-Make the article engaging, factual, and professionally written. Ensure all quotes are realistic and sources are credible.`;
-
-      return {response: {
-        id: articleId,
-        reporterId: reporter.id,
-        beat: fallbackBeat,
-        headline: `Breaking News in ${fallbackBeat}`,
-        leadParagraph: `Recent developments in the ${fallbackBeat} sector have captured significant attention from industry experts and the general public.`,
-        body: `A significant development has occurred in the ${fallbackBeat} sector, capturing widespread attention and prompting discussion among industry experts and the general public. The situation continues to evolve with potential implications for various stakeholders. Further details are expected to emerge as the story develops.`,
-        keyQuotes: [`"This development represents a significant shift in the ${fallbackBeat} landscape," said an industry expert.`],
-        sources: [`Industry Report on ${fallbackBeat}`, 'Market Analysis Publication'],
-        wordCount: 85,
-        generationTime,
-        reporterNotes: {
-          researchQuality: 'Standard research conducted with available information',
-          sourceDiversity: 'Limited source diversity due to breaking news nature',
-          factualAccuracy: 'Information based on preliminary reports'
-        },
-          socialMediaSummary: `Breaking: Major developments in ${fallbackBeat} sector capturing widespread attention. Stay tuned for updates! #${fallbackBeat.replace(/\s+/g, '')}News`,
-          messageIds: [],potentialMessageIds:[], // No tweets used in fallback,
-          modelName: this.modelName,
-          inputTokenCount: 0,
-          outputTokenCount: 0
-       }, messages:[], prompt:fallbackPrompt};
+      throw error;
     }
   }
 
@@ -273,6 +236,7 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      console.log(`Calling openai story selection with model ${modelName || this.modelName}`);
       const response = await this.openai.chat.completions.create({
         model: modelName || this.modelName,
         messages: [
@@ -377,6 +341,8 @@ Make the content engaging, balanced, and professionally written. Focus on creati
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      console.log(`Calling openai daily edition generation with model ${modelName || this.modelName}`);
+      console.log('Full prompt:', fullPrompt);
       const response = await this.openai.chat.completions.create({
         model: modelName || this.modelName,
         messages: [
@@ -389,7 +355,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
             content: userPrompt
           }
         ],
-        response_format: zodResponseFormat(reporterArticleSchema, "reporter_article")
+        response_format: zodResponseFormat(dailyEditionSchema, "daily_edition")
       });
 
       // Track KPI usage
@@ -413,38 +379,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         return { content: parsedResponse, fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error generating daily edition:', error);
-      // Return a fallback structure
-      const fallbackContent = {
-        frontPageHeadline: "Daily News Roundup",
-        frontPageArticle: "Today's news brings together the most important stories from our recent editions, providing readers with a comprehensive overview of current events and developments.",
-        topics: [
-          {
-            name: "General News",
-            headline: "News Developments",
-            newsStoryFirstParagraph: "Recent events have captured public attention with various developments across multiple sectors.",
-            newsStorySecondParagraph: "These stories continue to evolve as more information becomes available and stakeholders respond to the changing landscape.",
-            oneLineSummary: "Breaking news and updates from recent editions.",
-            supportingSocialMediaMessage: "Stay informed with today's top stories! 📰 #DailyNews",
-            skepticalComment: "Another day of carefully curated news - but what's really happening behind the headlines?",
-            gullibleComment: "This is absolutely the most important news of the day! Everyone should read this immediately!"
-          }
-        ],
-        modelFeedbackAboutThePrompt: {
-          positive: "The editorial guidelines provide clear direction for content creation.",
-          negative: "The prompt could benefit from more specific guidance on content prioritization."
-        },
-        newspaperName: "Daily Gazette"
-      };
-
-      return {
-        content: fallbackContent,
-        fullPrompt: `System: You are a newspaper editor creating a comprehensive daily edition. Based on the available newspaper editions, create a structured daily newspaper with front page content, multiple topics, and editorial feedback. Create engaging, professional content that synthesizes the available editions into a cohesive daily newspaper.
-
-User: Using the editorial guidelines: "${editorPrompt}", create a comprehensive daily newspaper edition based on these available newspaper editions.`,
-        modelName: modelName || this.modelName,
-        inputTokenCount: 0,
-        outputTokenCount: 0
-      };
+      throw error;
     }
   }
 
@@ -527,6 +462,7 @@ Instructions:
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      console.log(`Calling openai event generation with model ${modelName || this.modelName}`);
       const response = await this.openai.chat.completions.create({
         model: modelName || this.modelName,
         messages: [
@@ -685,6 +621,7 @@ When generating the article, first review your recent articles to avoid repetiti
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      console.log(`Calling openai articles from events generation with model ${modelName || this.modelName}`);
       const response = await this.openai.chat.completions.create({
         model: modelName || this.modelName,
         messages: [
