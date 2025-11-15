@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '../../../utils/auth';
-import { AbilitiesService } from '../../../services/abilities.service';
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "../../../utils/auth";
+import { AbilitiesService } from "../../../services/abilities.service";
 
 // GET /api/abilities/reader - Check if logged in user has Reader permission
 export const GET = withAuth(async (request: NextRequest, user, redis) => {

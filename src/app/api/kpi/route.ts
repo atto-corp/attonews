@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { ServiceContainer } from '../../services/service-container';
+import { NextResponse } from "next/server";
+import { ServiceContainer } from "../../services/service-container";
 
 export async function GET() {
   try {
@@ -9,9 +9,9 @@ export async function GET() {
 
     return NextResponse.json(kpiData);
   } catch (error) {
-    console.error('Error fetching KPI data:', error);
+    console.error("Error fetching KPI data:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch KPI data' },
+      { error: "Failed to fetch KPI data" },
       { status: 500 }
     );
   }

@@ -1,21 +1,21 @@
-import OpenAI from 'openai';
-import { IDataStorageService } from './data-storage.interface';
+import OpenAI from "openai";
+import { IDataStorageService } from "./data-storage.interface";
 
 export class AIClient {
   private openai: OpenAI;
-  private modelName: string = 'gpt-5-nano';
+  private modelName: string = "gpt-5-nano";
   private dataStorageService: IDataStorageService;
 
   constructor(dataStorageService: IDataStorageService) {
     this.dataStorageService = dataStorageService;
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
+      throw new Error("OPENAI_API_KEY environment variable is required");
     }
 
     // Initialize OpenAI client synchronously first, then update with baseUrl if available
     this.openai = new OpenAI({
-      apiKey: apiKey,
+      apiKey: apiKey
     });
 
     // Initialize OpenAI client with configurable base URL asynchronously
@@ -34,21 +34,27 @@ export class AIClient {
         // Re-initialize with baseUrl if available
         this.openai = new OpenAI({
           apiKey: apiKey,
-          baseURL: baseUrl,
+          baseURL: baseUrl
         });
       }
     } catch (error) {
-      console.warn('Failed to fetch baseUrl from Redis, keeping default OpenAI API:', error);
+      console.warn(
+        "Failed to fetch baseUrl from Redis, keeping default OpenAI API:",
+        error
+      );
     }
   }
 
   private async initializeModelName(): Promise<void> {
     try {
       const storedModelName = await this.dataStorageService.getModelName();
-      this.modelName = storedModelName || 'gpt-5-nano';
+      this.modelName = storedModelName || "gpt-5-nano";
     } catch (error) {
-      console.warn('Failed to fetch modelName from Redis, using default:', error);
-      this.modelName = 'gpt-5-nano';
+      console.warn(
+        "Failed to fetch modelName from Redis, using default:",
+        error
+      );
+      this.modelName = "gpt-5-nano";
     }
   }
 
@@ -68,7 +74,10 @@ export class AIClient {
         messageSliceCount = editor.messageSliceCount;
       }
     } catch (error) {
-      console.warn('Failed to fetch message slice count from Redis, using default:', error);
+      console.warn(
+        "Failed to fetch message slice count from Redis, using default:",
+        error
+      );
     }
     return messageSliceCount;
   }

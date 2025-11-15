@@ -9,27 +9,28 @@
  * Usage: npx ts-node scripts/create-postgres-schema.ts
  */
 
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 async function createSchema() {
   const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL || 'postgresql://localhost:5432/newsroom',
+    connectionString:
+      process.env.POSTGRES_URL || "postgresql://localhost:5432/newsroom",
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 2000
   });
 
   try {
-    console.log('Connecting to PostgreSQL...');
+    console.log("Connecting to PostgreSQL...");
     const client = await pool.connect();
-    console.log('Connected successfully!');
+    console.log("Connected successfully!");
 
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
-    console.log('Creating tables...');
+    console.log("Creating tables...");
 
     // Create editors table
-    console.log('Creating editors table...');
+    console.log("Creating editors table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS editors (
         id SERIAL PRIMARY KEY,
@@ -49,7 +50,7 @@ async function createSchema() {
     `);
 
     // Create reporters table
-    console.log('Creating reporters table...');
+    console.log("Creating reporters table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS reporters (
         id TEXT PRIMARY KEY,
@@ -60,7 +61,7 @@ async function createSchema() {
     `);
 
     // Create articles table
-    console.log('Creating articles table...');
+    console.log("Creating articles table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS articles (
         id TEXT PRIMARY KEY,
@@ -76,7 +77,7 @@ async function createSchema() {
     `);
 
     // Create events table
-    console.log('Creating events table...');
+    console.log("Creating events table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS events (
         id TEXT PRIMARY KEY,
@@ -94,7 +95,7 @@ async function createSchema() {
     `);
 
     // Create newspaper_editions table
-    console.log('Creating newspaper_editions table...');
+    console.log("Creating newspaper_editions table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS newspaper_editions (
         id TEXT PRIMARY KEY,
@@ -106,7 +107,7 @@ async function createSchema() {
     `);
 
     // Create daily_editions table
-    console.log('Creating daily_editions table...');
+    console.log("Creating daily_editions table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS daily_editions (
         id TEXT PRIMARY KEY,
@@ -124,7 +125,7 @@ async function createSchema() {
     `);
 
     // Create users table (must be created before ads due to foreign key)
-    console.log('Creating users table...');
+    console.log("Creating users table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -140,7 +141,7 @@ async function createSchema() {
     `);
 
     // Create ads table
-    console.log('Creating ads table...');
+    console.log("Creating ads table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS ads (
         id TEXT PRIMARY KEY,
@@ -152,7 +153,7 @@ async function createSchema() {
     `);
 
     // Create kpis table
-    console.log('Creating kpis table...');
+    console.log("Creating kpis table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS kpis (
         name TEXT PRIMARY KEY,
@@ -162,7 +163,7 @@ async function createSchema() {
     `);
 
     // Create job_status table
-    console.log('Creating job_status table...');
+    console.log("Creating job_status table...");
     await client.query(`
       CREATE TABLE IF NOT EXISTS job_status (
         name TEXT PRIMARY KEY,
@@ -172,33 +173,45 @@ async function createSchema() {
       )
     `);
 
-    console.log('Creating indexes...');
+    console.log("Creating indexes...");
 
     // Create indexes
-    console.log('Creating articles indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_articles_reporter_time ON articles(reporter_id, generation_time DESC)`);
+    console.log("Creating articles indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_articles_reporter_time ON articles(reporter_id, generation_time DESC)`
+    );
 
-    console.log('Creating events indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_events_reporter_created ON events(reporter_id, created_time DESC)`);
+    console.log("Creating events indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_events_reporter_created ON events(reporter_id, created_time DESC)`
+    );
 
-    console.log('Creating newspaper editions indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_newspaper_editions_time ON newspaper_editions(generation_time DESC)`);
+    console.log("Creating newspaper editions indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_newspaper_editions_time ON newspaper_editions(generation_time DESC)`
+    );
 
-    console.log('Creating daily editions indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_daily_editions_time ON daily_editions(generation_time DESC)`);
+    console.log("Creating daily editions indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_daily_editions_time ON daily_editions(generation_time DESC)`
+    );
 
-    console.log('Creating users indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
+    console.log("Creating users indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`
+    );
 
-    console.log('Creating ads indexes...');
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_ads_user ON ads(user_id)`);
+    console.log("Creating ads indexes...");
+    await client.query(
+      `CREATE INDEX IF NOT EXISTS idx_ads_user ON ads(user_id)`
+    );
 
-    await client.query('COMMIT');
-    console.log('✅ Schema created successfully!');
+    await client.query("COMMIT");
+    console.log("✅ Schema created successfully!");
 
     client.release();
   } catch (error) {
-    console.error('❌ Error creating schema:', error);
+    console.error("❌ Error creating schema:", error);
     throw error;
   } finally {
     await pool.end();
@@ -209,11 +222,11 @@ async function createSchema() {
 if (require.main === module) {
   createSchema()
     .then(() => {
-      console.log('🎉 PostgreSQL schema creation completed!');
+      console.log("🎉 PostgreSQL schema creation completed!");
       process.exit(0);
     })
     .catch((error) => {
-      console.error('💥 Schema creation failed:', error);
+      console.error("💥 Schema creation failed:", error);
       process.exit(1);
     });
 }

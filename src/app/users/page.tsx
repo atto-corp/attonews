@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { User } from '../models/types';
+import { useState, useEffect } from "react";
+import { User } from "../models/types";
 
 interface SafeUser {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'reporter';
+  role: "admin" | "editor" | "reporter";
   createdAt: number;
   lastLoginAt?: number;
 }
@@ -24,22 +24,22 @@ export default function UsersPage() {
   const checkAuthAndFetchUsers = async () => {
     try {
       // Get token from localStorage (assuming it's stored there after login)
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        setError('Not authenticated');
+        setError("Not authenticated");
         setLoading(false);
         return;
       }
 
       // First, verify the current user
-      const userResponse = await fetch('/api/auth/verify', {
+      const userResponse = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (!userResponse.ok) {
-        setError('Authentication failed');
+        setError("Authentication failed");
         setLoading(false);
         return;
       }
@@ -48,80 +48,84 @@ export default function UsersPage() {
       setCurrentUser(userData.user);
 
       // Check if user is admin
-      if (userData.user.role !== 'admin') {
-        setError('Admin access required');
+      if (userData.user.role !== "admin") {
+        setError("Admin access required");
         setLoading(false);
         return;
       }
 
       // Fetch users
-      const usersResponse = await fetch('/api/users', {
+      const usersResponse = await fetch("/api/users", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (!usersResponse.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error("Failed to fetch users");
       }
 
       const usersData = await usersResponse.json();
       setUsers(usersData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'admin':
-        return 'bg-red-500/20 text-red-300 border border-red-500/30';
-      case 'editor':
-        return 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
-      case 'reporter':
-        return 'bg-green-500/20 text-green-300 border border-green-500/30';
+      case "admin":
+        return "bg-red-500/20 text-red-300 border border-red-500/30";
+      case "editor":
+        return "bg-blue-500/20 text-blue-300 border border-blue-500/30";
+      case "reporter":
+        return "bg-green-500/20 text-green-300 border border-green-500/30";
       default:
-        return 'bg-gray-500/20 text-gray-300 border border-gray-500/30';
+        return "bg-gray-500/20 text-gray-300 border border-gray-500/30";
     }
   };
 
   const handleGenerateEvents = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        setError('Not authenticated');
+        setError("Not authenticated");
         return;
       }
 
-      const response = await fetch('/api/events/generate', {
-        method: 'POST',
+      const response = await fetch("/api/events/generate", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate events');
+        throw new Error("Failed to generate events");
       }
 
       const result = await response.json();
-      alert(`Events generated successfully! Created ${result.totalGenerated} events.`);
+      alert(
+        `Events generated successfully! Created ${result.totalGenerated} events.`
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate events');
+      setError(
+        err instanceof Error ? err.message : "Failed to generate events"
+      );
     } finally {
       setLoading(false);
     }
@@ -156,7 +160,9 @@ export default function UsersPage() {
         </div>
 
         <div className="text-center relative z-10">
-          <div className="text-red-300 text-lg font-semibold mb-2">Access Denied</div>
+          <div className="text-red-300 text-lg font-semibold mb-2">
+            Access Denied
+          </div>
           <p className="text-white/80">{error}</p>
           <a
             href="/login"
@@ -227,12 +233,17 @@ export default function UsersPage() {
               </thead>
               <tbody className="backdrop-blur-xl bg-white/5 divide-y divide-white/10">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-white/5 transition-colors duration-200">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-white/5 transition-colors duration-200"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                       {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}
+                      >
                         {user.role}
                       </span>
                     </td>
@@ -240,7 +251,9 @@ export default function UsersPage() {
                       {formatDate(user.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-white/70">
-                      {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'Never'}
+                      {user.lastLoginAt
+                        ? formatDate(user.lastLoginAt)
+                        : "Never"}
                     </td>
                   </tr>
                 ))}

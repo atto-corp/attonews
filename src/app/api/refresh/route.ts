@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AuthService } from '../../services/auth.service';
+import { NextRequest, NextResponse } from "next/server";
+import { withRedis } from "../../utils/redis";
+import { AuthService } from "../../services/auth.service";
 
 export const POST = withRedis(async (request: NextRequest, redis) => {
   const body = await request.json();
@@ -8,7 +8,7 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
 
   if (!refreshToken) {
     return NextResponse.json(
-      { message: 'Refresh token is required' },
+      { message: "Refresh token is required" },
       { status: 400 }
     );
   }
@@ -19,7 +19,7 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
   const newTokens = await authService.refreshAccessToken(refreshToken);
   if (!newTokens) {
     return NextResponse.json(
-      { message: 'Invalid or expired refresh token' },
+      { message: "Invalid or expired refresh token" },
       { status: 401 }
     );
   }
@@ -27,7 +27,7 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
   // Return new tokens
   return NextResponse.json(
     {
-      message: 'Token refreshed successfully',
+      message: "Token refreshed successfully",
       tokens: newTokens
     },
     { status: 200 }

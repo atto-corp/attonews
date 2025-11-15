@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ServiceContainer } from '../../../services/service-container';
+import { NextRequest, NextResponse } from "next/server";
+import { ServiceContainer } from "../../../services/service-container";
 
 let container: ServiceContainer | null = null;
 
@@ -13,8 +13,10 @@ async function getContainer(): Promise<ServiceContainer> {
 // GET /api/cron/events - Trigger reporter event generation job
 export async function GET(_request: NextRequest) {
   try {
-    console.log('\n=== CRON JOB: REPORTER EVENT GENERATION ===');
-    console.log(`[${new Date().toISOString()}] Starting cron-triggered event generation...`);
+    console.log("\n=== CRON JOB: REPORTER EVENT GENERATION ===");
+    console.log(
+      `[${new Date().toISOString()}] Starting cron-triggered event generation...`
+    );
 
     const container = await getContainer();
     const redis = await container.getDataStorageService();
@@ -24,14 +26,24 @@ export async function GET(_request: NextRequest) {
     const editor = await redis.getEditor();
     const currentTime = Date.now();
 
-    if (editor?.lastEventGenerationTime && editor?.eventGenerationPeriodMinutes) {
-      const timeSinceLastGeneration = (currentTime - editor.lastEventGenerationTime) / (1000 * 60); // Convert to minutes
+    if (
+      editor?.lastEventGenerationTime &&
+      editor?.eventGenerationPeriodMinutes
+    ) {
+      const timeSinceLastGeneration =
+        (currentTime - editor.lastEventGenerationTime) / (1000 * 60); // Convert to minutes
       const requiredInterval = editor.eventGenerationPeriodMinutes;
 
       if (timeSinceLastGeneration < requiredInterval) {
-        const remainingMinutes = Math.ceil(requiredInterval - timeSinceLastGeneration);
-        console.log(`[${new Date().toISOString()}] Skipping event generation - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${requiredInterval} minutes. ${remainingMinutes} minutes remaining.`);
-        console.log('Event generation cron job skipped due to time constraints\n');
+        const remainingMinutes = Math.ceil(
+          requiredInterval - timeSinceLastGeneration
+        );
+        console.log(
+          `[${new Date().toISOString()}] Skipping event generation - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${requiredInterval} minutes. ${remainingMinutes} minutes remaining.`
+        );
+        console.log(
+          "Event generation cron job skipped due to time constraints\n"
+        );
 
         return NextResponse.json({
           success: true,
@@ -44,7 +56,10 @@ export async function GET(_request: NextRequest) {
 
     // Proceed with generation
     const results = await reporterService.generateAllReporterEvents();
-    const totalEvents = Object.values(results).reduce((sum, events) => sum + events.length, 0);
+    const totalEvents = Object.values(results).reduce(
+      (sum, events) => sum + events.length,
+      0
+    );
 
     // Update the last generation time
     if (editor) {
@@ -53,11 +68,15 @@ export async function GET(_request: NextRequest) {
         lastEventGenerationTime: currentTime
       };
       await redis.saveEditor(updatedEditor);
-      console.log(`[${new Date().toISOString()}] Updated last event generation time to ${new Date(currentTime).toISOString()}`);
+      console.log(
+        `[${new Date().toISOString()}] Updated last event generation time to ${new Date(currentTime).toISOString()}`
+      );
     }
 
-    console.log(`[${new Date().toISOString()}] Successfully generated ${totalEvents} events`);
-    console.log('Event generation cron job completed successfully\n');
+    console.log(
+      `[${new Date().toISOString()}] Successfully generated ${totalEvents} events`
+    );
+    console.log("Event generation cron job completed successfully\n");
 
     return NextResponse.json({
       success: true,
@@ -66,12 +85,15 @@ export async function GET(_request: NextRequest) {
       lastGenerationTime: currentTime
     });
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Event generation cron job failed:`, error);
+    console.error(
+      `[${new Date().toISOString()}] Event generation cron job failed:`,
+      error
+    );
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to execute reporter event generation job',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to execute reporter event generation job",
+        details: error instanceof Error ? error.message : "Unknown error"
       },
       { status: 500 }
     );

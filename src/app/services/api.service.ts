@@ -9,14 +9,19 @@ interface JWTPayload {
 
 function decodeJWT(token: string): JWTPayload | null {
   try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Failed to decode JWT:', error);
+    console.error("Failed to decode JWT:", error);
     return null;
   }
 }
@@ -34,7 +39,7 @@ export class ApiService {
   private baseURL: string;
 
   private constructor() {
-    this.baseURL = '';
+    this.baseURL = "";
   }
 
   static getInstance(): ApiService {
@@ -46,20 +51,20 @@ export class ApiService {
 
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json"
     };
 
-    const accessToken = localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem("accessToken");
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers["Authorization"] = `Bearer ${accessToken}`;
     }
 
     return headers;
   }
 
   private async refreshTokenIfNeeded(): Promise<boolean> {
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
 
     if (!accessToken || !refreshToken) {
       return false;
@@ -79,18 +84,18 @@ export class ApiService {
     }
 
     try {
-      const response = await fetch('/api/refresh', {
-        method: 'POST',
+      const response = await fetch("/api/refresh", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ refreshToken })
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('accessToken', data.tokens.accessToken);
-        localStorage.setItem('refreshToken', data.tokens.refreshToken);
+        localStorage.setItem("accessToken", data.tokens.accessToken);
+        localStorage.setItem("refreshToken", data.tokens.refreshToken);
         return true;
       } else {
         // JWT verification unsuccessful - remove stored tokens and redirect
@@ -98,7 +103,7 @@ export class ApiService {
         return false;
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error("Token refresh failed:", error);
       // JWT verification unsuccessful - remove stored tokens and redirect
       this.handleAuthFailure();
       return false;
@@ -107,10 +112,7 @@ export class ApiService {
     return false;
   }
 
-  async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
     // Proactively refresh token if needed before making the request
@@ -118,12 +120,12 @@ export class ApiService {
 
     const headers = {
       ...this.getAuthHeaders(),
-      ...options.headers,
+      ...options.headers
     };
 
     let response = await fetch(url, {
       ...options,
-      headers,
+      headers
     });
 
     // If still unauthorized after proactive refresh, try one more refresh (in case of race condition)
@@ -133,16 +135,16 @@ export class ApiService {
         // Retry with new token
         const newHeaders = {
           ...this.getAuthHeaders(),
-          ...options.headers,
+          ...options.headers
         };
         response = await fetch(url, {
           ...options,
-          headers: newHeaders,
+          headers: newHeaders
         });
       } else {
         // Refresh failed - authentication is invalid, redirect to login
         this.handleAuthFailure();
-        throw new Error('Authentication failed - redirecting to login');
+        throw new Error("Authentication failed - redirecting to login");
       }
     }
 
@@ -154,41 +156,43 @@ export class ApiService {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined
     });
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined
     });
   }
 
   async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 
   logout(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
   }
 
   private handleAuthFailure(): void {
-    console.log('Authentication failed - clearing tokens and redirecting to login');
+    console.log(
+      "Authentication failed - clearing tokens and redirecting to login"
+    );
     this.logout();
     // Use window.location for full page redirect to ensure clean state
-    window.location.href = '/login';
+    window.location.href = "/login";
   }
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('accessToken');
+    return !!localStorage.getItem("accessToken");
   }
 }
 

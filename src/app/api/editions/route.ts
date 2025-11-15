@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
+import { NextRequest, NextResponse } from "next/server";
+import { withRedis } from "../../utils/redis";
 
 // GET /api/editions - Get all newspaper editions with full article data
 export const GET = withRedis(async (_request: NextRequest, redis) => {
@@ -16,7 +16,7 @@ export const GET = withRedis(async (_request: NextRequest, redis) => {
       );
 
       // Filter out null articles (in case some are missing)
-      const validArticles = articles.filter(article => article !== null);
+      const validArticles = articles.filter((article) => article !== null);
 
       return {
         ...edition,
@@ -34,13 +34,13 @@ export async function POST() {
     // For now, return a message that this feature is not yet implemented
     // In a full implementation, this would call the EditorService to generate a new edition
     return NextResponse.json(
-      { error: 'Newspaper edition generation not yet implemented in API' },
+      { error: "Newspaper edition generation not yet implemented in API" },
       { status: 501 }
     );
   } catch (error) {
-    console.error('Error generating newspaper edition:', error);
+    console.error("Error generating newspaper edition:", error);
     return NextResponse.json(
-      { error: 'Failed to generate newspaper edition' },
+      { error: "Failed to generate newspaper edition" },
       { status: 500 }
     );
   }

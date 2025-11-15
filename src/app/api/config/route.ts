@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import * as yaml from 'js-yaml';
+import { NextResponse } from "next/server";
+import { readFile } from "fs/promises";
+import { join } from "path";
+import * as yaml from "js-yaml";
 
 interface AppConfig {
   name: string;
@@ -15,8 +15,8 @@ interface Config {
 
 export async function GET() {
   try {
-    const configPath = join(process.cwd(), 'config.yaml');
-    const configContent = await readFile(configPath, 'utf-8');
+    const configPath = join(process.cwd(), "config.yaml");
+    const configContent = await readFile(configPath, "utf-8");
     const parsedConfig = yaml.load(configContent) as Config;
 
     // Apply environment variable overrides
@@ -30,12 +30,12 @@ export async function GET() {
 
     return NextResponse.json(config);
   } catch (error) {
-    console.error('Error fetching config:', error);
+    console.error("Error fetching config:", error);
     // Fallback to default values
     return NextResponse.json({
       app: {
-        name: 'Newsroom',
-        fullName: 'AI Newsroom'
+        name: "Newsroom",
+        fullName: "AI Newsroom"
       }
     });
   }

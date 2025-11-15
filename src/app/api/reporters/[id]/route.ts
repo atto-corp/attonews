@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '../../../utils/auth';
-import { withRedis } from '../../../utils/redis';
-import { ServiceContainer } from '../../../services/service-container';
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "../../../utils/auth";
+import { withRedis } from "../../../utils/redis";
+import { ServiceContainer } from "../../../services/service-container";
 
 let container: ServiceContainer | null = null;
 
@@ -13,82 +13,84 @@ async function getContainer(): Promise<ServiceContainer> {
 }
 
 // GET /api/reporters/[id] - Get specific reporter (public read-only access)
-export const GET = withRedis(async (
-  request: NextRequest,
-  redis,
-  context: { params: Promise<{ id: string }> }
-) => {
-  const { id: reporterId } = await context.params;
+export const GET = withRedis(
+  async (
+    request: NextRequest,
+    redis,
+    context: { params: Promise<{ id: string }> }
+  ) => {
+    const { id: reporterId } = await context.params;
 
-  const reporter = await redis.getReporter(reporterId);
-  if (!reporter) {
-    return NextResponse.json(
-      { error: 'Reporter not found' },
-      { status: 404 }
-    );
+    const reporter = await redis.getReporter(reporterId);
+    if (!reporter) {
+      return NextResponse.json(
+        { error: "Reporter not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(reporter);
   }
-
-  return NextResponse.json(reporter);
-});
+);
 
 // PUT /api/reporters/[id] - Update specific reporter
-export const PUT = withAuth(async (
-  request: NextRequest,
-  user,
-  redis,
-  context
-) => {
-  const { id: reporterId } = await context.params;
+export const PUT = withAuth(
+  async (request: NextRequest, user, redis, context) => {
+    const { id: reporterId } = await context.params;
 
-  const container = await getContainer();
-  const reporterService = await container.getReporterService();
+    const container = await getContainer();
+    const reporterService = await container.getReporterService();
 
-  const body = await request.json();
-  const { beats, prompt, enabled } = body;
+    const body = await request.json();
+    const { beats, prompt, enabled } = body;
 
-  if (!Array.isArray(beats) || typeof prompt !== 'string') {
-    return NextResponse.json(
-      { error: 'Beats must be an array and prompt must be a string' },
-      { status: 400 }
-    );
-  }
+    if (!Array.isArray(beats) || typeof prompt !== "string") {
+      return NextResponse.json(
+        { error: "Beats must be an array and prompt must be a string" },
+        { status: 400 }
+      );
+    }
 
-  const updatedReporter = await reporterService.updateReporter(reporterId, { beats, prompt, enabled });
+    const updatedReporter = await reporterService.updateReporter(reporterId, {
+      beats,
+      prompt,
+      enabled
+    });
 
-  if (!updatedReporter) {
-    return NextResponse.json(
-      { error: 'Reporter not found' },
-      { status: 404 }
-    );
-  }
+    if (!updatedReporter) {
+      return NextResponse.json(
+        { error: "Reporter not found" },
+        { status: 404 }
+      );
+    }
 
-  return NextResponse.json({
-    ...updatedReporter,
-    message: 'Reporter updated successfully'
-  });
-}, { requiredPermission: 'reporter' });
+    return NextResponse.json({
+      ...updatedReporter,
+      message: "Reporter updated successfully"
+    });
+  },
+  { requiredPermission: "reporter" }
+);
 
 // DELETE /api/reporters/[id] - Delete specific reporter
-export const DELETE = withAuth(async (
-  request: NextRequest,
-  user,
-  redis,
-  context
-) => {
-  const { id: reporterId } = await context.params;
+export const DELETE = withAuth(
+  async (request: NextRequest, user, redis, context) => {
+    const { id: reporterId } = await context.params;
 
-  const container = await getContainer();
-  const reporterService = await container.getReporterService();
+    const container = await getContainer();
+    const reporterService = await container.getReporterService();
 
-  const success = await reporterService.deleteReporter(reporterId);
-  if (!success) {
-    return NextResponse.json(
-      { error: 'Reporter not found' },
-      { status: 404 }
-    );
-  }
+    const success = await reporterService.deleteReporter(reporterId);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Reporter not found" },
+        { status: 404 }
+      );
+    }
 
-  return NextResponse.json({
-    message: 'Reporter deleted successfully'
-  });
-}, { requiredPermission: 'reporter' });
+    return NextResponse.json({
+      message: "Reporter deleted successfully"
+    });
+  },
+  { requiredPermission: "reporter" }
+);

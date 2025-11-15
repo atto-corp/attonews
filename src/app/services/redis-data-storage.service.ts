@@ -1,4 +1,4 @@
-import { createClient, RedisClientType } from 'redis';
+import { createClient, RedisClientType } from "redis";
 import {
   Editor,
   Reporter,
@@ -9,87 +9,186 @@ import {
   AdEntry,
   User,
   REDIS_KEYS
-} from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
+} from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
 
 export class RedisDataStorageService implements IDataStorageService {
   private client: RedisClientType;
 
   constructor() {
     this.client = createClient({
-      url: 'redis://localhost:6379',
+      url: "redis://localhost:6379"
       // Add username/password if needed
       // username: 'default',
       // password: 'yourpassword'
     });
 
-    this.client.on('error', (err: Error) => {
-      console.error('Redis Client Error:', err);
+    this.client.on("error", (err: Error) => {
+      console.error("Redis Client Error:", err);
     });
   }
 
   async connect(): Promise<void> {
-    try { await this.client.connect(); } catch (e) {console.log(e)}
-    console.log('Connected to Redis');
+    try {
+      await this.client.connect();
+    } catch (e) {
+      console.log(e);
+    }
+    console.log("Connected to Redis");
   }
 
   async disconnect(): Promise<void> {
     // await this.client..disconnect();
-    console.log('Disconnected from Redis');
+    console.log("Disconnected from Redis");
   }
-
-
 
   // Editor operations
   async saveEditor(editor: Editor): Promise<void> {
     const multi = this.client.multi();
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_BIO, editor.bio);
+    console.log("Redis Write: SET", REDIS_KEYS.EDITOR_BIO, editor.bio);
     multi.set(REDIS_KEYS.EDITOR_BIO, editor.bio);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
+    console.log("Redis Write: SET", REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
     multi.set(REDIS_KEYS.EDITOR_PROMPT, editor.prompt);
-    console.log('Redis Write: SET', REDIS_KEYS.MODEL_NAME, editor.modelName);
+    console.log("Redis Write: SET", REDIS_KEYS.MODEL_NAME, editor.modelName);
     multi.set(REDIS_KEYS.MODEL_NAME, editor.modelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME, editor.articleModelName);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME,
+      editor.articleModelName
+    );
     multi.set(REDIS_KEYS.EDITOR_ARTICLE_MODEL_NAME, editor.articleModelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_EVENT_MODEL_NAME, editor.eventModelName);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITOR_EVENT_MODEL_NAME,
+      editor.eventModelName
+    );
     multi.set(REDIS_KEYS.EDITOR_EVENT_MODEL_NAME, editor.eventModelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME, editor.storySelectionModelName);
-    multi.set(REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME, editor.storySelectionModelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME, editor.editionSelectionModelName);
-    multi.set(REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME, editor.editionSelectionModelName);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
-    multi.set(REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT, editor.messageSliceCount.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.INPUT_TOKEN_COST, editor.inputTokenCost.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME,
+      editor.storySelectionModelName
+    );
+    multi.set(
+      REDIS_KEYS.EDITOR_STORY_SELECTION_MODEL_NAME,
+      editor.storySelectionModelName
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME,
+      editor.editionSelectionModelName
+    );
+    multi.set(
+      REDIS_KEYS.EDITOR_EDITION_SELECTION_MODEL_NAME,
+      editor.editionSelectionModelName
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT,
+      editor.messageSliceCount.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EDITOR_MESSAGE_SLICE_COUNT,
+      editor.messageSliceCount.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.INPUT_TOKEN_COST,
+      editor.inputTokenCost.toString()
+    );
     multi.set(REDIS_KEYS.INPUT_TOKEN_COST, editor.inputTokenCost.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.OUTPUT_TOKEN_COST, editor.outputTokenCost.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.OUTPUT_TOKEN_COST,
+      editor.outputTokenCost.toString()
+    );
     multi.set(REDIS_KEYS.OUTPUT_TOKEN_COST, editor.outputTokenCost.toString());
     if (editor.baseUrl !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.BASE_URL, editor.baseUrl);
+      console.log("Redis Write: SET", REDIS_KEYS.BASE_URL, editor.baseUrl);
       multi.set(REDIS_KEYS.BASE_URL, editor.baseUrl);
     }
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES, editor.articleGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES, editor.articleGenerationPeriodMinutes.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES,
+      editor.articleGenerationPeriodMinutes.toString()
+    );
+    multi.set(
+      REDIS_KEYS.ARTICLE_GENERATION_PERIOD_MINUTES,
+      editor.articleGenerationPeriodMinutes.toString()
+    );
     if (editor.lastArticleGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME, editor.lastArticleGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME, editor.lastArticleGenerationTime.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME,
+        editor.lastArticleGenerationTime.toString()
+      );
+      multi.set(
+        REDIS_KEYS.LAST_ARTICLE_GENERATION_TIME,
+        editor.lastArticleGenerationTime.toString()
+      );
     }
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES, editor.eventGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES, editor.eventGenerationPeriodMinutes.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES,
+      editor.eventGenerationPeriodMinutes.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EVENT_GENERATION_PERIOD_MINUTES,
+      editor.eventGenerationPeriodMinutes.toString()
+    );
     if (editor.lastEventGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_EVENT_GENERATION_TIME, editor.lastEventGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_EVENT_GENERATION_TIME, editor.lastEventGenerationTime.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.LAST_EVENT_GENERATION_TIME,
+        editor.lastEventGenerationTime.toString()
+      );
+      multi.set(
+        REDIS_KEYS.LAST_EVENT_GENERATION_TIME,
+        editor.lastEventGenerationTime.toString()
+      );
     }
-    console.log('Redis Write: SET', REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES, editor.editionGenerationPeriodMinutes.toString());
-    multi.set(REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES, editor.editionGenerationPeriodMinutes.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES,
+      editor.editionGenerationPeriodMinutes.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EDITION_GENERATION_PERIOD_MINUTES,
+      editor.editionGenerationPeriodMinutes.toString()
+    );
     if (editor.lastEditionGenerationTime !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.LAST_EDITION_GENERATION_TIME, editor.lastEditionGenerationTime.toString());
-      multi.set(REDIS_KEYS.LAST_EDITION_GENERATION_TIME, editor.lastEditionGenerationTime.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.LAST_EDITION_GENERATION_TIME,
+        editor.lastEditionGenerationTime.toString()
+      );
+      multi.set(
+        REDIS_KEYS.LAST_EDITION_GENERATION_TIME,
+        editor.lastEditionGenerationTime.toString()
+      );
     }
     await multi.exec();
   }
 
   async getEditor(): Promise<Editor | null> {
-    const [bio, prompt, modelName, articleModelName, eventModelName, storySelectionModelName, editionSelectionModelName, messageSliceCountStr, inputTokenCostStr, outputTokenCostStr, baseUrl, articleGenerationPeriodMinutesStr, lastArticleGenerationTimeStr, eventGenerationPeriodMinutesStr, lastEventGenerationTimeStr, editionGenerationPeriodMinutesStr, lastEditionGenerationTimeStr] = await Promise.all([
+    const [
+      bio,
+      prompt,
+      modelName,
+      articleModelName,
+      eventModelName,
+      storySelectionModelName,
+      editionSelectionModelName,
+      messageSliceCountStr,
+      inputTokenCostStr,
+      outputTokenCostStr,
+      baseUrl,
+      articleGenerationPeriodMinutesStr,
+      lastArticleGenerationTimeStr,
+      eventGenerationPeriodMinutesStr,
+      lastEventGenerationTimeStr,
+      editionGenerationPeriodMinutesStr,
+      lastEditionGenerationTimeStr
+    ] = await Promise.all([
       this.client.get(REDIS_KEYS.EDITOR_BIO),
       this.client.get(REDIS_KEYS.EDITOR_PROMPT),
       this.client.get(REDIS_KEYS.MODEL_NAME),
@@ -114,39 +213,70 @@ export class RedisDataStorageService implements IDataStorageService {
     return {
       bio,
       prompt,
-      modelName: modelName || 'gpt-5-nano', // Default fallback
-      articleModelName: articleModelName || 'gpt-5-nano', // Default fallback
-      eventModelName: eventModelName || 'gpt-5-nano', // Default fallback
-      storySelectionModelName: storySelectionModelName || 'gpt-5-nano', // Default fallback
-      editionSelectionModelName: editionSelectionModelName || 'gpt-5-nano', // Default fallback
-      messageSliceCount: messageSliceCountStr ? parseInt(messageSliceCountStr) : 200, // Default fallback
-      inputTokenCost: inputTokenCostStr ? parseFloat(inputTokenCostStr) : 0.050, // Default to $0.050 per 1M tokens
-      outputTokenCost: outputTokenCostStr ? parseFloat(outputTokenCostStr) : 0.400, // Default to $0.400 per 1M tokens
+      modelName: modelName || "gpt-5-nano", // Default fallback
+      articleModelName: articleModelName || "gpt-5-nano", // Default fallback
+      eventModelName: eventModelName || "gpt-5-nano", // Default fallback
+      storySelectionModelName: storySelectionModelName || "gpt-5-nano", // Default fallback
+      editionSelectionModelName: editionSelectionModelName || "gpt-5-nano", // Default fallback
+      messageSliceCount: messageSliceCountStr
+        ? parseInt(messageSliceCountStr)
+        : 200, // Default fallback
+      inputTokenCost: inputTokenCostStr ? parseFloat(inputTokenCostStr) : 0.05, // Default to $0.050 per 1M tokens
+      outputTokenCost: outputTokenCostStr
+        ? parseFloat(outputTokenCostStr)
+        : 0.4, // Default to $0.400 per 1M tokens
       baseUrl: baseUrl || undefined, // Optional field
-      articleGenerationPeriodMinutes: articleGenerationPeriodMinutesStr ? parseInt(articleGenerationPeriodMinutesStr) : 15, // Default fallback
-      lastArticleGenerationTime: lastArticleGenerationTimeStr ? parseInt(lastArticleGenerationTimeStr) : undefined, // Optional field
-      eventGenerationPeriodMinutes: eventGenerationPeriodMinutesStr ? parseInt(eventGenerationPeriodMinutesStr) : 30, // Default fallback
-      lastEventGenerationTime: lastEventGenerationTimeStr ? parseInt(lastEventGenerationTimeStr) : undefined, // Optional field
-      editionGenerationPeriodMinutes: editionGenerationPeriodMinutesStr ? parseInt(editionGenerationPeriodMinutesStr) : 180, // Default to 3 hours
-      lastEditionGenerationTime: lastEditionGenerationTimeStr ? parseInt(lastEditionGenerationTimeStr) : undefined // Optional field
+      articleGenerationPeriodMinutes: articleGenerationPeriodMinutesStr
+        ? parseInt(articleGenerationPeriodMinutesStr)
+        : 15, // Default fallback
+      lastArticleGenerationTime: lastArticleGenerationTimeStr
+        ? parseInt(lastArticleGenerationTimeStr)
+        : undefined, // Optional field
+      eventGenerationPeriodMinutes: eventGenerationPeriodMinutesStr
+        ? parseInt(eventGenerationPeriodMinutesStr)
+        : 30, // Default fallback
+      lastEventGenerationTime: lastEventGenerationTimeStr
+        ? parseInt(lastEventGenerationTimeStr)
+        : undefined, // Optional field
+      editionGenerationPeriodMinutes: editionGenerationPeriodMinutesStr
+        ? parseInt(editionGenerationPeriodMinutesStr)
+        : 180, // Default to 3 hours
+      lastEditionGenerationTime: lastEditionGenerationTimeStr
+        ? parseInt(lastEditionGenerationTimeStr)
+        : undefined // Optional field
     };
   }
 
   // Reporter operations
   async saveReporter(reporter: Reporter): Promise<void> {
     const multi = this.client.multi();
-    console.log('Redis Write: SADD', REDIS_KEYS.REPORTERS, reporter.id);
+    console.log("Redis Write: SADD", REDIS_KEYS.REPORTERS, reporter.id);
     multi.sAdd(REDIS_KEYS.REPORTERS, reporter.id);
-    console.log('Redis Write: DEL', REDIS_KEYS.REPORTER_BEATS(reporter.id));
+    console.log("Redis Write: DEL", REDIS_KEYS.REPORTER_BEATS(reporter.id));
     multi.del(REDIS_KEYS.REPORTER_BEATS(reporter.id));
-    reporter.beats.forEach(beat => {
-      console.log('Redis Write: SADD', REDIS_KEYS.REPORTER_BEATS(reporter.id), beat);
+    reporter.beats.forEach((beat) => {
+      console.log(
+        "Redis Write: SADD",
+        REDIS_KEYS.REPORTER_BEATS(reporter.id),
+        beat
+      );
       multi.sAdd(REDIS_KEYS.REPORTER_BEATS(reporter.id), beat);
     });
-    console.log('Redis Write: SET', REDIS_KEYS.REPORTER_PROMPT(reporter.id), reporter.prompt);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.REPORTER_PROMPT(reporter.id),
+      reporter.prompt
+    );
     multi.set(REDIS_KEYS.REPORTER_PROMPT(reporter.id), reporter.prompt);
-    console.log('Redis Write: SET', REDIS_KEYS.REPORTER_ENABLED(reporter.id), reporter.enabled.toString());
-    multi.set(REDIS_KEYS.REPORTER_ENABLED(reporter.id), reporter.enabled.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.REPORTER_ENABLED(reporter.id),
+      reporter.enabled.toString()
+    );
+    multi.set(
+      REDIS_KEYS.REPORTER_ENABLED(reporter.id),
+      reporter.enabled.toString()
+    );
     await multi.exec();
   }
 
@@ -174,7 +304,7 @@ export class RedisDataStorageService implements IDataStorageService {
     if (!prompt) return null;
 
     // Default to true for backward compatibility with existing reporters
-    const enabled = enabledStr === null ? true : enabledStr === 'true';
+    const enabled = enabledStr === null ? true : enabledStr === "true";
 
     return {
       id,
@@ -190,48 +320,106 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to reporter's article sorted set
-    console.log('Redis Write: ZADD', REDIS_KEYS.ARTICLES_BY_REPORTER(article.reporterId), {
-      score: article.generationTime,
-      value: articleId
-    });
+    console.log(
+      "Redis Write: ZADD",
+      REDIS_KEYS.ARTICLES_BY_REPORTER(article.reporterId),
+      {
+        score: article.generationTime,
+        value: articleId
+      }
+    );
     multi.zAdd(REDIS_KEYS.ARTICLES_BY_REPORTER(article.reporterId), {
       score: article.generationTime,
       value: articleId
     });
 
     // Store article data
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_HEADLINE(articleId), article.headline);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_HEADLINE(articleId),
+      article.headline
+    );
     multi.set(REDIS_KEYS.ARTICLE_HEADLINE(articleId), article.headline);
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_BODY(articleId), article.body);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_BODY(articleId),
+      article.body
+    );
     multi.set(REDIS_KEYS.ARTICLE_BODY(articleId), article.body);
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_TIME(articleId), article.generationTime.toString());
-    multi.set(REDIS_KEYS.ARTICLE_TIME(articleId), article.generationTime.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_PROMPT(articleId), article.prompt);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_TIME(articleId),
+      article.generationTime.toString()
+    );
+    multi.set(
+      REDIS_KEYS.ARTICLE_TIME(articleId),
+      article.generationTime.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_PROMPT(articleId),
+      article.prompt
+    );
     multi.set(REDIS_KEYS.ARTICLE_PROMPT(articleId), article.prompt);
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId), JSON.stringify(article.messageIds));
-    multi.set(REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId), JSON.stringify(article.messageIds));
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId), JSON.stringify(article.messageTexts));
-    multi.set(REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId), JSON.stringify(article.messageTexts));
-    console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_MODEL_NAME(articleId), article.modelName);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId),
+      JSON.stringify(article.messageIds)
+    );
+    multi.set(
+      REDIS_KEYS.ARTICLE_MESSAGE_IDS(articleId),
+      JSON.stringify(article.messageIds)
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId),
+      JSON.stringify(article.messageTexts)
+    );
+    multi.set(
+      REDIS_KEYS.ARTICLE_MESSAGE_TEXTS(articleId),
+      JSON.stringify(article.messageTexts)
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_MODEL_NAME(articleId),
+      article.modelName
+    );
     multi.set(REDIS_KEYS.ARTICLE_MODEL_NAME(articleId), article.modelName);
     if (article.inputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_INPUT_TOKEN_COUNT(articleId), article.inputTokenCount.toString());
-      multi.set(REDIS_KEYS.ARTICLE_INPUT_TOKEN_COUNT(articleId), article.inputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.ARTICLE_INPUT_TOKEN_COUNT(articleId),
+        article.inputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.ARTICLE_INPUT_TOKEN_COUNT(articleId),
+        article.inputTokenCount.toString()
+      );
     }
     if (article.outputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.ARTICLE_OUTPUT_TOKEN_COUNT(articleId), article.outputTokenCount.toString());
-      multi.set(REDIS_KEYS.ARTICLE_OUTPUT_TOKEN_COUNT(articleId), article.outputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.ARTICLE_OUTPUT_TOKEN_COUNT(articleId),
+        article.outputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.ARTICLE_OUTPUT_TOKEN_COUNT(articleId),
+        article.outputTokenCount.toString()
+      );
     }
 
     await multi.exec();
   }
 
-  async getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]> {
+  async getArticlesByReporter(
+    reporterId: string,
+    limit?: number
+  ): Promise<Article[]> {
     const count = limit || -1;
     const articleIds = await this.client.ZRANGE(
       REDIS_KEYS.ARTICLES_BY_REPORTER(reporterId),
       0,
-      count == -1 ? count : count - 1, 
+      count == -1 ? count : count - 1,
       { REV: true }
     );
 
@@ -276,10 +464,14 @@ export class RedisDataStorageService implements IDataStorageService {
     // Apply limit if specified
     const limitedArticles = limit ? allArticles.slice(0, limit) : allArticles;
 
-    return limitedArticles.map(item => item.article);
+    return limitedArticles.map((item) => item.article);
   }
 
-  async getArticlesInTimeRange(reporterId: string, startTime: number, endTime: number): Promise<Article[]> {
+  async getArticlesInTimeRange(
+    reporterId: string,
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]> {
     const articleIds = await this.client.zRangeByScore(
       REDIS_KEYS.ARTICLES_BY_REPORTER(reporterId),
       startTime,
@@ -298,7 +490,17 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getArticle(articleId: string): Promise<Article | null> {
-    const [headline, body, timeStr, prompt, messageIdsJson, messageTextsJson, modelName, inputTokenCountStr, outputTokenCountStr] = await Promise.all([
+    const [
+      headline,
+      body,
+      timeStr,
+      prompt,
+      messageIdsJson,
+      messageTextsJson,
+      modelName,
+      inputTokenCountStr,
+      outputTokenCountStr
+    ] = await Promise.all([
       this.client.get(REDIS_KEYS.ARTICLE_HEADLINE(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_BODY(articleId)),
       this.client.get(REDIS_KEYS.ARTICLE_TIME(articleId)),
@@ -325,7 +527,7 @@ export class RedisDataStorageService implements IDataStorageService {
       try {
         messageIds = JSON.parse(messageIdsJson);
       } catch (error) {
-        console.error('Error parsing messageIds JSON:', error);
+        console.error("Error parsing messageIds JSON:", error);
         messageIds = [];
       }
     }
@@ -334,7 +536,7 @@ export class RedisDataStorageService implements IDataStorageService {
       try {
         messageTexts = JSON.parse(messageTextsJson);
       } catch (error) {
-        console.error('Error parsing messageTexts JSON:', error);
+        console.error("Error parsing messageTexts JSON:", error);
         messageTexts = [];
       }
     }
@@ -345,20 +547,31 @@ export class RedisDataStorageService implements IDataStorageService {
       headline,
       body,
       generationTime: parseInt(timeStr),
-      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
+      prompt:
+        prompt ||
+        "Prompt not available (generated before prompt storage was implemented)",
       messageIds,
       messageTexts,
-      modelName: modelName || 'gpt-5-nano', // Default for backward compatibility
-      inputTokenCount: inputTokenCountStr ? parseInt(inputTokenCountStr) : undefined,
-      outputTokenCount: outputTokenCountStr ? parseInt(outputTokenCountStr) : undefined
+      modelName: modelName || "gpt-5-nano", // Default for backward compatibility
+      inputTokenCount: inputTokenCountStr
+        ? parseInt(inputTokenCountStr)
+        : undefined,
+      outputTokenCount: outputTokenCountStr
+        ? parseInt(outputTokenCountStr)
+        : undefined
     };
   }
 
-  private async findReporterForArticle(articleId: string): Promise<string | null> {
+  private async findReporterForArticle(
+    articleId: string
+  ): Promise<string | null> {
     const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
 
     for (const reporterId of reporterIds) {
-      const exists = await this.client.zScore(REDIS_KEYS.ARTICLES_BY_REPORTER(reporterId), articleId);
+      const exists = await this.client.zScore(
+        REDIS_KEYS.ARTICLES_BY_REPORTER(reporterId),
+        articleId
+      );
       if (exists !== null) {
         return reporterId;
       }
@@ -373,57 +586,126 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to reporter's event sorted set
-    console.log('Redis Write: ZADD', REDIS_KEYS.EVENTS_BY_REPORTER(event.reporterId), {
-      score: event.createdTime,
-      value: eventId
-    });
+    console.log(
+      "Redis Write: ZADD",
+      REDIS_KEYS.EVENTS_BY_REPORTER(event.reporterId),
+      {
+        score: event.createdTime,
+        value: eventId
+      }
+    );
     multi.zAdd(REDIS_KEYS.EVENTS_BY_REPORTER(event.reporterId), {
       score: event.createdTime,
       value: eventId
     });
 
     // Store event data
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_TITLE(eventId), event.title);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_TITLE(eventId),
+      event.title
+    );
     multi.set(REDIS_KEYS.EVENT_TITLE(eventId), event.title);
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_CREATED_TIME(eventId), event.createdTime.toString());
-    multi.set(REDIS_KEYS.EVENT_CREATED_TIME(eventId), event.createdTime.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_UPDATED_TIME(eventId), event.updatedTime.toString());
-    multi.set(REDIS_KEYS.EVENT_UPDATED_TIME(eventId), event.updatedTime.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_FACTS(eventId), JSON.stringify(event.facts));
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_CREATED_TIME(eventId),
+      event.createdTime.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EVENT_CREATED_TIME(eventId),
+      event.createdTime.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_UPDATED_TIME(eventId),
+      event.updatedTime.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EVENT_UPDATED_TIME(eventId),
+      event.updatedTime.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_FACTS(eventId),
+      JSON.stringify(event.facts)
+    );
     multi.set(REDIS_KEYS.EVENT_FACTS(eventId), JSON.stringify(event.facts));
     if (event.where) {
-      console.log('Redis Write: SET', REDIS_KEYS.EVENT_WHERE(eventId), event.where);
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EVENT_WHERE(eventId),
+        event.where
+      );
       multi.set(REDIS_KEYS.EVENT_WHERE(eventId), event.where);
     }
     if (event.when) {
-      console.log('Redis Write: SET', REDIS_KEYS.EVENT_WHEN(eventId), event.when);
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EVENT_WHEN(eventId),
+        event.when
+      );
       multi.set(REDIS_KEYS.EVENT_WHEN(eventId), event.when);
     }
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_MESSAGE_IDS(eventId), JSON.stringify(event.messageIds || []));
-    multi.set(REDIS_KEYS.EVENT_MESSAGE_IDS(eventId), JSON.stringify(event.messageIds || []));
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId), JSON.stringify(event.messageTexts || []));
-    multi.set(REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId), JSON.stringify(event.messageTexts || []));
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_MODEL_NAME(eventId), event.modelName);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_MESSAGE_IDS(eventId),
+      JSON.stringify(event.messageIds || [])
+    );
+    multi.set(
+      REDIS_KEYS.EVENT_MESSAGE_IDS(eventId),
+      JSON.stringify(event.messageIds || [])
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId),
+      JSON.stringify(event.messageTexts || [])
+    );
+    multi.set(
+      REDIS_KEYS.EVENT_MESSAGE_TEXTS(eventId),
+      JSON.stringify(event.messageTexts || [])
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_MODEL_NAME(eventId),
+      event.modelName
+    );
     multi.set(REDIS_KEYS.EVENT_MODEL_NAME(eventId), event.modelName);
     if (event.inputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.EVENT_INPUT_TOKEN_COUNT(eventId), event.inputTokenCount.toString());
-      multi.set(REDIS_KEYS.EVENT_INPUT_TOKEN_COUNT(eventId), event.inputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EVENT_INPUT_TOKEN_COUNT(eventId),
+        event.inputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.EVENT_INPUT_TOKEN_COUNT(eventId),
+        event.inputTokenCount.toString()
+      );
     }
     if (event.outputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.EVENT_OUTPUT_TOKEN_COUNT(eventId), event.outputTokenCount.toString());
-      multi.set(REDIS_KEYS.EVENT_OUTPUT_TOKEN_COUNT(eventId), event.outputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EVENT_OUTPUT_TOKEN_COUNT(eventId),
+        event.outputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.EVENT_OUTPUT_TOKEN_COUNT(eventId),
+        event.outputTokenCount.toString()
+      );
     }
 
     await multi.exec();
   }
 
-  async getEventsByReporter(reporterId: string, limit?: number): Promise<Event[]> {
+  async getEventsByReporter(
+    reporterId: string,
+    limit?: number
+  ): Promise<Event[]> {
     const count = limit || -1;
     const eventIds = await this.client.ZRANGE(
       REDIS_KEYS.EVENTS_BY_REPORTER(reporterId),
       0,
       count == -1 ? count : count - 1,
-      {REV: true}
+      { REV: true }
     );
 
     const events: Event[] = [];
@@ -467,7 +749,7 @@ export class RedisDataStorageService implements IDataStorageService {
     // Apply limit if specified
     const limitedEvents = limit ? allEvents.slice(0, limit) : allEvents;
 
-    return limitedEvents.map(item => item.event);
+    return limitedEvents.map((item) => item.event);
   }
 
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
@@ -500,11 +782,23 @@ export class RedisDataStorageService implements IDataStorageService {
     // Apply limit if specified
     const limitedEvents = limit ? allEvents.slice(0, limit) : allEvents;
 
-    return limitedEvents.map(item => item.event);
+    return limitedEvents.map((item) => item.event);
   }
 
   async getEvent(eventId: string): Promise<Event | null> {
-    const [title, createdTimeStr, updatedTimeStr, factsJson, where, when, messageIdsJson, messageTextsJson, modelName, inputTokenCountStr, outputTokenCountStr] = await Promise.all([
+    const [
+      title,
+      createdTimeStr,
+      updatedTimeStr,
+      factsJson,
+      where,
+      when,
+      messageIdsJson,
+      messageTextsJson,
+      modelName,
+      inputTokenCountStr,
+      outputTokenCountStr
+    ] = await Promise.all([
       this.client.get(REDIS_KEYS.EVENT_TITLE(eventId)),
       this.client.get(REDIS_KEYS.EVENT_CREATED_TIME(eventId)),
       this.client.get(REDIS_KEYS.EVENT_UPDATED_TIME(eventId)),
@@ -530,7 +824,7 @@ export class RedisDataStorageService implements IDataStorageService {
       try {
         facts = JSON.parse(factsJson);
       } catch (error) {
-        console.error('Error parsing event facts JSON:', error);
+        console.error("Error parsing event facts JSON:", error);
         facts = [];
       }
     }
@@ -541,7 +835,7 @@ export class RedisDataStorageService implements IDataStorageService {
       try {
         messageIds = JSON.parse(messageIdsJson);
       } catch (error) {
-        console.error('Error parsing event messageIds JSON:', error);
+        console.error("Error parsing event messageIds JSON:", error);
         messageIds = [];
       }
     }
@@ -552,7 +846,7 @@ export class RedisDataStorageService implements IDataStorageService {
       try {
         messageTexts = JSON.parse(messageTextsJson);
       } catch (error) {
-        console.error('Error parsing event messageTexts JSON:', error);
+        console.error("Error parsing event messageTexts JSON:", error);
         messageTexts = [];
       }
     }
@@ -568,9 +862,13 @@ export class RedisDataStorageService implements IDataStorageService {
       when: when || undefined,
       messageIds,
       messageTexts,
-      modelName: modelName || 'gpt-5-nano', // Default for backward compatibility
-      inputTokenCount: inputTokenCountStr ? parseInt(inputTokenCountStr) : undefined,
-      outputTokenCount: outputTokenCountStr ? parseInt(outputTokenCountStr) : undefined
+      modelName: modelName || "gpt-5-nano", // Default for backward compatibility
+      inputTokenCount: inputTokenCountStr
+        ? parseInt(inputTokenCountStr)
+        : undefined,
+      outputTokenCount: outputTokenCountStr
+        ? parseInt(outputTokenCountStr)
+        : undefined
     };
   }
 
@@ -578,7 +876,10 @@ export class RedisDataStorageService implements IDataStorageService {
     const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
 
     for (const reporterId of reporterIds) {
-      const exists = await this.client.zScore(REDIS_KEYS.EVENTS_BY_REPORTER(reporterId), eventId);
+      const exists = await this.client.zScore(
+        REDIS_KEYS.EVENTS_BY_REPORTER(reporterId),
+        eventId
+      );
       if (exists !== null) {
         return reporterId;
       }
@@ -597,9 +898,17 @@ export class RedisDataStorageService implements IDataStorageService {
     const mergedFacts = newFacts;
 
     const multi = this.client.multi();
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_UPDATED_TIME(eventId), Date.now().toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_UPDATED_TIME(eventId),
+      Date.now().toString()
+    );
     multi.set(REDIS_KEYS.EVENT_UPDATED_TIME(eventId), Date.now().toString());
-    console.log('Redis Write: SET', REDIS_KEYS.EVENT_FACTS(eventId), JSON.stringify(mergedFacts));
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_FACTS(eventId),
+      JSON.stringify(mergedFacts)
+    );
     multi.set(REDIS_KEYS.EVENT_FACTS(eventId), JSON.stringify(mergedFacts));
 
     await multi.exec();
@@ -611,7 +920,7 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to editions sorted set
-    console.log('Redis Write: ZADD', REDIS_KEYS.EDITIONS, {
+    console.log("Redis Write: ZADD", REDIS_KEYS.EDITIONS, {
       score: edition.generationTime,
       value: editionId
     });
@@ -621,25 +930,58 @@ export class RedisDataStorageService implements IDataStorageService {
     });
 
     // Store edition data
-    console.log('Redis Write: DEL', REDIS_KEYS.EDITION_STORIES(editionId));
+    console.log("Redis Write: DEL", REDIS_KEYS.EDITION_STORIES(editionId));
     multi.del(REDIS_KEYS.EDITION_STORIES(editionId));
-    edition.stories.forEach(storyId => {
-      console.log('Redis Write: SADD', REDIS_KEYS.EDITION_STORIES(editionId), storyId);
+    edition.stories.forEach((storyId) => {
+      console.log(
+        "Redis Write: SADD",
+        REDIS_KEYS.EDITION_STORIES(editionId),
+        storyId
+      );
       multi.sAdd(REDIS_KEYS.EDITION_STORIES(editionId), storyId);
     });
-    console.log('Redis Write: SET', REDIS_KEYS.EDITION_TIME(editionId), edition.generationTime.toString());
-    multi.set(REDIS_KEYS.EDITION_TIME(editionId), edition.generationTime.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.EDITION_PROMPT(editionId), edition.prompt);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITION_TIME(editionId),
+      edition.generationTime.toString()
+    );
+    multi.set(
+      REDIS_KEYS.EDITION_TIME(editionId),
+      edition.generationTime.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITION_PROMPT(editionId),
+      edition.prompt
+    );
     multi.set(REDIS_KEYS.EDITION_PROMPT(editionId), edition.prompt);
-    console.log('Redis Write: SET', REDIS_KEYS.EDITION_MODEL_NAME(editionId), edition.modelName);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EDITION_MODEL_NAME(editionId),
+      edition.modelName
+    );
     multi.set(REDIS_KEYS.EDITION_MODEL_NAME(editionId), edition.modelName);
     if (edition.inputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.EDITION_INPUT_TOKEN_COUNT(editionId), edition.inputTokenCount.toString());
-      multi.set(REDIS_KEYS.EDITION_INPUT_TOKEN_COUNT(editionId), edition.inputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EDITION_INPUT_TOKEN_COUNT(editionId),
+        edition.inputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.EDITION_INPUT_TOKEN_COUNT(editionId),
+        edition.inputTokenCount.toString()
+      );
     }
     if (edition.outputTokenCount !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.EDITION_OUTPUT_TOKEN_COUNT(editionId), edition.outputTokenCount.toString());
-      multi.set(REDIS_KEYS.EDITION_OUTPUT_TOKEN_COUNT(editionId), edition.outputTokenCount.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.EDITION_OUTPUT_TOKEN_COUNT(editionId),
+        edition.outputTokenCount.toString()
+      );
+      multi.set(
+        REDIS_KEYS.EDITION_OUTPUT_TOKEN_COUNT(editionId),
+        edition.outputTokenCount.toString()
+      );
     }
 
     await multi.exec();
@@ -647,7 +989,12 @@ export class RedisDataStorageService implements IDataStorageService {
 
   async getNewspaperEditions(limit?: number): Promise<NewspaperEdition[]> {
     const count = limit || -1;
-    const editionIds = await this.client.ZRANGE(REDIS_KEYS.EDITIONS, 0, count == -1 ? count : count - 1, { REV: true });
+    const editionIds = await this.client.ZRANGE(
+      REDIS_KEYS.EDITIONS,
+      0,
+      count == -1 ? count : count - 1,
+      { REV: true }
+    );
 
     const editions: NewspaperEdition[] = [];
     for (const editionId of editionIds) {
@@ -660,8 +1007,17 @@ export class RedisDataStorageService implements IDataStorageService {
     return editions;
   }
 
-  async getNewspaperEdition(editionId: string): Promise<NewspaperEdition | null> {
-    const [stories, timeStr, prompt, modelName, inputTokenCountStr, outputTokenCountStr] = await Promise.all([
+  async getNewspaperEdition(
+    editionId: string
+  ): Promise<NewspaperEdition | null> {
+    const [
+      stories,
+      timeStr,
+      prompt,
+      modelName,
+      inputTokenCountStr,
+      outputTokenCountStr
+    ] = await Promise.all([
       this.client.sMembers(REDIS_KEYS.EDITION_STORIES(editionId)),
       this.client.get(REDIS_KEYS.EDITION_TIME(editionId)),
       this.client.get(REDIS_KEYS.EDITION_PROMPT(editionId)),
@@ -676,10 +1032,16 @@ export class RedisDataStorageService implements IDataStorageService {
       id: editionId,
       stories: stories || [],
       generationTime: parseInt(timeStr),
-      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
-      modelName: modelName || 'gpt-5-nano', // Default for backward compatibility
-      inputTokenCount: inputTokenCountStr ? parseInt(inputTokenCountStr) : undefined,
-      outputTokenCount: outputTokenCountStr ? parseInt(outputTokenCountStr) : undefined
+      prompt:
+        prompt ||
+        "Prompt not available (generated before prompt storage was implemented)",
+      modelName: modelName || "gpt-5-nano", // Default for backward compatibility
+      inputTokenCount: inputTokenCountStr
+        ? parseInt(inputTokenCountStr)
+        : undefined,
+      outputTokenCount: outputTokenCountStr
+        ? parseInt(outputTokenCountStr)
+        : undefined
     };
   }
 
@@ -689,7 +1051,7 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to daily editions sorted set
-    console.log('Redis Write: ZADD', REDIS_KEYS.DAILY_EDITIONS, {
+    console.log("Redis Write: ZADD", REDIS_KEYS.DAILY_EDITIONS, {
       score: dailyEdition.generationTime,
       value: dailyEditionId
     });
@@ -699,51 +1061,140 @@ export class RedisDataStorageService implements IDataStorageService {
     });
 
     // Store daily edition data
-    console.log('Redis Write: DEL', REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId));
+    console.log(
+      "Redis Write: DEL",
+      REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId)
+    );
     multi.del(REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId));
-    dailyEdition.editions.forEach(editionId => {
-      console.log('Redis Write: SADD', REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId), editionId);
+    dailyEdition.editions.forEach((editionId) => {
+      console.log(
+        "Redis Write: SADD",
+        REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId),
+        editionId
+      );
       multi.sAdd(REDIS_KEYS.DAILY_EDITION_EDITIONS(dailyEditionId), editionId);
     });
-    console.log('Redis Write: SET', REDIS_KEYS.DAILY_EDITION_TIME(dailyEditionId), dailyEdition.generationTime.toString());
-    multi.set(REDIS_KEYS.DAILY_EDITION_TIME(dailyEditionId), dailyEdition.generationTime.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.DAILY_EDITION_TIME(dailyEditionId),
+      dailyEdition.generationTime.toString()
+    );
+    multi.set(
+      REDIS_KEYS.DAILY_EDITION_TIME(dailyEditionId),
+      dailyEdition.generationTime.toString()
+    );
 
     // Store new detailed content fields
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:front_page_headline`, dailyEdition.frontPageHeadline);
-    multi.set(`daily_edition:${dailyEditionId}:front_page_headline`, dailyEdition.frontPageHeadline);
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:front_page_article`, dailyEdition.frontPageArticle);
-    multi.set(`daily_edition:${dailyEditionId}:front_page_article`, dailyEdition.frontPageArticle);
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:newspaper_name`, dailyEdition.newspaperName);
-    multi.set(`daily_edition:${dailyEditionId}:newspaper_name`, dailyEdition.newspaperName);
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:front_page_headline`,
+      dailyEdition.frontPageHeadline
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:front_page_headline`,
+      dailyEdition.frontPageHeadline
+    );
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:front_page_article`,
+      dailyEdition.frontPageArticle
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:front_page_article`,
+      dailyEdition.frontPageArticle
+    );
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:newspaper_name`,
+      dailyEdition.newspaperName
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:newspaper_name`,
+      dailyEdition.newspaperName
+    );
 
     // Store model feedback
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:model_feedback_positive`, dailyEdition.modelFeedbackAboutThePrompt.positive);
-    multi.set(`daily_edition:${dailyEditionId}:model_feedback_positive`, dailyEdition.modelFeedbackAboutThePrompt.positive);
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:model_feedback_negative`, dailyEdition.modelFeedbackAboutThePrompt.negative);
-    multi.set(`daily_edition:${dailyEditionId}:model_feedback_negative`, dailyEdition.modelFeedbackAboutThePrompt.negative);
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:model_feedback_positive`,
+      dailyEdition.modelFeedbackAboutThePrompt.positive
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:model_feedback_positive`,
+      dailyEdition.modelFeedbackAboutThePrompt.positive
+    );
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:model_feedback_negative`,
+      dailyEdition.modelFeedbackAboutThePrompt.negative
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:model_feedback_negative`,
+      dailyEdition.modelFeedbackAboutThePrompt.negative
+    );
 
     // Store topics as JSON
-    console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:topics`, JSON.stringify(dailyEdition.topics));
-    multi.set(`daily_edition:${dailyEditionId}:topics`, JSON.stringify(dailyEdition.topics));
-     console.log('Redis Write: SET', REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId), dailyEdition.prompt);
-     multi.set(REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId), dailyEdition.prompt);
-     console.log('Redis Write: SET', REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId), dailyEdition.modelName);
-     multi.set(REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId), dailyEdition.modelName);
-     if (dailyEdition.inputTokenCount !== undefined) {
-       console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:input_token_count`, dailyEdition.inputTokenCount.toString());
-       multi.set(`daily_edition:${dailyEditionId}:input_token_count`, dailyEdition.inputTokenCount.toString());
-     }
-     if (dailyEdition.outputTokenCount !== undefined) {
-       console.log('Redis Write: SET', `daily_edition:${dailyEditionId}:output_token_count`, dailyEdition.outputTokenCount.toString());
-       multi.set(`daily_edition:${dailyEditionId}:output_token_count`, dailyEdition.outputTokenCount.toString());
-     }
+    console.log(
+      "Redis Write: SET",
+      `daily_edition:${dailyEditionId}:topics`,
+      JSON.stringify(dailyEdition.topics)
+    );
+    multi.set(
+      `daily_edition:${dailyEditionId}:topics`,
+      JSON.stringify(dailyEdition.topics)
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId),
+      dailyEdition.prompt
+    );
+    multi.set(
+      REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId),
+      dailyEdition.prompt
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId),
+      dailyEdition.modelName
+    );
+    multi.set(
+      REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId),
+      dailyEdition.modelName
+    );
+    if (dailyEdition.inputTokenCount !== undefined) {
+      console.log(
+        "Redis Write: SET",
+        `daily_edition:${dailyEditionId}:input_token_count`,
+        dailyEdition.inputTokenCount.toString()
+      );
+      multi.set(
+        `daily_edition:${dailyEditionId}:input_token_count`,
+        dailyEdition.inputTokenCount.toString()
+      );
+    }
+    if (dailyEdition.outputTokenCount !== undefined) {
+      console.log(
+        "Redis Write: SET",
+        `daily_edition:${dailyEditionId}:output_token_count`,
+        dailyEdition.outputTokenCount.toString()
+      );
+      multi.set(
+        `daily_edition:${dailyEditionId}:output_token_count`,
+        dailyEdition.outputTokenCount.toString()
+      );
+    }
 
-     await multi.exec();
+    await multi.exec();
   }
 
   async getDailyEditions(limit?: number): Promise<DailyEdition[]> {
     const count = limit || -1;
-    const dailyEditionIds = await this.client.ZRANGE(REDIS_KEYS.DAILY_EDITIONS, 0, count == -1 ? count : count - 1, { REV: true });
+    const dailyEditionIds = await this.client.ZRANGE(
+      REDIS_KEYS.DAILY_EDITIONS,
+      0,
+      count == -1 ? count : count - 1,
+      { REV: true }
+    );
     // Reverse to get most recent first
     // dailyEditionIds.reverse();
 
@@ -778,8 +1229,12 @@ export class RedisDataStorageService implements IDataStorageService {
       this.client.get(`daily_edition:${dailyEditionId}:front_page_headline`),
       this.client.get(`daily_edition:${dailyEditionId}:front_page_article`),
       this.client.get(`daily_edition:${dailyEditionId}:newspaper_name`),
-      this.client.get(`daily_edition:${dailyEditionId}:model_feedback_positive`),
-      this.client.get(`daily_edition:${dailyEditionId}:model_feedback_negative`),
+      this.client.get(
+        `daily_edition:${dailyEditionId}:model_feedback_positive`
+      ),
+      this.client.get(
+        `daily_edition:${dailyEditionId}:model_feedback_negative`
+      ),
       this.client.get(`daily_edition:${dailyEditionId}:topics`),
       this.client.get(REDIS_KEYS.DAILY_EDITION_PROMPT(dailyEditionId)),
       this.client.get(REDIS_KEYS.DAILY_EDITION_MODEL_NAME(dailyEditionId)),
@@ -790,12 +1245,12 @@ export class RedisDataStorageService implements IDataStorageService {
     if (!timeStr) return null;
 
     // Parse topics JSON
-    let topics: DailyEdition['topics'] = [];
+    let topics: DailyEdition["topics"] = [];
     if (topicsJson) {
       try {
         topics = JSON.parse(topicsJson);
       } catch (error) {
-        console.error('Error parsing topics JSON:', error);
+        console.error("Error parsing topics JSON:", error);
         topics = [];
       }
     }
@@ -804,18 +1259,24 @@ export class RedisDataStorageService implements IDataStorageService {
       id: dailyEditionId,
       editions,
       generationTime: parseInt(timeStr),
-      frontPageHeadline: frontPageHeadline || '',
-      frontPageArticle: frontPageArticle || '',
-      newspaperName: newspaperName || 'Daily Gazette',
+      frontPageHeadline: frontPageHeadline || "",
+      frontPageArticle: frontPageArticle || "",
+      newspaperName: newspaperName || "Daily Gazette",
       modelFeedbackAboutThePrompt: {
-        positive: modelFeedbackPositive || '',
-        negative: modelFeedbackNegative || ''
+        positive: modelFeedbackPositive || "",
+        negative: modelFeedbackNegative || ""
       },
       topics,
-      prompt: prompt || 'Prompt not available (generated before prompt storage was implemented)',
-      modelName: modelName || 'gpt-5-nano', // Default for backward compatibility
-      inputTokenCount: inputTokenCountStr ? parseInt(inputTokenCountStr) : undefined,
-      outputTokenCount: outputTokenCountStr ? parseInt(outputTokenCountStr) : undefined
+      prompt:
+        prompt ||
+        "Prompt not available (generated before prompt storage was implemented)",
+      modelName: modelName || "gpt-5-nano", // Default for backward compatibility
+      inputTokenCount: inputTokenCountStr
+        ? parseInt(inputTokenCountStr)
+        : undefined,
+      outputTokenCount: outputTokenCountStr
+        ? parseInt(outputTokenCountStr)
+        : undefined
     };
   }
 
@@ -825,17 +1286,25 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to ads set
-    console.log('Redis Write: SADD', REDIS_KEYS.ADS, adId);
+    console.log("Redis Write: SADD", REDIS_KEYS.ADS, adId);
     multi.sAdd(REDIS_KEYS.ADS, adId);
 
     // Store ad data
-    console.log('Redis Write: SET', REDIS_KEYS.AD_NAME(adId), ad.name);
+    console.log("Redis Write: SET", REDIS_KEYS.AD_NAME(adId), ad.name);
     multi.set(REDIS_KEYS.AD_NAME(adId), ad.name);
-    console.log('Redis Write: SET', REDIS_KEYS.AD_BID_PRICE(adId), ad.bidPrice.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.AD_BID_PRICE(adId),
+      ad.bidPrice.toString()
+    );
     multi.set(REDIS_KEYS.AD_BID_PRICE(adId), ad.bidPrice.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.AD_PROMPT_CONTENT(adId), ad.promptContent);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.AD_PROMPT_CONTENT(adId),
+      ad.promptContent
+    );
     multi.set(REDIS_KEYS.AD_PROMPT_CONTENT(adId), ad.promptContent);
-    console.log('Redis Write: SET', REDIS_KEYS.AD_USER_ID(adId), ad.userId);
+    console.log("Redis Write: SET", REDIS_KEYS.AD_USER_ID(adId), ad.userId);
     multi.set(REDIS_KEYS.AD_USER_ID(adId), ad.userId);
 
     await multi.exec();
@@ -861,8 +1330,8 @@ export class RedisDataStorageService implements IDataStorageService {
 
     // Sort ad IDs by timestamp (extracted from ID format: ad_timestamp_random)
     const sortedAdIds = adIds.sort((a, b) => {
-      const timestampA = parseInt(a.split('_')[1]);
-      const timestampB = parseInt(b.split('_')[1]);
+      const timestampA = parseInt(a.split("_")[1]);
+      const timestampB = parseInt(b.split("_")[1]);
       return timestampB - timestampA; // Most recent first
     });
 
@@ -888,26 +1357,41 @@ export class RedisDataStorageService implements IDataStorageService {
     };
   }
 
-  async updateAd(adId: string, updates: Partial<Omit<AdEntry, 'id'>>): Promise<void> {
+  async updateAd(
+    adId: string,
+    updates: Partial<Omit<AdEntry, "id">>
+  ): Promise<void> {
     const multi = this.client.multi();
 
     if (updates.name !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.AD_NAME(adId), updates.name);
+      console.log("Redis Write: SET", REDIS_KEYS.AD_NAME(adId), updates.name);
       multi.set(REDIS_KEYS.AD_NAME(adId), updates.name);
     }
 
     if (updates.bidPrice !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.AD_BID_PRICE(adId), updates.bidPrice.toString());
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.AD_BID_PRICE(adId),
+        updates.bidPrice.toString()
+      );
       multi.set(REDIS_KEYS.AD_BID_PRICE(adId), updates.bidPrice.toString());
     }
 
     if (updates.promptContent !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.AD_PROMPT_CONTENT(adId), updates.promptContent);
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.AD_PROMPT_CONTENT(adId),
+        updates.promptContent
+      );
       multi.set(REDIS_KEYS.AD_PROMPT_CONTENT(adId), updates.promptContent);
     }
 
     if (updates.userId !== undefined) {
-      console.log('Redis Write: SET', REDIS_KEYS.AD_USER_ID(adId), updates.userId);
+      console.log(
+        "Redis Write: SET",
+        REDIS_KEYS.AD_USER_ID(adId),
+        updates.userId
+      );
       multi.set(REDIS_KEYS.AD_USER_ID(adId), updates.userId);
     }
 
@@ -918,25 +1402,27 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Remove from ads set
-    console.log('Redis Write: SREM', REDIS_KEYS.ADS, adId);
+    console.log("Redis Write: SREM", REDIS_KEYS.ADS, adId);
     multi.sRem(REDIS_KEYS.ADS, adId);
 
     // Delete ad data
-    console.log('Redis Write: DEL', REDIS_KEYS.AD_NAME(adId));
+    console.log("Redis Write: DEL", REDIS_KEYS.AD_NAME(adId));
     multi.del(REDIS_KEYS.AD_NAME(adId));
-    console.log('Redis Write: DEL', REDIS_KEYS.AD_BID_PRICE(adId));
+    console.log("Redis Write: DEL", REDIS_KEYS.AD_BID_PRICE(adId));
     multi.del(REDIS_KEYS.AD_BID_PRICE(adId));
-    console.log('Redis Write: DEL', REDIS_KEYS.AD_PROMPT_CONTENT(adId));
+    console.log("Redis Write: DEL", REDIS_KEYS.AD_PROMPT_CONTENT(adId));
     multi.del(REDIS_KEYS.AD_PROMPT_CONTENT(adId));
-    console.log('Redis Write: DEL', REDIS_KEYS.AD_USER_ID(adId));
+    console.log("Redis Write: DEL", REDIS_KEYS.AD_USER_ID(adId));
     multi.del(REDIS_KEYS.AD_USER_ID(adId));
 
     await multi.exec();
   }
 
   // User operations
-  async createUser(user: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>): Promise<User> {
-    const userId = await this.generateId('user');
+  async createUser(
+    user: Omit<User, "id" | "createdAt" | "lastLoginAt">
+  ): Promise<User> {
+    const userId = await this.generateId("user");
     const now = Date.now();
     const newUser: User = {
       ...user,
@@ -947,27 +1433,58 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Add to users set
-    console.log('Redis Write: SADD', REDIS_KEYS.USERS, userId);
+    console.log("Redis Write: SADD", REDIS_KEYS.USERS, userId);
     multi.sAdd(REDIS_KEYS.USERS, userId);
 
     // Store user data
-    console.log('Redis Write: SET', REDIS_KEYS.USER_EMAIL(userId), newUser.email);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_EMAIL(userId),
+      newUser.email
+    );
     multi.set(REDIS_KEYS.USER_EMAIL(userId), newUser.email);
-    console.log('Redis Write: SET', REDIS_KEYS.USER_PASSWORD_HASH(userId), newUser.passwordHash);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_PASSWORD_HASH(userId),
+      newUser.passwordHash
+    );
     multi.set(REDIS_KEYS.USER_PASSWORD_HASH(userId), newUser.passwordHash);
-    console.log('Redis Write: SET', REDIS_KEYS.USER_ROLE(userId), newUser.role);
+    console.log("Redis Write: SET", REDIS_KEYS.USER_ROLE(userId), newUser.role);
     multi.set(REDIS_KEYS.USER_ROLE(userId), newUser.role);
-    console.log('Redis Write: SET', REDIS_KEYS.USER_CREATED_AT(userId), newUser.createdAt.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_CREATED_AT(userId),
+      newUser.createdAt.toString()
+    );
     multi.set(REDIS_KEYS.USER_CREATED_AT(userId), newUser.createdAt.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.USER_HAS_READER(userId), newUser.hasReader.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_HAS_READER(userId),
+      newUser.hasReader.toString()
+    );
     multi.set(REDIS_KEYS.USER_HAS_READER(userId), newUser.hasReader.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.USER_HAS_REPORTER(userId), newUser.hasReporter.toString());
-    multi.set(REDIS_KEYS.USER_HAS_REPORTER(userId), newUser.hasReporter.toString());
-    console.log('Redis Write: SET', REDIS_KEYS.USER_HAS_EDITOR(userId), newUser.hasEditor.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_HAS_REPORTER(userId),
+      newUser.hasReporter.toString()
+    );
+    multi.set(
+      REDIS_KEYS.USER_HAS_REPORTER(userId),
+      newUser.hasReporter.toString()
+    );
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_HAS_EDITOR(userId),
+      newUser.hasEditor.toString()
+    );
     multi.set(REDIS_KEYS.USER_HAS_EDITOR(userId), newUser.hasEditor.toString());
 
     // Create email to user ID mapping
-    console.log('Redis Write: SET', REDIS_KEYS.USER_BY_EMAIL(newUser.email), userId);
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_BY_EMAIL(newUser.email),
+      userId
+    );
     multi.set(REDIS_KEYS.USER_BY_EMAIL(newUser.email), userId);
 
     await multi.exec();
@@ -976,7 +1493,16 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getUserById(userId: string): Promise<User | null> {
-    const [email, passwordHash, role, createdAtStr, lastLoginAtStr, hasReaderStr, hasReporterStr, hasEditorStr] = await Promise.all([
+    const [
+      email,
+      passwordHash,
+      role,
+      createdAtStr,
+      lastLoginAtStr,
+      hasReaderStr,
+      hasReporterStr,
+      hasEditorStr
+    ] = await Promise.all([
       this.client.get(REDIS_KEYS.USER_EMAIL(userId)),
       this.client.get(REDIS_KEYS.USER_PASSWORD_HASH(userId)),
       this.client.get(REDIS_KEYS.USER_ROLE(userId)),
@@ -993,12 +1519,12 @@ export class RedisDataStorageService implements IDataStorageService {
       id: userId,
       email,
       passwordHash,
-      role: role as User['role'],
+      role: role as User["role"],
       createdAt: parseInt(createdAtStr),
       lastLoginAt: lastLoginAtStr ? parseInt(lastLoginAtStr) : undefined,
-      hasReader: hasReaderStr === 'true',
-      hasReporter: hasReporterStr === 'true',
-      hasEditor: hasEditorStr === 'true'
+      hasReader: hasReaderStr === "true",
+      hasReporter: hasReporterStr === "true",
+      hasEditor: hasEditorStr === "true"
     };
   }
 
@@ -1011,8 +1537,15 @@ export class RedisDataStorageService implements IDataStorageService {
 
   async updateUserLastLogin(userId: string): Promise<void> {
     const now = Date.now();
-    console.log('Redis Write: SET', REDIS_KEYS.USER_LAST_LOGIN_AT(userId), now.toString());
-    await this.client.set(REDIS_KEYS.USER_LAST_LOGIN_AT(userId), now.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.USER_LAST_LOGIN_AT(userId),
+      now.toString()
+    );
+    await this.client.set(
+      REDIS_KEYS.USER_LAST_LOGIN_AT(userId),
+      now.toString()
+    );
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -1036,29 +1569,29 @@ export class RedisDataStorageService implements IDataStorageService {
     const multi = this.client.multi();
 
     // Remove from users set
-    console.log('Redis Write: SREM', REDIS_KEYS.USERS, userId);
+    console.log("Redis Write: SREM", REDIS_KEYS.USERS, userId);
     multi.sRem(REDIS_KEYS.USERS, userId);
 
     // Delete user data
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_EMAIL(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_EMAIL(userId));
     multi.del(REDIS_KEYS.USER_EMAIL(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_PASSWORD_HASH(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_PASSWORD_HASH(userId));
     multi.del(REDIS_KEYS.USER_PASSWORD_HASH(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_ROLE(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_ROLE(userId));
     multi.del(REDIS_KEYS.USER_ROLE(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_CREATED_AT(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_CREATED_AT(userId));
     multi.del(REDIS_KEYS.USER_CREATED_AT(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_LAST_LOGIN_AT(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_LAST_LOGIN_AT(userId));
     multi.del(REDIS_KEYS.USER_LAST_LOGIN_AT(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_HAS_READER(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_HAS_READER(userId));
     multi.del(REDIS_KEYS.USER_HAS_READER(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_HAS_REPORTER(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_HAS_REPORTER(userId));
     multi.del(REDIS_KEYS.USER_HAS_REPORTER(userId));
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_HAS_EDITOR(userId));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_HAS_EDITOR(userId));
     multi.del(REDIS_KEYS.USER_HAS_EDITOR(userId));
 
     // Delete email mapping
-    console.log('Redis Write: DEL', REDIS_KEYS.USER_BY_EMAIL(user.email));
+    console.log("Redis Write: DEL", REDIS_KEYS.USER_BY_EMAIL(user.email));
     multi.del(REDIS_KEYS.USER_BY_EMAIL(user.email));
 
     await multi.exec();
@@ -1077,18 +1610,29 @@ export class RedisDataStorageService implements IDataStorageService {
 
   // Job status operations
   async setJobRunning(jobName: string, running: boolean): Promise<void> {
-    console.log('Redis Write: SET', REDIS_KEYS.JOB_RUNNING(jobName), running.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.JOB_RUNNING(jobName),
+      running.toString()
+    );
     await this.client.set(REDIS_KEYS.JOB_RUNNING(jobName), running.toString());
   }
 
   async getJobRunning(jobName: string): Promise<boolean> {
     const value = await this.client.get(REDIS_KEYS.JOB_RUNNING(jobName));
-    return value === 'true';
+    return value === "true";
   }
 
   async setJobLastRun(jobName: string, timestamp: number): Promise<void> {
-    console.log('Redis Write: SET', REDIS_KEYS.JOB_LAST_RUN(jobName), timestamp.toString());
-    await this.client.set(REDIS_KEYS.JOB_LAST_RUN(jobName), timestamp.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.JOB_LAST_RUN(jobName),
+      timestamp.toString()
+    );
+    await this.client.set(
+      REDIS_KEYS.JOB_LAST_RUN(jobName),
+      timestamp.toString()
+    );
   }
 
   async getJobLastRun(jobName: string): Promise<number | null> {
@@ -1097,8 +1641,15 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async setJobLastSuccess(jobName: string, timestamp: number): Promise<void> {
-    console.log('Redis Write: SET', REDIS_KEYS.JOB_LAST_SUCCESS(jobName), timestamp.toString());
-    await this.client.set(REDIS_KEYS.JOB_LAST_SUCCESS(jobName), timestamp.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.JOB_LAST_SUCCESS(jobName),
+      timestamp.toString()
+    );
+    await this.client.set(
+      REDIS_KEYS.JOB_LAST_SUCCESS(jobName),
+      timestamp.toString()
+    );
   }
 
   async getJobLastSuccess(jobName: string): Promise<number | null> {
@@ -1115,10 +1666,18 @@ export class RedisDataStorageService implements IDataStorageService {
   async setKpiValue(kpiName: string, value: number): Promise<void> {
     const multi = this.client.multi();
 
-    console.log('Redis Write: SET', REDIS_KEYS.KPI_VALUE(kpiName), value.toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.KPI_VALUE(kpiName),
+      value.toString()
+    );
     multi.set(REDIS_KEYS.KPI_VALUE(kpiName), value.toString());
 
-    console.log('Redis Write: SET', REDIS_KEYS.KPI_LAST_UPDATED(kpiName), Date.now().toString());
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.KPI_LAST_UPDATED(kpiName),
+      Date.now().toString()
+    );
     multi.set(REDIS_KEYS.KPI_LAST_UPDATED(kpiName), Date.now().toString());
 
     await multi.exec();

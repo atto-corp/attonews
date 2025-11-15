@@ -1,4 +1,4 @@
-import { Reporter } from '../models/types';
+import { Reporter } from "../models/types";
 
 export class AIPrompts {
   static generateStructuredArticlePrompts(
@@ -35,7 +35,8 @@ When generating the article, first scan the social media context for messages re
     articlesText: string,
     editorPrompt: string
   ): { systemPrompt: string; userPrompt: string } {
-    const systemPrompt = 'You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.';
+    const systemPrompt =
+      "You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.";
     const userPrompt = `Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below. Consider factors like timeliness, impact, audience interest, and editorial fit.
 
 Articles:

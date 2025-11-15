@@ -1,4 +1,4 @@
-import { TinyJetstream } from 'mbjc/tinyjetstream';
+import { TinyJetstream } from "mbjc/tinyjetstream";
 
 export interface BlueskyMessage {
   did: string;
@@ -6,14 +6,16 @@ export interface BlueskyMessage {
   time: number;
 }
 
-export async function fetchLatestMessages(n: number): Promise<BlueskyMessage[]> {
+export async function fetchLatestMessages(
+  n: number
+): Promise<BlueskyMessage[]> {
   const messages: BlueskyMessage[] = [];
   const jetstream = new TinyJetstream();
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       jetstream.stop();
-      reject(new Error('Timeout fetching messages'));
+      reject(new Error("Timeout fetching messages"));
     }, 30000); // 30 second timeout
 
     jetstream.onTweet = (e) => {

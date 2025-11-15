@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Event } from '../models/types';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Event } from "../models/types";
 
 interface SafeEvent {
   id: string;
@@ -20,7 +20,7 @@ interface SafeEvent {
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'reporter' | 'user';
+  role: "admin" | "editor" | "reporter" | "user";
   hasReader: boolean;
   hasReporter: boolean;
   hasEditor: boolean;
@@ -42,43 +42,43 @@ export default function EventsPage() {
 
   const fetchPublicEvents = async () => {
     try {
-      const response = await fetch('/api/events/public');
+      const response = await fetch("/api/events/public");
       if (!response.ok) {
-        throw new Error('Failed to fetch events');
+        throw new Error("Failed to fetch events");
       }
       const eventsData = await response.json();
       setPublicEvents(eventsData || []);
     } catch (err) {
-      console.error('Error fetching public events:', err);
+      console.error("Error fetching public events:", err);
       // Don't set error for public events, just log it
     }
   };
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         setLoading(false);
         return;
       }
 
-      const userResponse = await fetch('/api/auth/verify', {
+      const userResponse = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
         setCurrentUser(userData.user);
-        setIsAdmin(userData.user.role === 'admin');
+        setIsAdmin(userData.user.role === "admin");
 
-        if (userData.user.role === 'admin') {
+        if (userData.user.role === "admin") {
           await fetchAdminEvents(token);
         }
       }
     } catch (err) {
-      console.error('Auth check failed:', err);
+      console.error("Auth check failed:", err);
     } finally {
       setLoading(false);
     }
@@ -87,32 +87,34 @@ export default function EventsPage() {
   const fetchAdminEvents = async (token: string) => {
     try {
       setAdminLoading(true);
-      const eventsResponse = await fetch('/api/events', {
+      const eventsResponse = await fetch("/api/events", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (!eventsResponse.ok) {
-        throw new Error('Failed to fetch admin events');
+        throw new Error("Failed to fetch admin events");
       }
 
       const eventsData = await eventsResponse.json();
       setAdminEvents(eventsData.events || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch admin events');
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch admin events"
+      );
     } finally {
       setAdminLoading(false);
     }
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
 
@@ -121,29 +123,31 @@ export default function EventsPage() {
 
     try {
       setAdminLoading(true);
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        setError('Not authenticated');
+        setError("Not authenticated");
         return;
       }
 
-      const response = await fetch('/api/events/generate', {
-        method: 'POST',
+      const response = await fetch("/api/events/generate", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate events');
+        throw new Error("Failed to generate events");
       }
 
       // Refresh both public and admin events
       await fetchPublicEvents();
       await fetchAdminEvents(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate events');
+      setError(
+        err instanceof Error ? err.message : "Failed to generate events"
+      );
       setAdminLoading(false);
     }
   };
@@ -153,32 +157,36 @@ export default function EventsPage() {
 
     try {
       setAdminLoading(true);
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        setError('Not authenticated');
+        setError("Not authenticated");
         return;
       }
 
-      const response = await fetch('/api/articles/generate-from-events', {
-        method: 'POST',
+      const response = await fetch("/api/articles/generate-from-events", {
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate articles from events');
+        throw new Error("Failed to generate articles from events");
       }
 
       const result = await response.json();
-      console.log('Articles generated from events:', result);
+      console.log("Articles generated from events:", result);
 
       // Refresh events (articles are generated from events, so events remain the same)
       await fetchPublicEvents();
       if (token) await fetchAdminEvents(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate articles from events');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to generate articles from events"
+      );
       setAdminLoading(false);
     }
   };
@@ -189,7 +197,10 @@ export default function EventsPage() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
 
         <div className="text-center relative z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
@@ -204,7 +215,10 @@ export default function EventsPage() {
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+        style={{ animationDelay: "1s" }}
+      ></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 space-y-8">
         {/* Explanatory Box */}
@@ -212,8 +226,9 @@ export default function EventsPage() {
           <div className="text-center">
             <h2 className="text-xl font-bold text-white mb-4">Latest Events</h2>
             <p className="text-white/80 mb-4">
-              Events are regularly updated from Bluesky messages and social media data.
-              Our reporters use these events as the foundation for writing their articles.
+              Events are regularly updated from Bluesky messages and social
+              media data. Our reporters use these events as the foundation for
+              writing their articles.
             </p>
             <Link
               href="/pricing"
@@ -226,22 +241,29 @@ export default function EventsPage() {
 
         {/* Public Events Grid */}
         <div className="backdrop-blur-xl bg-white/10 rounded-2xl shadow-2xl border border-white/20 p-6">
-          <h3 className="text-lg font-semibold text-white mb-6">Recent Events</h3>
+          <h3 className="text-lg font-semibold text-white mb-6">
+            Recent Events
+          </h3>
           {publicEvents.length > 0 ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {publicEvents.map((event) => (
-                <div key={event.id} className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors duration-200">
-                   <h4 className="text-sm font-medium text-white mb-2">{event.title}</h4>
+                <div
+                  key={event.id}
+                  className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-colors duration-200"
+                >
+                  <h4 className="text-sm font-medium text-white mb-2">
+                    {event.title}
+                  </h4>
                   <div className="text-xs text-white/60 mb-2">
                     Updated: {formatDate(event.updatedTime)}
                   </div>
-                    {event.facts.length > 0 && (
-                      <div className="text-xs text-white/70">
-                        {event.facts.map((fact, index) => (
-                          <div key={index}>• {fact}</div>
-                        ))}
-                      </div>
-                    )}
+                  {event.facts.length > 0 && (
+                    <div className="text-xs text-white/70">
+                      {event.facts.map((fact, index) => (
+                        <div key={index}>• {fact}</div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -257,7 +279,9 @@ export default function EventsPage() {
           <div className="backdrop-blur-xl bg-white/10 rounded-2xl shadow-2xl border border-white/20">
             <div className="px-6 py-4 border-b border-white/20 flex justify-between items-center">
               <div>
-                <h1 className="text-2xl font-bold text-white">Event Management</h1>
+                <h1 className="text-2xl font-bold text-white">
+                  Event Management
+                </h1>
                 <p className="mt-1 text-sm text-white/80">
                   View and manage all tracked events in the system
                 </p>
@@ -277,7 +301,9 @@ export default function EventsPage() {
                   className="group relative inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
-                  <span className="relative">Generate Articles from Events</span>
+                  <span className="relative">
+                    Generate Articles from Events
+                  </span>
                 </button>
               </div>
             </div>
@@ -304,20 +330,25 @@ export default function EventsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">
                       When
                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">
-                       Social Media Messages
-                     </th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">
-                       Details
-                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">
+                      Social Media Messages
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white/70 uppercase tracking-wider">
+                      Details
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="backdrop-blur-xl bg-white/5 divide-y divide-white/10">
                   {adminEvents.map((event) => (
-                    <tr key={event.id} className="hover:bg-white/5 transition-colors duration-200">
+                    <tr
+                      key={event.id}
+                      className="hover:bg-white/5 transition-colors duration-200"
+                    >
                       <td className="px-6 py-4 text-sm font-medium text-white">
                         <div className="font-semibold">{event.title}</div>
-                        <div className="text-xs text-white/60 mt-1">ID: {event.id}</div>
+                        <div className="text-xs text-white/60 mt-1">
+                          ID: {event.id}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-white/70 w-1/3 text-center">
                         <div className="space-y-1">
@@ -329,29 +360,34 @@ export default function EventsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-white/70">
-                        {event.where || '-'}
+                        {event.where || "-"}
                       </td>
-                       <td className="px-6 py-4 text-sm text-white/70">
-                         {event.when || '-'}
-                       </td>
-                       <td className="px-6 py-4 text-sm text-white/70">
-                         {event.messageTexts && event.messageTexts.length > 0 ? (
-                           <div className="space-y-1 max-h-32 overflow-y-auto">
-                             {event.messageTexts.map((text, index) => (
-                               <div key={index} className="text-xs bg-black/20 p-2 rounded">
-                                 {text}
-                               </div>
-                             ))}
-                           </div>
-                         ) : (
-                           <span className="text-white/50">No messages</span>
-                         )}
-                       </td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm text-white/70">
-                         Reporter: {event.reporterId}<br/>
-                         Created: {formatDate(event.createdTime)}<br/>
-                         Updated: {formatDate(event.updatedTime)}
-                       </td>
+                      <td className="px-6 py-4 text-sm text-white/70">
+                        {event.when || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-white/70">
+                        {event.messageTexts && event.messageTexts.length > 0 ? (
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {event.messageTexts.map((text, index) => (
+                              <div
+                                key={index}
+                                className="text-xs bg-black/20 p-2 rounded"
+                              >
+                                {text}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-white/50">No messages</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white/70">
+                        Reporter: {event.reporterId}
+                        <br />
+                        Created: {formatDate(event.createdTime)}
+                        <br />
+                        Updated: {formatDate(event.updatedTime)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -361,7 +397,10 @@ export default function EventsPage() {
             {adminEvents.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-white/70">No events found</p>
-                <p className="text-white/50 text-sm mt-2">Click "Generate Events" to create new events from recent social media data</p>
+                <p className="text-white/50 text-sm mt-2">
+                  Click "Generate Events" to create new events from recent
+                  social media data
+                </p>
               </div>
             )}
           </div>

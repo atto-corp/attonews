@@ -1,6 +1,6 @@
-import { Reporter, Article, Event } from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
-import { AIService } from './ai.service';
+import { Reporter, Article, Event } from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
+import { AIService } from "./ai.service";
 
 export class ReporterService {
   constructor(
@@ -20,7 +20,7 @@ export class ReporterService {
     // Get editor configuration for model settings
     const editor = await this.dataStorageService.getEditor();
     if (!editor) {
-      throw new Error('Editor configuration not found');
+      throw new Error("Editor configuration not found");
     }
 
     const numArticles = 1;
@@ -28,20 +28,40 @@ export class ReporterService {
 
     for (let i = 0; i < numArticles; i++) {
       try {
-        const structuredArticle = await this.aiService.generateStructuredArticle(reporter, editor.articleModelName);
+        const structuredArticle =
+          await this.aiService.generateStructuredArticle(
+            reporter,
+            editor.articleModelName
+          );
 
         // Check if messageIds is empty - if so, skip generating and saving this article
-        if (!structuredArticle.response.messageIds || structuredArticle.response.messageIds.length === 0) {
-          console.log(`Skipping article generation for reporter ${reporterId} - no messageIds returned`);
+        if (
+          !structuredArticle.response.messageIds ||
+          structuredArticle.response.messageIds.length === 0
+        ) {
+          console.log(
+            `Skipping article generation for reporter ${reporterId} - no messageIds returned`
+          );
           continue;
         }
 
         // Extract message texts for the used message IDs
         const messageTexts: string[] = [];
-        if (structuredArticle.response.messageIds && structuredArticle.response.messageIds.length > 0) {
-          console.log(`Article used message IDs: ${structuredArticle.response.messageIds.join(', ')}`);
-          const ids = [...(new Set(structuredArticle.response.messageIds).union(new Set(structuredArticle.response.potentialMessageIds)))];
-          ids.forEach(x => messageTexts.push(structuredArticle.messages[x-1])); // -1 because ai service does a +1
+        if (
+          structuredArticle.response.messageIds &&
+          structuredArticle.response.messageIds.length > 0
+        ) {
+          console.log(
+            `Article used message IDs: ${structuredArticle.response.messageIds.join(", ")}`
+          );
+          const ids = [
+            ...new Set(structuredArticle.response.messageIds).union(
+              new Set(structuredArticle.response.potentialMessageIds)
+            )
+          ];
+          ids.forEach((x) =>
+            messageTexts.push(structuredArticle.messages[x - 1])
+          ); // -1 because ai service does a +1
         }
 
         // Convert structured article to simple Article format for storage
@@ -59,7 +79,10 @@ export class ReporterService {
         articles.push(article);
         console.log(`Generated article: "${article.headline}"`);
       } catch (error) {
-        console.error(`Failed to generate article ${i + 1} for reporter ${reporterId}:`, error);
+        console.error(
+          `Failed to generate article ${i + 1} for reporter ${reporterId}:`,
+          error
+        );
       }
     }
 
@@ -72,21 +95,25 @@ export class ReporterService {
     return articles;
   }
 
-  async generateAllReporterArticles(): Promise<{ [reporterId: string]: Article[] }> {
-    console.log('Starting article generation for all reporters...');
+  async generateAllReporterArticles(): Promise<{
+    [reporterId: string]: Article[];
+  }> {
+    console.log("Starting article generation for all reporters...");
 
     // Get all reporters
     const reporters = await this.dataStorageService.getAllReporters();
     if (reporters.length === 0) {
-      throw new Error('No reporters available to generate articles');
+      throw new Error("No reporters available to generate articles");
     }
 
     // Filter to only enabled reporters
-    const enabledReporters = reporters.filter(reporter => reporter.enabled);
-    console.log(`Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`);
+    const enabledReporters = reporters.filter((reporter) => reporter.enabled);
+    console.log(
+      `Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`
+    );
 
     if (enabledReporters.length === 0) {
-      console.log('No enabled reporters available to generate articles');
+      console.log("No enabled reporters available to generate articles");
       return {};
     }
 
@@ -98,27 +125,56 @@ export class ReporterService {
         const articles = await this.generateArticlesForReporter(reporter.id);
         results[reporter.id] = articles;
       } catch (error) {
-        console.error(`Failed to generate articles for reporter ${reporter.id}:`, error);
+        console.error(
+          `Failed to generate articles for reporter ${reporter.id}:`,
+          error
+        );
         results[reporter.id] = [];
       }
     }
 
-    const totalArticles = Object.values(results).reduce((sum, articles) => sum + articles.length, 0);
-    console.log(`Generated ${totalArticles} articles across ${enabledReporters.length} enabled reporters`);
+    const totalArticles = Object.values(results).reduce(
+      (sum, articles) => sum + articles.length,
+      0
+    );
+    console.log(
+      `Generated ${totalArticles} articles across ${enabledReporters.length} enabled reporters`
+    );
 
     return results;
   }
 
-  async getReporterArticles(reporterId: string, limit?: number): Promise<Article[]> {
-    return await this.dataStorageService.getArticlesByReporter(reporterId, limit);
+  async getReporterArticles(
+    reporterId: string,
+    limit?: number
+  ): Promise<Article[]> {
+    return await this.dataStorageService.getArticlesByReporter(
+      reporterId,
+      limit
+    );
   }
 
-  async getAllReporterStats(): Promise<{ [reporterId: string]: { reporter: Reporter; articleCount: number; latestArticle?: Article } }> {
+  async getAllReporterStats(): Promise<{
+    [reporterId: string]: {
+      reporter: Reporter;
+      articleCount: number;
+      latestArticle?: Article;
+    };
+  }> {
     const reporters = await this.dataStorageService.getAllReporters();
-    const stats: { [reporterId: string]: { reporter: Reporter; articleCount: number; latestArticle?: Article } } = {};
+    const stats: {
+      [reporterId: string]: {
+        reporter: Reporter;
+        articleCount: number;
+        latestArticle?: Article;
+      };
+    } = {};
 
     for (const reporter of reporters) {
-      const articles = await this.dataStorageService.getArticlesByReporter(reporter.id, 1);
+      const articles = await this.dataStorageService.getArticlesByReporter(
+        reporter.id,
+        1
+      );
       stats[reporter.id] = {
         reporter,
         articleCount: await this.getArticleCountForReporter(reporter.id),
@@ -129,14 +185,17 @@ export class ReporterService {
     return stats;
   }
 
-  private async getArticleCountForReporter(reporterId: string): Promise<number> {
+  private async getArticleCountForReporter(
+    reporterId: string
+  ): Promise<number> {
     // This is a simplified count - in a real implementation, you might want to cache this
-    const articles = await this.dataStorageService.getArticlesByReporter(reporterId);
+    const articles =
+      await this.dataStorageService.getArticlesByReporter(reporterId);
     return articles.length;
   }
 
-  async createReporter(reporterData: Omit<Reporter, 'id'>): Promise<Reporter> {
-    const reporterId = await this.dataStorageService.generateId('reporter');
+  async createReporter(reporterData: Omit<Reporter, "id">): Promise<Reporter> {
+    const reporterId = await this.dataStorageService.generateId("reporter");
     const reporter: Reporter = {
       id: reporterId,
       ...reporterData,
@@ -144,13 +203,19 @@ export class ReporterService {
     };
 
     await this.dataStorageService.saveReporter(reporter);
-    console.log(`Created new reporter: ${reporterId} (${reporter.beats.join(', ')})`);
+    console.log(
+      `Created new reporter: ${reporterId} (${reporter.beats.join(", ")})`
+    );
 
     return reporter;
   }
 
-  async updateReporter(reporterId: string, updates: Partial<Omit<Reporter, 'id'>>): Promise<Reporter | null> {
-    const existingReporter = await this.dataStorageService.getReporter(reporterId);
+  async updateReporter(
+    reporterId: string,
+    updates: Partial<Omit<Reporter, "id">>
+  ): Promise<Reporter | null> {
+    const existingReporter =
+      await this.dataStorageService.getReporter(reporterId);
     if (!existingReporter) {
       return null;
     }
@@ -177,7 +242,7 @@ export class ReporterService {
     // The articles will remain but become orphaned
 
     const reporters = await this.dataStorageService.getAllReporters();
-    const updatedReporters = reporters.filter(r => r.id !== reporterId);
+    const updatedReporters = reporters.filter((r) => r.id !== reporterId);
 
     // Clear and repopulate the reporters set
     // This is a simplified approach - in production, you'd want atomic operations
@@ -204,17 +269,28 @@ export class ReporterService {
     // Get editor configuration for model settings
     const editor = await this.dataStorageService.getEditor();
     if (!editor) {
-      throw new Error('Editor configuration not found');
+      throw new Error("Editor configuration not found");
     }
 
-    console.log(`Reporter ${reporterId}: Generating events for beats: ${reporter.beats.join(', ')}`);
+    console.log(
+      `Reporter ${reporterId}: Generating events for beats: ${reporter.beats.join(", ")}`
+    );
 
     // Get last 5 events for this reporter
-    const lastEvents = await this.dataStorageService.getEventsByReporter(reporterId, 5);
-    console.log(`Reporter ${reporterId}: Found ${lastEvents.length} previous events`);
+    const lastEvents = await this.dataStorageService.getEventsByReporter(
+      reporterId,
+      5
+    );
+    console.log(
+      `Reporter ${reporterId}: Found ${lastEvents.length} previous events`
+    );
 
     // Generate events using AI service
-    const eventGenerationResult = await this.aiService.generateEvents(reporter, lastEvents, editor.eventModelName);
+    const eventGenerationResult = await this.aiService.generateEvents(
+      reporter,
+      lastEvents,
+      editor.eventModelName
+    );
 
     const generatedEvents: Event[] = [];
     const now = Date.now();
@@ -224,19 +300,31 @@ export class ReporterService {
         // Extract message texts for the used message IDs
         const messageTexts: string[] = [];
         if (aiEvent.messageIds && aiEvent.messageIds.length > 0) {
-          console.log(`Event used message IDs: ${aiEvent.messageIds.join(', ')}`);
-          const ids = [...(new Set(aiEvent.messageIds).union(new Set(aiEvent.potentialMessageIds || [])))];
-          ids.forEach(x => messageTexts.push(eventGenerationResult.messages[x-1])); // -1 because ai service does a +1
+          console.log(
+            `Event used message IDs: ${aiEvent.messageIds.join(", ")}`
+          );
+          const ids = [
+            ...new Set(aiEvent.messageIds).union(
+              new Set(aiEvent.potentialMessageIds || [])
+            )
+          ];
+          ids.forEach((x) =>
+            messageTexts.push(eventGenerationResult.messages[x - 1])
+          ); // -1 because ai service does a +1
         }
 
         if (aiEvent.index) {
           // Update existing event with new facts
           const previousEventId = lastEvents[aiEvent.index - 1].id;
           console.log(`Updating existing event: ${previousEventId}`);
-          await this.dataStorageService.updateEventFacts(previousEventId, aiEvent.facts);
+          await this.dataStorageService.updateEventFacts(
+            previousEventId,
+            aiEvent.facts
+          );
 
           // Update message data and location/timing for existing event
-          const existingEvent = await this.dataStorageService.getEvent(previousEventId);
+          const existingEvent =
+            await this.dataStorageService.getEvent(previousEventId);
           if (existingEvent) {
             const updatedEvent: Event = {
               ...existingEvent,
@@ -252,7 +340,7 @@ export class ReporterService {
           }
         } else {
           // Create new event
-          const eventId = await this.dataStorageService.generateId('event');
+          const eventId = await this.dataStorageService.generateId("event");
           const newEvent: Event = {
             id: eventId,
             reporterId,
@@ -271,32 +359,43 @@ export class ReporterService {
 
           await this.dataStorageService.saveEvent(newEvent);
           generatedEvents.push(newEvent);
-          console.log(`Created new event: ${eventId} with title "${aiEvent.title}" and ${aiEvent.facts.length} facts`);
+          console.log(
+            `Created new event: ${eventId} with title "${aiEvent.title}" and ${aiEvent.facts.length} facts`
+          );
         }
       } catch (error) {
-        console.error(`Failed to process event for reporter ${reporterId}:`, error);
+        console.error(
+          `Failed to process event for reporter ${reporterId}:`,
+          error
+        );
       }
     }
 
-    console.log(`Reporter ${reporterId}: Processed ${eventGenerationResult.events.length} events (${generatedEvents.length} new, ${eventGenerationResult.events.length - generatedEvents.length} updated)`);
+    console.log(
+      `Reporter ${reporterId}: Processed ${eventGenerationResult.events.length} events (${generatedEvents.length} new, ${eventGenerationResult.events.length - generatedEvents.length} updated)`
+    );
     return generatedEvents;
   }
 
-  async generateAllReporterEvents(): Promise<{ [reporterId: string]: Event[] }> {
-    console.log('Starting event generation for all reporters...');
+  async generateAllReporterEvents(): Promise<{
+    [reporterId: string]: Event[];
+  }> {
+    console.log("Starting event generation for all reporters...");
 
     // Get all reporters
     const reporters = await this.dataStorageService.getAllReporters();
     if (reporters.length === 0) {
-      throw new Error('No reporters available to generate events');
+      throw new Error("No reporters available to generate events");
     }
 
     // Filter to only enabled reporters
-    const enabledReporters = reporters.filter(reporter => reporter.enabled);
-    console.log(`Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`);
+    const enabledReporters = reporters.filter((reporter) => reporter.enabled);
+    console.log(
+      `Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`
+    );
 
     if (enabledReporters.length === 0) {
-      console.log('No enabled reporters available to generate events');
+      console.log("No enabled reporters available to generate events");
       return {};
     }
 
@@ -308,42 +407,61 @@ export class ReporterService {
         const events = await this.generateEventsForReporter(reporter.id);
         results[reporter.id] = events;
       } catch (error) {
-        console.error(`Failed to generate events for reporter ${reporter.id}:`, error);
+        console.error(
+          `Failed to generate events for reporter ${reporter.id}:`,
+          error
+        );
         results[reporter.id] = [];
       }
     }
 
-    const totalEvents = Object.values(results).reduce((sum, events) => sum + events.length, 0);
-    console.log(`Generated ${totalEvents} events across ${enabledReporters.length} enabled reporters`);
+    const totalEvents = Object.values(results).reduce(
+      (sum, events) => sum + events.length,
+      0
+    );
+    console.log(
+      `Generated ${totalEvents} events across ${enabledReporters.length} enabled reporters`
+    );
 
     return results;
   }
 
-  async getReporterEvents(reporterId: string, limit?: number): Promise<Event[]> {
+  async getReporterEvents(
+    reporterId: string,
+    limit?: number
+  ): Promise<Event[]> {
     return await this.dataStorageService.getEventsByReporter(reporterId, limit);
   }
 
-  async generateArticlesFromEvents(): Promise<{ [reporterId: string]: Article[] }> {
-    console.log('Starting article generation from events for all reporters...');
+  async generateArticlesFromEvents(): Promise<{
+    [reporterId: string]: Article[];
+  }> {
+    console.log("Starting article generation from events for all reporters...");
 
     // Get editor configuration for model settings
     const editor = await this.dataStorageService.getEditor();
     if (!editor) {
-      throw new Error('Editor configuration not found');
+      throw new Error("Editor configuration not found");
     }
 
     // Get all reporters
     const reporters = await this.dataStorageService.getAllReporters();
     if (reporters.length === 0) {
-      throw new Error('No reporters available to generate articles from events');
+      throw new Error(
+        "No reporters available to generate articles from events"
+      );
     }
 
     // Filter to only enabled reporters
-    const enabledReporters = reporters.filter(reporter => reporter.enabled);
-    console.log(`Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`);
+    const enabledReporters = reporters.filter((reporter) => reporter.enabled);
+    console.log(
+      `Found ${reporters.length} total reporters, ${enabledReporters.length} enabled`
+    );
 
     if (enabledReporters.length === 0) {
-      console.log('No enabled reporters available to generate articles from events');
+      console.log(
+        "No enabled reporters available to generate articles from events"
+      );
       return {};
     }
 
@@ -352,21 +470,43 @@ export class ReporterService {
     // Generate articles from events for each enabled reporter
     for (const reporter of enabledReporters) {
       try {
-        const structuredArticle = await this.aiService.generateArticlesFromEvents(reporter, editor.articleModelName);
-        if (!structuredArticle) { continue; } // no article generated, that's fine
+        const structuredArticle =
+          await this.aiService.generateArticlesFromEvents(
+            reporter,
+            editor.articleModelName
+          );
+        if (!structuredArticle) {
+          continue;
+        } // no article generated, that's fine
 
         // Check if messageIds is empty - if so, skip generating and saving this article
-        if (!structuredArticle.response.messageIds || structuredArticle.response.messageIds.length === 0) {
-          console.log(`Skipping article generation from events for reporter ${reporter.id} - no messageIds returned`);
+        if (
+          !structuredArticle.response.messageIds ||
+          structuredArticle.response.messageIds.length === 0
+        ) {
+          console.log(
+            `Skipping article generation from events for reporter ${reporter.id} - no messageIds returned`
+          );
           continue;
         }
 
         // Extract message texts for the used message IDs
         const messageTexts: string[] = [];
-        if (structuredArticle.response.messageIds && structuredArticle.response.messageIds.length > 0) {
-          console.log(`Article used message IDs: ${structuredArticle.response.messageIds.join(', ')}`);
-          const ids = [...(new Set(structuredArticle.response.messageIds).union(new Set(structuredArticle.response.potentialMessageIds)))];
-          ids.forEach(x => messageTexts.push(structuredArticle.messages[x-1])); // -1 because ai service does a +1
+        if (
+          structuredArticle.response.messageIds &&
+          structuredArticle.response.messageIds.length > 0
+        ) {
+          console.log(
+            `Article used message IDs: ${structuredArticle.response.messageIds.join(", ")}`
+          );
+          const ids = [
+            ...new Set(structuredArticle.response.messageIds).union(
+              new Set(structuredArticle.response.potentialMessageIds)
+            )
+          ];
+          ids.forEach((x) =>
+            messageTexts.push(structuredArticle.messages[x - 1])
+          ); // -1 because ai service does a +1
         }
 
         // Convert structured article to simple Article format for storage
@@ -384,15 +524,25 @@ export class ReporterService {
 
         await this.dataStorageService.saveArticle(article);
         results[reporter.id] = [article];
-        console.log(`Generated article from events: "${article.headline}" for reporter ${reporter.id}`);
+        console.log(
+          `Generated article from events: "${article.headline}" for reporter ${reporter.id}`
+        );
       } catch (error) {
-        console.error(`Failed to generate article from events for reporter ${reporter.id}:`, error);
+        console.error(
+          `Failed to generate article from events for reporter ${reporter.id}:`,
+          error
+        );
         results[reporter.id] = [];
       }
     }
 
-    const totalArticles = Object.values(results).reduce((sum, articles) => sum + articles.length, 0);
-    console.log(`Generated ${totalArticles} articles from events across ${enabledReporters.length} enabled reporters`);
+    const totalArticles = Object.values(results).reduce(
+      (sum, articles) => sum + articles.length,
+      0
+    );
+    console.log(
+      `Generated ${totalArticles} articles from events across ${enabledReporters.length} enabled reporters`
+    );
 
     return results;
   }

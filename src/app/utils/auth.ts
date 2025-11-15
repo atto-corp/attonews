@@ -1,19 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { User } from '../models/types';
-import { IDataStorageService } from '../services/data-storage.interface';
-import { AuthService } from '../services/auth.service';
-import { AbilitiesService } from '../services/abilities.service';
-import { ServiceContainer } from '../services/service-container';
+import { NextRequest, NextResponse } from "next/server";
+import { User } from "../models/types";
+import { IDataStorageService } from "../services/data-storage.interface";
+import { AuthService } from "../services/auth.service";
+import { AbilitiesService } from "../services/abilities.service";
+import { ServiceContainer } from "../services/service-container";
 
-type PermissionType = 'reader' | 'reporter' | 'editor';
+type PermissionType = "reader" | "reporter" | "editor";
 
 interface WithAuthOptions {
-  requiredRole?: 'admin';
+  requiredRole?: "admin";
   requiredPermission?: PermissionType;
 }
 
 export function withAuth(
-  handler: (request: NextRequest, user: User, dataStorage: IDataStorageService, context?: any) => Promise<NextResponse>,
+  handler: (
+    request: NextRequest,
+    user: User,
+    dataStorage: IDataStorageService,
+    context?: any
+  ) => Promise<NextResponse>,
   options: WithAuthOptions = {}
 ) {
   return async (request: NextRequest, context?: any): Promise<NextResponse> => {
@@ -23,10 +28,10 @@ export function withAuth(
     const abilitiesService = await container.getAbilitiesService();
 
     try {
-      const authHeader = request.headers.get('authorization');
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      const authHeader = request.headers.get("authorization");
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return NextResponse.json(
-          { error: 'Authorization token required' },
+          { error: "Authorization token required" },
           { status: 401 }
         );
       }
@@ -36,7 +41,7 @@ export function withAuth(
       const user = await authService.getUserFromToken(token);
       if (!user) {
         return NextResponse.json(
-          { error: 'Invalid or expired token' },
+          { error: "Invalid or expired token" },
           { status: 401 }
         );
       }
@@ -55,13 +60,13 @@ export function withAuth(
       if (options.requiredPermission) {
         let hasPermission = false;
         switch (options.requiredPermission) {
-          case 'reader':
+          case "reader":
             hasPermission = abilitiesService.userIsReader(user);
             break;
-          case 'reporter':
+          case "reporter":
             hasPermission = abilitiesService.userIsReporter(user);
             break;
-          case 'editor':
+          case "editor":
             hasPermission = abilitiesService.userIsEditor(user);
             break;
         }
@@ -75,9 +80,9 @@ export function withAuth(
 
       return await handler(request, user, dataStorage, context);
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      console.error("Auth middleware error:", error);
       return NextResponse.json(
-        { error: 'Internal server error' },
+        { error: "Internal server error" },
         { status: 500 }
       );
     }

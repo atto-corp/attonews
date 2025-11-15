@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface Article {
   id: string;
@@ -20,10 +20,10 @@ export default function ArticlePage() {
   const articleId = params.id as string;
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showPrompt, setShowPrompt] = useState(false);
   const [showMessages, setShowMessages] = useState(false);
-  const [appName, setAppName] = useState('Newsroom');
+  const [appName, setAppName] = useState("Newsroom");
 
   const fetchArticle = useCallback(async () => {
     try {
@@ -32,13 +32,13 @@ export default function ArticlePage() {
         const data = await response.json();
         setArticle(data);
       } else if (response.status === 404) {
-        setError('Article not found');
+        setError("Article not found");
       } else {
-        setError('Failed to load article');
+        setError("Failed to load article");
       }
     } catch (error) {
-      setError('Error loading article');
-      console.error('Error fetching article:', error);
+      setError("Error loading article");
+      console.error("Error fetching article:", error);
     } finally {
       setLoading(false);
     }
@@ -54,25 +54,25 @@ export default function ArticlePage() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config');
+        const response = await fetch("/api/config");
         if (response.ok) {
           const config = await response.json();
           setAppName(config.app.name);
         }
       } catch (error) {
-        console.error('Failed to load config:', error);
+        console.error("Failed to load config:", error);
       }
     };
     loadConfig();
   }, []);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
 
@@ -89,11 +89,23 @@ export default function ArticlePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-slate-800 mb-2">Error Loading Article</h2>
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">
+            Error Loading Article
+          </h2>
           <p className="text-slate-600">{error}</p>
           <Link
             href="/articles"
@@ -120,7 +132,7 @@ export default function ArticlePage() {
               Article Details
             </h1>
             <p className="text-slate-600 text-lg">
-              Reporter {article.reporterId.split('_')[2] || article.reporterId}
+              Reporter {article.reporterId.split("_")[2] || article.reporterId}
             </p>
           </div>
           <div className="flex items-center space-x-4">
@@ -140,8 +152,18 @@ export default function ArticlePage() {
               {article.headline}
             </h2>
             <div className="flex items-center text-sm text-slate-500">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               {formatDate(article.generationTime)}
             </div>
@@ -161,25 +183,41 @@ export default function ArticlePage() {
                 className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
               >
                 <svg
-                  className={`w-4 h-4 mr-2 transition-transform ${showMessages ? 'rotate-90' : ''}`}
+                  className={`w-4 h-4 mr-2 transition-transform ${showMessages ? "rotate-90" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
-                {showMessages ? 'Hide Source Messages' : `Show Source Messages (${article.messageTexts.length})`}
+                {showMessages
+                  ? "Hide Source Messages"
+                  : `Show Source Messages (${article.messageTexts.length})`}
               </button>
 
               {showMessages && (
                 <div className="mt-4 space-y-4">
-                  <h4 className="text-sm font-semibold text-slate-700">Social Media Messages Used:</h4>
+                  <h4 className="text-sm font-semibold text-slate-700">
+                    Social Media Messages Used:
+                  </h4>
                   {article.messageTexts.map((message, index) => (
-                    <div key={index} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div
+                      key={index}
+                      className="p-4 bg-slate-50 rounded-lg border border-slate-200"
+                    >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">Message {index + 1}</span>
+                        <span className="text-xs font-medium text-slate-500">
+                          Message {index + 1}
+                        </span>
                         {article.messageIds && article.messageIds[index] && (
-                          <span className="text-xs text-slate-400">ID: {article.messageIds[index]}</span>
+                          <span className="text-xs text-slate-400">
+                            ID: {article.messageIds[index]}
+                          </span>
                         )}
                       </div>
                       <div className="text-sm text-slate-700 whitespace-pre-wrap">
@@ -199,29 +237,47 @@ export default function ArticlePage() {
               className="flex items-center text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
             >
               <svg
-                className={`w-4 h-4 mr-2 transition-transform ${showPrompt ? 'rotate-90' : ''}`}
+                className={`w-4 h-4 mr-2 transition-transform ${showPrompt ? "rotate-90" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
-              {showPrompt ? 'Hide Prompt' : 'Show Prompt'}
+              {showPrompt ? "Hide Prompt" : "Show Prompt"}
             </button>
 
             {showPrompt && (
-               <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                 <div className="flex items-center gap-2 mb-2 relative group">
-                   <h4 className="text-sm font-semibold text-slate-700">AI Generation Prompt:</h4>
-                   <div className="relative group">
-                     <svg className="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                     </svg>
-                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                       To ensure full journalistic transparency, this is the exact prompt given to the AI model to generate this article. This allows the user to verify that no funny business has taken place.
-                     </div>
-                   </div>
-                 </div>
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="flex items-center gap-2 mb-2 relative group">
+                  <h4 className="text-sm font-semibold text-slate-700">
+                    AI Generation Prompt:
+                  </h4>
+                  <div className="relative group">
+                    <svg
+                      className="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-help"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                      To ensure full journalistic transparency, this is the
+                      exact prompt given to the AI model to generate this
+                      article. This allows the user to verify that no funny
+                      business has taken place.
+                    </div>
+                  </div>
+                </div>
                 <pre className="text-xs text-slate-600 whitespace-pre-wrap font-mono leading-relaxed">
                   {article.prompt}
                 </pre>

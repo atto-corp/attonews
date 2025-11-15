@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 import {
   Editor,
   Reporter,
@@ -8,22 +8,23 @@ import {
   Event,
   AdEntry,
   User
-} from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
+} from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
 
 export class PostgreSQLDataStorageService implements IDataStorageService {
   private pool: Pool;
 
   constructor() {
     this.pool = new Pool({
-      connectionString: process.env.POSTGRES_URL || 'postgresql://localhost:5432/newsroom',
+      connectionString:
+        process.env.POSTGRES_URL || "postgresql://localhost:5432/newsroom",
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 2000
     });
 
-    this.pool.on('error', (err: Error) => {
-      console.error('PostgreSQL Pool Error:', err);
+    this.pool.on("error", (err: Error) => {
+      console.error("PostgreSQL Pool Error:", err);
     });
   }
 
@@ -31,27 +32,27 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     try {
       // Test connection
       const client = await this.pool.connect();
-      console.log('Connected to PostgreSQL');
+      console.log("Connected to PostgreSQL");
       client.release();
 
       // Create tables if they don't exist
       await this.createTables();
     } catch (error) {
-      console.error('Failed to connect to PostgreSQL:', error);
+      console.error("Failed to connect to PostgreSQL:", error);
       throw error;
     }
   }
 
   async disconnect(): Promise<void> {
     await this.pool.end();
-    console.log('Disconnected from PostgreSQL');
+    console.log("Disconnected from PostgreSQL");
   }
 
   private async createTables(): Promise<void> {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       // Create editors table
       await client.query(`
@@ -200,16 +201,28 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       `);
 
       // Create indexes
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_articles_reporter_time ON articles(reporter_id, generation_time DESC)`);
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_events_reporter_created ON events(reporter_id, created_time DESC)`);
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_newspaper_editions_time ON newspaper_editions(generation_time DESC)`);
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_daily_editions_time ON daily_editions(generation_time DESC)`);
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-      await client.query(`CREATE INDEX IF NOT EXISTS idx_ads_user ON ads(user_id)`);
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_articles_reporter_time ON articles(reporter_id, generation_time DESC)`
+      );
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_events_reporter_created ON events(reporter_id, created_time DESC)`
+      );
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_newspaper_editions_time ON newspaper_editions(generation_time DESC)`
+      );
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_daily_editions_time ON daily_editions(generation_time DESC)`
+      );
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`
+      );
+      await client.query(
+        `CREATE INDEX IF NOT EXISTS idx_ads_user ON ads(user_id)`
+      );
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
@@ -278,7 +291,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM editors LIMIT 1');
+      const result = await client.query("SELECT * FROM editors LIMIT 1");
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -319,7 +332,12 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           enabled = EXCLUDED.enabled
       `;
 
-      await client.query(query, [reporter.id, JSON.stringify(reporter.beats), reporter.prompt, reporter.enabled]);
+      await client.query(query, [
+        reporter.id,
+        JSON.stringify(reporter.beats),
+        reporter.prompt,
+        reporter.enabled
+      ]);
     } finally {
       client.release();
     }
@@ -329,7 +347,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM reporters');
+      const result = await client.query("SELECT * FROM reporters");
       return result.rows.map((row: any) => ({
         id: row.id,
         beats: row.beats,
@@ -345,7 +363,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM reporters WHERE id = $1', [id]);
+      const result = await client.query(
+        "SELECT * FROM reporters WHERE id = $1",
+        [id]
+      );
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -401,7 +422,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]> {
+  async getArticlesByReporter(
+    reporterId: string,
+    limit?: number
+  ): Promise<Article[]> {
     const client = await this.pool.connect();
 
     try {
@@ -409,25 +433,25 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         SELECT * FROM articles
         WHERE reporter_id = $1
         ORDER BY generation_time DESC
-        ${limit ? 'LIMIT $2' : ''}
+        ${limit ? "LIMIT $2" : ""}
       `;
 
       const values = limit ? [reporterId, limit] : [reporterId];
-       const result = await client.query(query, values);
+      const result = await client.query(query, values);
 
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         reporterId: row.reporter_id,
-         headline: row.headline,
-         body: row.body,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        headline: row.headline,
+        body: row.body,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
@@ -440,51 +464,58 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const query = `
         SELECT * FROM articles
         ORDER BY generation_time DESC
-        ${limit ? 'LIMIT $1' : ''}
+        ${limit ? "LIMIT $1" : ""}
       `;
 
-       const result = await client.query(query, limit ? [limit] : []);
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         reporterId: row.reporter_id,
-         headline: row.headline,
-         body: row.body,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      const result = await client.query(query, limit ? [limit] : []);
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        headline: row.headline,
+        body: row.body,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
   }
 
-  async getArticlesInTimeRange(reporterId: string, startTime: number, endTime: number): Promise<Article[]> {
+  async getArticlesInTimeRange(
+    reporterId: string,
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]> {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query(`
+      const result = await client.query(
+        `
         SELECT * FROM articles
         WHERE reporter_id = $1 AND generation_time >= $2 AND generation_time <= $3
         ORDER BY generation_time DESC
-      `, [reporterId, startTime, endTime]);
+      `,
+        [reporterId, startTime, endTime]
+      );
 
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         reporterId: row.reporter_id,
-         headline: row.headline,
-         body: row.body,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        headline: row.headline,
+        body: row.body,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
@@ -494,23 +525,26 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM articles WHERE id = $1', [articleId]);
+      const result = await client.query(
+        "SELECT * FROM articles WHERE id = $1",
+        [articleId]
+      );
       if (result.rows.length === 0) return null;
 
-       const row = result.rows[0];
-       return {
-         id: row.id,
-         reporterId: row.reporter_id,
-         headline: row.headline,
-         body: row.body,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       };
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        reporterId: row.reporter_id,
+        headline: row.headline,
+        body: row.body,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      };
     } finally {
       client.release();
     }
@@ -561,7 +595,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async getEventsByReporter(reporterId: string, limit?: number): Promise<Event[]> {
+  async getEventsByReporter(
+    reporterId: string,
+    limit?: number
+  ): Promise<Event[]> {
     const client = await this.pool.connect();
 
     try {
@@ -569,27 +606,27 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
         SELECT * FROM events
         WHERE reporter_id = $1
         ORDER BY created_time DESC
-        ${limit ? 'LIMIT $2' : ''}
+        ${limit ? "LIMIT $2" : ""}
       `;
 
       const values = limit ? [reporterId, limit] : [reporterId];
-       const result = await client.query(query, values);
+      const result = await client.query(query, values);
 
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         reporterId: row.reporter_id,
-         title: row.title,
-         createdTime: row.created_time,
-         updatedTime: row.updated_time,
-         facts: row.facts,
-         where: row.location,
-         when: row.event_time,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        title: row.title,
+        createdTime: row.created_time,
+        updatedTime: row.updated_time,
+        facts: row.facts,
+        where: row.location,
+        when: row.event_time,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
@@ -602,7 +639,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const query = `
         SELECT * FROM events
         ORDER BY updated_time DESC
-        ${limit ? 'LIMIT $1' : ''}
+        ${limit ? "LIMIT $1" : ""}
       `;
 
       const result = await client.query(query, limit ? [limit] : []);
@@ -633,7 +670,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const query = `
         SELECT * FROM events
         ORDER BY updated_time DESC
-        ${limit ? 'LIMIT $1' : ''}
+        ${limit ? "LIMIT $1" : ""}
       `;
 
       const result = await client.query(query, limit ? [limit] : []);
@@ -661,25 +698,27 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM events WHERE id = $1', [eventId]);
+      const result = await client.query("SELECT * FROM events WHERE id = $1", [
+        eventId
+      ]);
       if (result.rows.length === 0) return null;
 
-       const row = result.rows[0];
-       return {
-         id: row.id,
-         reporterId: row.reporter_id,
-         title: row.title,
-         createdTime: row.created_time,
-         updatedTime: row.updated_time,
-         facts: row.facts,
-         where: row.location,
-         when: row.event_time,
-         messageIds: row.message_ids,
-         messageTexts: row.message_texts,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       };
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        reporterId: row.reporter_id,
+        title: row.title,
+        createdTime: row.created_time,
+        updatedTime: row.updated_time,
+        facts: row.facts,
+        where: row.location,
+        when: row.event_time,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      };
     } finally {
       client.release();
     }
@@ -689,11 +728,14 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      await client.query(`
+      await client.query(
+        `
         UPDATE events
         SET facts = $1, updated_time = $2
         WHERE id = $3
-      `, [JSON.stringify(newFacts), Date.now(), eventId]);
+      `,
+        [JSON.stringify(newFacts), Date.now(), eventId]
+      );
     } finally {
       client.release();
     }
@@ -737,41 +779,46 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const query = `
         SELECT * FROM newspaper_editions
         ORDER BY generation_time DESC
-        ${limit ? 'LIMIT $1' : ''}
+        ${limit ? "LIMIT $1" : ""}
       `;
 
-       const result = await client.query(query, limit ? [limit] : []);
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         stories: row.stories,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      const result = await client.query(query, limit ? [limit] : []);
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        stories: row.stories,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
   }
 
-  async getNewspaperEdition(editionId: string): Promise<NewspaperEdition | null> {
+  async getNewspaperEdition(
+    editionId: string
+  ): Promise<NewspaperEdition | null> {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM newspaper_editions WHERE id = $1', [editionId]);
+      const result = await client.query(
+        "SELECT * FROM newspaper_editions WHERE id = $1",
+        [editionId]
+      );
       if (result.rows.length === 0) return null;
 
-       const row = result.rows[0];
-       return {
-         id: row.id,
-         stories: row.stories,
-         generationTime: row.generation_time,
-         prompt: row.prompt,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       };
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        stories: row.stories,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      };
     } finally {
       client.release();
     }
@@ -827,27 +874,27 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const query = `
         SELECT * FROM daily_editions
         ORDER BY generation_time DESC
-        ${limit ? 'LIMIT $1' : ''}
+        ${limit ? "LIMIT $1" : ""}
       `;
 
-       const result = await client.query(query, limit ? [limit] : []);
-       return result.rows.map((row: any) => ({
-         id: row.id,
-         editions: row.editions,
-         generationTime: row.generation_time,
-         frontPageHeadline: row.front_page_headline,
-         frontPageArticle: row.front_page_article,
-         newspaperName: row.newspaper_name,
-         modelFeedbackAboutThePrompt: {
-           positive: row.model_feedback_positive,
-           negative: row.model_feedback_negative
-         },
-         topics: row.topics,
-         prompt: row.prompt,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       }));
+      const result = await client.query(query, limit ? [limit] : []);
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        editions: row.editions,
+        generationTime: row.generation_time,
+        frontPageHeadline: row.front_page_headline,
+        frontPageArticle: row.front_page_article,
+        newspaperName: row.newspaper_name,
+        modelFeedbackAboutThePrompt: {
+          positive: row.model_feedback_positive,
+          negative: row.model_feedback_negative
+        },
+        topics: row.topics,
+        prompt: row.prompt,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
     } finally {
       client.release();
     }
@@ -857,27 +904,30 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM daily_editions WHERE id = $1', [dailyEditionId]);
+      const result = await client.query(
+        "SELECT * FROM daily_editions WHERE id = $1",
+        [dailyEditionId]
+      );
       if (result.rows.length === 0) return null;
 
-       const row = result.rows[0];
-       return {
-         id: row.id,
-         editions: row.editions,
-         generationTime: row.generation_time,
-         frontPageHeadline: row.front_page_headline,
-         frontPageArticle: row.front_page_article,
-         newspaperName: row.newspaper_name,
-         modelFeedbackAboutThePrompt: {
-           positive: row.model_feedback_positive,
-           negative: row.model_feedback_negative
-         },
-         topics: row.topics,
-         prompt: row.prompt,
-         modelName: row.model_name,
-         inputTokenCount: row.input_token_count,
-         outputTokenCount: row.output_token_count
-       };
+      const row = result.rows[0];
+      return {
+        id: row.id,
+        editions: row.editions,
+        generationTime: row.generation_time,
+        frontPageHeadline: row.front_page_headline,
+        frontPageArticle: row.front_page_article,
+        newspaperName: row.newspaper_name,
+        modelFeedbackAboutThePrompt: {
+          positive: row.model_feedback_positive,
+          negative: row.model_feedback_negative
+        },
+        topics: row.topics,
+        prompt: row.prompt,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      };
     } finally {
       client.release();
     }
@@ -898,7 +948,13 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           prompt_content = EXCLUDED.prompt_content
       `;
 
-      await client.query(query, [ad.id, ad.userId, ad.name, ad.bidPrice, ad.promptContent]);
+      await client.query(query, [
+        ad.id,
+        ad.userId,
+        ad.name,
+        ad.bidPrice,
+        ad.promptContent
+      ]);
     } finally {
       client.release();
     }
@@ -908,7 +964,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM ads');
+      const result = await client.query("SELECT * FROM ads");
       return result.rows.map((row: any) => ({
         id: row.id,
         userId: row.user_id,
@@ -925,7 +981,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM ads ORDER BY id DESC LIMIT 1');
+      const result = await client.query(
+        "SELECT * FROM ads ORDER BY id DESC LIMIT 1"
+      );
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -945,7 +1003,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM ads WHERE id = $1', [adId]);
+      const result = await client.query("SELECT * FROM ads WHERE id = $1", [
+        adId
+      ]);
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -961,7 +1021,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async updateAd(adId: string, updates: Partial<Omit<AdEntry, 'id'>>): Promise<void> {
+  async updateAd(
+    adId: string,
+    updates: Partial<Omit<AdEntry, "id">>
+  ): Promise<void> {
     const client = await this.pool.connect();
 
     try {
@@ -988,7 +1051,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
       if (setParts.length === 0) return;
 
-      const query = `UPDATE ads SET ${setParts.join(', ')} WHERE id = $${paramIndex}`;
+      const query = `UPDATE ads SET ${setParts.join(", ")} WHERE id = $${paramIndex}`;
       values.push(adId);
 
       await client.query(query, values);
@@ -1001,18 +1064,20 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      await client.query('DELETE FROM ads WHERE id = $1', [adId]);
+      await client.query("DELETE FROM ads WHERE id = $1", [adId]);
     } finally {
       client.release();
     }
   }
 
   // User operations
-  async createUser(user: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>): Promise<User> {
+  async createUser(
+    user: Omit<User, "id" | "createdAt" | "lastLoginAt">
+  ): Promise<User> {
     const client = await this.pool.connect();
 
     try {
-      const userId = await this.generateId('user');
+      const userId = await this.generateId("user");
       const now = Date.now();
 
       const query = `
@@ -1050,7 +1115,9 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+      const result = await client.query("SELECT * FROM users WHERE id = $1", [
+        userId
+      ]);
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -1074,7 +1141,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+      const result = await client.query(
+        "SELECT * FROM users WHERE email = $1",
+        [email]
+      );
       if (result.rows.length === 0) return null;
 
       const row = result.rows[0];
@@ -1098,7 +1168,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      await client.query('UPDATE users SET last_login_at = $1 WHERE id = $2', [Date.now(), userId]);
+      await client.query("UPDATE users SET last_login_at = $1 WHERE id = $2", [
+        Date.now(),
+        userId
+      ]);
     } finally {
       client.release();
     }
@@ -1108,7 +1181,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT * FROM users');
+      const result = await client.query("SELECT * FROM users");
       return result.rows.map((row: any) => ({
         id: row.id,
         email: row.email,
@@ -1129,7 +1202,7 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query("DELETE FROM users WHERE id = $1", [userId]);
     } finally {
       client.release();
     }
@@ -1148,7 +1221,11 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
           last_run = CASE WHEN EXCLUDED.running THEN EXCLUDED.last_run ELSE job_status.last_run END
       `;
 
-      await client.query(query, [jobName, running, running ? Date.now() : null]);
+      await client.query(query, [
+        jobName,
+        running,
+        running ? Date.now() : null
+      ]);
     } finally {
       client.release();
     }
@@ -1158,7 +1235,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT running FROM job_status WHERE name = $1', [jobName]);
+      const result = await client.query(
+        "SELECT running FROM job_status WHERE name = $1",
+        [jobName]
+      );
       return result.rows.length > 0 ? result.rows[0].running : false;
     } finally {
       client.release();
@@ -1185,7 +1265,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT last_run FROM job_status WHERE name = $1', [jobName]);
+      const result = await client.query(
+        "SELECT last_run FROM job_status WHERE name = $1",
+        [jobName]
+      );
       return result.rows.length > 0 ? result.rows[0].last_run : null;
     } finally {
       client.release();
@@ -1212,7 +1295,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT last_success FROM job_status WHERE name = $1', [jobName]);
+      const result = await client.query(
+        "SELECT last_success FROM job_status WHERE name = $1",
+        [jobName]
+      );
       return result.rows.length > 0 ? result.rows[0].last_success : null;
     } finally {
       client.release();
@@ -1224,7 +1310,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      const result = await client.query('SELECT value FROM kpis WHERE name = $1', [kpiName]);
+      const result = await client.query(
+        "SELECT value FROM kpis WHERE name = $1",
+        [kpiName]
+      );
       return result.rows.length > 0 ? parseFloat(result.rows[0].value) : 0;
     } finally {
       client.release();
@@ -1277,23 +1366,23 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     const client = await this.pool.connect();
 
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       // Delete in order to respect foreign key constraints
-      await client.query('DELETE FROM job_status');
-      await client.query('DELETE FROM kpis');
-      await client.query('DELETE FROM ads');
-      await client.query('DELETE FROM users');
-      await client.query('DELETE FROM daily_editions');
-      await client.query('DELETE FROM newspaper_editions');
-      await client.query('DELETE FROM events');
-      await client.query('DELETE FROM articles');
-      await client.query('DELETE FROM reporters');
-      await client.query('DELETE FROM editors');
+      await client.query("DELETE FROM job_status");
+      await client.query("DELETE FROM kpis");
+      await client.query("DELETE FROM ads");
+      await client.query("DELETE FROM users");
+      await client.query("DELETE FROM daily_editions");
+      await client.query("DELETE FROM newspaper_editions");
+      await client.query("DELETE FROM events");
+      await client.query("DELETE FROM articles");
+      await client.query("DELETE FROM reporters");
+      await client.query("DELETE FROM editors");
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();

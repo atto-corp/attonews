@@ -1,6 +1,6 @@
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import * as yaml from 'js-yaml';
+import { readFile } from "fs/promises";
+import { join } from "path";
+import * as yaml from "js-yaml";
 
 interface AppConfig {
   name: string;
@@ -17,7 +17,7 @@ export class ConfigService {
   private configPath: string;
 
   constructor() {
-    this.configPath = join(process.cwd(), 'config.yaml');
+    this.configPath = join(process.cwd(), "config.yaml");
   }
 
   async loadConfig(): Promise<Config> {
@@ -26,7 +26,7 @@ export class ConfigService {
     }
 
     try {
-      const configContent = await readFile(this.configPath, 'utf-8');
+      const configContent = await readFile(this.configPath, "utf-8");
       const parsedConfig = yaml.load(configContent) as Config;
 
       // Apply environment variable overrides
@@ -41,12 +41,12 @@ export class ConfigService {
       this.config = overriddenConfig;
       return this.config;
     } catch (error) {
-      console.warn('Failed to load config.yaml, using default values:', error);
+      console.warn("Failed to load config.yaml, using default values:", error);
       // Fallback to default values
       this.config = {
         app: {
-          name: 'Newsroom',
-          fullName: 'AI Newsroom'
+          name: "Newsroom",
+          fullName: "AI Newsroom"
         }
       };
       return this.config;

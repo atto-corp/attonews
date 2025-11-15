@@ -6,12 +6,12 @@ import { ServiceContainer } from "./services/service-container";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin"]
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin"]
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,12 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: fullName,
-    description: "AI-powered newsroom with automated reporting and editing",
+    description: "AI-powered newsroom with automated reporting and editing"
   };
 }
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {

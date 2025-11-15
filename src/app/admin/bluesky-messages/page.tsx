@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { User } from '../../models/types';
+import { useState, useEffect } from "react";
+import { User } from "../../models/types";
 
 interface BlueskyMessage {
   did: string;
@@ -28,22 +28,22 @@ export default function BlueskyMessagesPage() {
   const checkAuthAndFetchMessages = async () => {
     try {
       // Get token from localStorage
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        setError('Not authenticated');
+        setError("Not authenticated");
         setLoading(false);
         return;
       }
 
       // First, verify the current user
-      const userResponse = await fetch('/api/auth/verify', {
+      const userResponse = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (!userResponse.ok) {
-        setError('Authentication failed');
+        setError("Authentication failed");
         setLoading(false);
         return;
       }
@@ -52,40 +52,40 @@ export default function BlueskyMessagesPage() {
       setCurrentUser(userData.user);
 
       // Check if user is admin
-      if (userData.user.role !== 'admin') {
-        setError('Admin access required');
+      if (userData.user.role !== "admin") {
+        setError("Admin access required");
         setLoading(false);
         return;
       }
 
       // Fetch Bluesky messages
-      const messagesResponse = await fetch('/api/admin/bluesky-messages', {
+      const messagesResponse = await fetch("/api/admin/bluesky-messages", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
       if (!messagesResponse.ok) {
-        throw new Error('Failed to fetch Bluesky messages');
+        throw new Error("Failed to fetch Bluesky messages");
       }
 
       const messagesData = await messagesResponse.json();
       setData(messagesData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
   const formatTimestamp = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+    return new Date(timestamp).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
     });
   };
 
@@ -95,7 +95,10 @@ export default function BlueskyMessagesPage() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
 
         <div className="text-center relative z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
@@ -111,10 +114,15 @@ export default function BlueskyMessagesPage() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
 
         <div className="text-center relative z-10">
-          <div className="text-red-300 text-lg font-semibold mb-2">Access Denied</div>
+          <div className="text-red-300 text-lg font-semibold mb-2">
+            Access Denied
+          </div>
           <p className="text-white/80">{error}</p>
           <a
             href="/login"
@@ -133,18 +141,24 @@ export default function BlueskyMessagesPage() {
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+        style={{ animationDelay: "1s" }}
+      ></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="backdrop-blur-xl bg-white/10 rounded-2xl shadow-2xl border border-white/20">
           <div className="px-6 py-4 border-b border-white/20">
             <h1 className="text-2xl font-bold text-white">Bluesky Messages</h1>
-             <p className="mt-1 text-sm text-white/80">
-               Bluesky messages will be obtained from bluesky.service.ts by constructing a fresh TinyJetstream from the npm package "mbjc", listening for "n" messages, and then disposing the TinyJetstream.
-             </p>
+            <p className="mt-1 text-sm text-white/80">
+              Bluesky messages will be obtained from bluesky.service.ts by
+              constructing a fresh TinyJetstream from the npm package "mbjc",
+              listening for "n" messages, and then disposing the TinyJetstream.
+            </p>
             {data && (
               <div className="mt-2 text-sm text-white/70">
-                <span className="font-medium">{data.count}</span> messages fetched at {formatTimestamp(data.timestamp)}
+                <span className="font-medium">{data.count}</span> messages
+                fetched at {formatTimestamp(data.timestamp)}
               </div>
             )}
           </div>
@@ -154,19 +168,27 @@ export default function BlueskyMessagesPage() {
               <div className="space-y-4">
                 {/* Summary */}
                 <div className="backdrop-blur-xl bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-lg font-semibold text-white mb-2">Summary</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Summary
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                       <span className="text-white/70">Total Messages:</span>
-                      <span className="ml-2 font-medium text-white">{data.count}</span>
+                      <span className="ml-2 font-medium text-white">
+                        {data.count}
+                      </span>
                     </div>
                     <div>
                       <span className="text-white/70">Fetched At:</span>
-                      <span className="ml-2 font-medium text-white">{formatTimestamp(data.timestamp)}</span>
+                      <span className="ml-2 font-medium text-white">
+                        {formatTimestamp(data.timestamp)}
+                      </span>
                     </div>
                     <div>
                       <span className="text-white/70">Response Time:</span>
-                      <span className="ml-2 font-medium text-white">{Date.now() - data.timestamp}ms ago</span>
+                      <span className="ml-2 font-medium text-white">
+                        {Date.now() - data.timestamp}ms ago
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -174,22 +196,33 @@ export default function BlueskyMessagesPage() {
                 {/* Messages List */}
                 <div className="backdrop-blur-xl bg-white/5 rounded-lg border border-white/10">
                   <div className="px-4 py-3 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Messages</h3>
+                    <h3 className="text-lg font-semibold text-white">
+                      Messages
+                    </h3>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {data.messages.length > 0 ? (
                       <div className="divide-y divide-white/10">
                         {data.messages.map((message, index) => (
-                          <div key={index} className="p-4 hover:bg-white/5 transition-colors">
+                          <div
+                            key={index}
+                            className="p-4 hover:bg-white/5 transition-colors"
+                          >
                             <div className="flex justify-between items-start mb-2">
-                              <span className="text-sm font-medium text-blue-300">#{index + 1}</span>
-                              <span className="text-xs text-white/50">{formatTimestamp(message.time)}</span>
+                              <span className="text-sm font-medium text-blue-300">
+                                #{index + 1}
+                              </span>
+                              <span className="text-xs text-white/50">
+                                {formatTimestamp(message.time)}
+                              </span>
                             </div>
                             <div className="text-sm text-white/90 mb-2">
-                              <strong className="text-white/70">DID:</strong> {message.did}
+                              <strong className="text-white/70">DID:</strong>{" "}
+                              {message.did}
                             </div>
                             <div className="text-sm text-white">
-                              <strong className="text-white/70">Text:</strong> {message.text}
+                              <strong className="text-white/70">Text:</strong>{" "}
+                              {message.text}
                             </div>
                           </div>
                         ))}
@@ -205,7 +238,9 @@ export default function BlueskyMessagesPage() {
                 {/* Raw JSON */}
                 <div className="backdrop-blur-xl bg-white/5 rounded-lg border border-white/10">
                   <div className="px-4 py-3 border-b border-white/10">
-                    <h3 className="text-lg font-semibold text-white">Raw JSON Response</h3>
+                    <h3 className="text-lg font-semibold text-white">
+                      Raw JSON Response
+                    </h3>
                   </div>
                   <div className="p-4">
                     <pre className="text-xs text-white/80 bg-black/20 p-4 rounded overflow-x-auto max-h-96 overflow-y-auto">

@@ -1,7 +1,7 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { User } from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
 
 export interface AuthTokens {
   accessToken: string;
@@ -11,7 +11,7 @@ export interface AuthTokens {
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: User['role'];
+  role: User["role"];
 }
 
 export class AuthService {
@@ -21,8 +21,9 @@ export class AuthService {
 
   constructor(dataStorageService: IDataStorageService) {
     this.dataStorageService = dataStorageService;
-    this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-    this.jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
+    this.jwtSecret = process.env.JWT_SECRET || "your-secret-key";
+    this.jwtRefreshSecret =
+      process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key";
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -30,7 +31,10 @@ export class AuthService {
     return await bcrypt.hash(password, saltRounds);
   }
 
-  async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
+  async comparePassword(
+    password: string,
+    hashedPassword: string
+  ): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
 
@@ -42,16 +46,12 @@ export class AuthService {
     };
 
     const accessToken = jwt.sign(payload, this.jwtSecret, {
-      expiresIn: '12h' // 12 hours
+      expiresIn: "12h" // 12 hours
     });
 
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      this.jwtRefreshSecret,
-      {
-        expiresIn: '7d' // 7 days
-      }
-    );
+    const refreshToken = jwt.sign({ userId: user.id }, this.jwtRefreshSecret, {
+      expiresIn: "7d" // 7 days
+    });
 
     return { accessToken, refreshToken };
   }
@@ -61,28 +61,36 @@ export class AuthService {
       const decoded = jwt.verify(token, this.jwtSecret) as JWTPayload;
       return decoded;
     } catch (error) {
-      console.error('JWT verification failed:', error);
+      console.error("JWT verification failed:", error);
       return null;
     }
   }
 
   verifyRefreshToken(token: string): { userId: string } | null {
     try {
-      const decoded = jwt.verify(token, this.jwtRefreshSecret) as { userId: string };
+      const decoded = jwt.verify(token, this.jwtRefreshSecret) as {
+        userId: string;
+      };
       return decoded;
     } catch (error) {
-      console.error('Refresh token verification failed:', error);
+      console.error("Refresh token verification failed:", error);
       return null;
     }
   }
 
-  async authenticateUser(email: string, password: string): Promise<User | null> {
+  async authenticateUser(
+    email: string,
+    password: string
+  ): Promise<User | null> {
     const user = await this.dataStorageService.getUserByEmail(email);
     if (!user) {
       return null;
     }
 
-    const isPasswordValid = await this.comparePassword(password, user.passwordHash);
+    const isPasswordValid = await this.comparePassword(
+      password,
+      user.passwordHash
+    );
     if (!isPasswordValid) {
       return null;
     }
@@ -97,7 +105,7 @@ export class AuthService {
     // Check if user already exists
     const existingUser = await this.dataStorageService.getUserByEmail(email);
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new Error("User with this email already exists");
     }
 
     // Hash password
@@ -107,7 +115,7 @@ export class AuthService {
     const user = await this.dataStorageService.createUser({
       email,
       passwordHash,
-      role: 'user',
+      role: "user",
       hasReader: false,
       hasReporter: false,
       hasEditor: false

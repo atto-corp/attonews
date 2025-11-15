@@ -1,6 +1,6 @@
-import { NewspaperEdition, DailyEdition, Article } from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
-import { AIService } from './ai.service';
+import { NewspaperEdition, DailyEdition, Article } from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
+import { AIService } from "./ai.service";
 
 export class EditorService {
   constructor(
@@ -9,16 +9,16 @@ export class EditorService {
   ) {}
 
   async generateHourlyEdition(): Promise<NewspaperEdition> {
-    console.log('Editor: Starting newspaper edition generation...');
+    console.log("Editor: Starting newspaper edition generation...");
 
     // Get all reporters
     const reporters = await this.dataStorageService.getAllReporters();
     if (reporters.length === 0) {
-      throw new Error('No reporters available to generate articles');
+      throw new Error("No reporters available to generate articles");
     }
 
     // Get articles from the last 3 hours
-    const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
+    const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
     const allRecentArticles: Article[] = [];
 
     for (const reporter of reporters) {
@@ -31,31 +31,41 @@ export class EditorService {
     }
 
     if (allRecentArticles.length === 0) {
-      throw new Error('No articles found in the last 3 hours');
+      throw new Error("No articles found in the last 3 hours");
     }
 
-    console.log(`Found ${allRecentArticles.length} articles from the last 3 hours`);
+    console.log(
+      `Found ${allRecentArticles.length} articles from the last 3 hours`
+    );
 
     // Get editor information
     const editor = await this.dataStorageService.getEditor();
     if (!editor) {
-      throw new Error('No editor configuration found');
+      throw new Error("No editor configuration found");
     }
 
     // Use AI to select newsworthy stories
-    const { selectedArticles, fullPrompt, modelName, inputTokenCount, outputTokenCount } = await this.aiService.selectNewsworthyStories(
+    const {
+      selectedArticles,
+      fullPrompt,
+      modelName,
+      inputTokenCount,
+      outputTokenCount
+    } = await this.aiService.selectNewsworthyStories(
       allRecentArticles,
       editor.prompt,
       editor.storySelectionModelName
     );
 
-    console.log(`Selected ${selectedArticles.length} newsworthy stories for the edition`);
+    console.log(
+      `Selected ${selectedArticles.length} newsworthy stories for the edition`
+    );
 
     // Create newspaper edition
-    const editionId = await this.dataStorageService.generateId('edition');
+    const editionId = await this.dataStorageService.generateId("edition");
     const edition: NewspaperEdition = {
       id: editionId,
-      stories: selectedArticles.map(article => article.id),
+      stories: selectedArticles.map((article) => article.id),
       generationTime: Date.now(),
       prompt: fullPrompt,
       modelName: modelName,
@@ -66,38 +76,42 @@ export class EditorService {
     // Save the edition
     await this.dataStorageService.saveNewspaperEdition(edition);
 
-    console.log(`Newspaper edition ${editionId} generated with ${selectedArticles.length} stories`);
+    console.log(
+      `Newspaper edition ${editionId} generated with ${selectedArticles.length} stories`
+    );
     return edition;
   }
 
   async generateDailyEdition(): Promise<DailyEdition> {
-    console.log('Editor: Starting daily edition generation...');
+    console.log("Editor: Starting daily edition generation...");
 
     // Get newspaper editions from the last 24 hours
-    const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
     const recentEditions = await this.dataStorageService.getNewspaperEditions();
 
     // Filter to only editions from the last 24 hours
     const last24HoursEditions = recentEditions.filter(
-      edition => edition.generationTime >= twentyFourHoursAgo
+      (edition) => edition.generationTime >= twentyFourHoursAgo
     );
 
     if (last24HoursEditions.length === 0) {
-      throw new Error('No newspaper editions found in the last 24 hours');
+      throw new Error("No newspaper editions found in the last 24 hours");
     }
 
-    console.log(`Found ${last24HoursEditions.length} newspaper editions from the last 24 hours`);
+    console.log(
+      `Found ${last24HoursEditions.length} newspaper editions from the last 24 hours`
+    );
 
     // Get editor information
     const editor = await this.dataStorageService.getEditor();
     if (!editor) {
-      throw new Error('No editor configuration found');
+      throw new Error("No editor configuration found");
     }
 
     // Prepare detailed edition information with articles
     const detailedEditions = await Promise.all(
       last24HoursEditions.map(async (edition) => {
-        const articles: Array<{headline: string; body: string}> = [];
+        const articles: Array<{ headline: string; body: string }> = [];
         for (const articleId of edition.stories) {
           const article = await this.dataStorageService.getArticle(articleId);
           if (article) {
@@ -115,26 +129,39 @@ export class EditorService {
     );
 
     // Use AI to generate comprehensive daily edition content
-    const { content: dailyEditionContent, fullPrompt, modelName, inputTokenCount, outputTokenCount } = await this.aiService.selectNotableEditions(
+    const {
+      content: dailyEditionContent,
+      fullPrompt,
+      modelName,
+      inputTokenCount,
+      outputTokenCount
+    } = await this.aiService.selectNotableEditions(
       detailedEditions,
       editor.prompt,
       editor.editionSelectionModelName
     );
 
-    console.log(`Generated comprehensive daily edition with ${dailyEditionContent.topics.length} topics`);
+    console.log(
+      `Generated comprehensive daily edition with ${dailyEditionContent.topics.length} topics`
+    );
 
     // Create daily edition with the new detailed format
-    const dailyEditionId = await this.dataStorageService.generateId('daily_edition');
+    const dailyEditionId =
+      await this.dataStorageService.generateId("daily_edition");
     const dailyEdition: DailyEdition = {
       id: dailyEditionId,
-      editions: last24HoursEditions.map(edition => edition.id), // Keep all edition IDs for reference
+      editions: last24HoursEditions.map((edition) => edition.id), // Keep all edition IDs for reference
       generationTime: Date.now(),
       // Add the new detailed content
       frontPageHeadline: dailyEditionContent.frontPageHeadline,
       frontPageArticle: dailyEditionContent.frontPageArticle,
       topics: dailyEditionContent.topics,
-      modelFeedbackAboutThePrompt: dailyEditionContent.modelFeedbackAboutThePrompt,
-      newspaperName: (d => `${d.toLocaleDateString('en-US',{weekday: 'long'})}, ${d.getMonth() + 1}/${d.getDate()}`)(new Date()),//dailyEditionContent.newspaperName,
+      modelFeedbackAboutThePrompt:
+        dailyEditionContent.modelFeedbackAboutThePrompt,
+      newspaperName: ((d) =>
+        `${d.toLocaleDateString("en-US", { weekday: "long" })}, ${d.getMonth() + 1}/${d.getDate()}`)(
+        new Date()
+      ), //dailyEditionContent.newspaperName,
       prompt: fullPrompt,
       modelName: modelName,
       inputTokenCount,
@@ -144,7 +171,9 @@ export class EditorService {
     // Save the daily edition
     await this.dataStorageService.saveDailyEdition(dailyEdition);
 
-    console.log(`Daily edition ${dailyEditionId} generated with comprehensive content for ${dailyEdition.newspaperName}`);
+    console.log(
+      `Daily edition ${dailyEditionId} generated with comprehensive content for ${dailyEdition.newspaperName}`
+    );
     return dailyEdition;
   }
 
@@ -158,8 +187,11 @@ export class EditorService {
     return dailyEditions.length > 0 ? dailyEditions[0] : null;
   }
 
-  async getEditionWithArticles(editionId: string): Promise<{ edition: NewspaperEdition; articles: Article[] } | null> {
-    const edition = await this.dataStorageService.getNewspaperEdition(editionId);
+  async getEditionWithArticles(
+    editionId: string
+  ): Promise<{ edition: NewspaperEdition; articles: Article[] } | null> {
+    const edition =
+      await this.dataStorageService.getNewspaperEdition(editionId);
     if (!edition) return null;
 
     const articles: Article[] = [];
@@ -173,13 +205,20 @@ export class EditorService {
     return { edition, articles };
   }
 
-  async getDailyEditionWithEditions(dailyEditionId: string): Promise<{ dailyEdition: DailyEdition; editions: NewspaperEdition[] } | null> {
-    const dailyEdition = await this.dataStorageService.getDailyEdition(dailyEditionId);
+  async getDailyEditionWithEditions(
+    dailyEditionId: string
+  ): Promise<{
+    dailyEdition: DailyEdition;
+    editions: NewspaperEdition[];
+  } | null> {
+    const dailyEdition =
+      await this.dataStorageService.getDailyEdition(dailyEditionId);
     if (!dailyEdition) return null;
 
     const editions: NewspaperEdition[] = [];
     for (const editionId of dailyEdition.editions) {
-      const edition = await this.dataStorageService.getNewspaperEdition(editionId);
+      const edition =
+        await this.dataStorageService.getNewspaperEdition(editionId);
       if (edition) {
         editions.push(edition);
       }

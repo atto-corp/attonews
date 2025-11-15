@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 interface Topic {
   name: string;
@@ -32,7 +32,7 @@ interface DailyEdition {
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'reporter' | 'user';
+  role: "admin" | "editor" | "reporter" | "user";
   hasReader: boolean;
   hasReporter: boolean;
   hasEditor: boolean;
@@ -41,13 +41,15 @@ interface User {
 export default function Home() {
   const [dailyEditions, setDailyEditions] = useState<DailyEdition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEdition, setSelectedEdition] = useState<DailyEdition | null>(null);
-  const [message, setMessage] = useState('');
+  const [selectedEdition, setSelectedEdition] = useState<DailyEdition | null>(
+    null
+  );
+  const [message, setMessage] = useState("");
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  const [appName, setAppName] = useState('Newsroom');
-  const [appFullName, setAppFullName] = useState('AI Newsroom');
+  const [appName, setAppName] = useState("Newsroom");
+  const [appFullName, setAppFullName] = useState("AI Newsroom");
 
   // Check authentication status
   useEffect(() => {
@@ -59,20 +61,18 @@ export default function Home() {
     fetchDailyEditions();
   }, []);
 
-
-
   // Load app configuration
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config');
+        const response = await fetch("/api/config");
         if (response.ok) {
           const config = await response.json();
           setAppName(config.app.name);
           setAppFullName(config.app.fullName);
         }
       } catch (error) {
-        console.error('Failed to load config:', error);
+        console.error("Failed to load config:", error);
       }
     };
     loadConfig();
@@ -80,15 +80,15 @@ export default function Home() {
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         setAuthLoading(false);
         return;
       }
 
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -97,7 +97,7 @@ export default function Home() {
         setUser(data.user);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error("Auth check failed:", error);
     } finally {
       setAuthLoading(false);
     }
@@ -105,7 +105,7 @@ export default function Home() {
 
   const fetchDailyEditions = async () => {
     try {
-      const response = await fetch('/api/daily-editions');
+      const response = await fetch("/api/daily-editions");
       if (response.ok) {
         const data = await response.json();
         setDailyEditions(data);
@@ -114,28 +114,26 @@ export default function Home() {
           setSelectedEdition(data[0]);
         }
       } else {
-        setMessage('Failed to load daily editions');
+        setMessage("Failed to load daily editions");
       }
     } catch (error) {
-      setMessage('Error loading daily editions');
-      console.error('Error fetching daily editions:', error);
+      setMessage("Error loading daily editions");
+      console.error("Error fetching daily editions:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
-
-
 
   if (loading || authLoading) {
     return (
@@ -170,19 +168,35 @@ export default function Home() {
         {dailyEditions.length === 0 ? (
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
             <div className="w-16 h-16 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2zM16 2v4M8 2v4M3 10h18" />
+              <svg
+                className="w-8 h-8 text-white/70"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2zM16 2v4M8 2v4M3 10h18"
+                />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white/90 mb-2">No Daily Editions Available</h3>
-            <p className="text-white/70">Daily editions are generated automatically. Check back later!</p>
+            <h3 className="text-xl font-semibold text-white/90 mb-2">
+              No Daily Editions Available
+            </h3>
+            <p className="text-white/70">
+              Daily editions are generated automatically. Check back later!
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Edition Selector */}
             <div className="lg:col-span-1">
               <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl">
-                <h2 className="text-lg font-semibold text-white/90 mb-4">Available Editions</h2>
+                <h2 className="text-lg font-semibold text-white/90 mb-4">
+                  Available Editions
+                </h2>
                 <div className="space-y-2">
                   {dailyEditions.map((edition) => (
                     <button
@@ -190,12 +204,12 @@ export default function Home() {
                       onClick={() => setSelectedEdition(edition)}
                       className={`w-full text-left px-4 py-3 backdrop-blur-sm rounded-xl transition-all duration-300 ${
                         selectedEdition?.id === edition.id
-                          ? 'bg-white/20 border-2 border-white/30 text-white'
-                          : 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10'
+                          ? "bg-white/20 border-2 border-white/30 text-white"
+                          : "bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
                       }`}
                     >
                       <div className="font-medium text-sm">
-                        {edition.newspaperName || 'Daily Edition'}
+                        {edition.newspaperName || "Daily Edition"}
                       </div>
                       <div className="text-xs text-white/60 mt-1">
                         {formatDate(edition.generationTime)}
@@ -218,7 +232,7 @@ export default function Home() {
                     <div className="border-b border-white/20 pb-6 mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-2xl font-bold text-white/90">
-                          {selectedEdition.newspaperName || 'Daily Edition'}
+                          {selectedEdition.newspaperName || "Daily Edition"}
                         </h2>
                         <span className="text-sm text-white/70">
                           {formatDate(selectedEdition.generationTime)}
@@ -238,9 +252,14 @@ export default function Home() {
 
                   {/* Topics */}
                   <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-white/90">Today's Stories</h2>
+                    <h2 className="text-xl font-bold text-white/90">
+                      Today's Stories
+                    </h2>
                     {selectedEdition.topics.map((topic, index) => (
-                      <div key={index} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
+                      <div
+                        key={index}
+                        className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl"
+                      >
                         <div className="mb-4">
                           <div className="flex items-center space-x-3 mb-2">
                             <div className="w-8 h-8 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center">
@@ -271,29 +290,49 @@ export default function Home() {
 
                         {/* Social Media & Comments */}
                         <div className="border-t border-white/20 pt-6 space-y-4">
-                           <div>
-                             <h4 className="text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
-                               Social Media Buzz
-                               <div className="relative group">
-                                 <svg className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-                                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                 </svg>
-                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                    To assist in semantic parsing of the given story, {appName} generates several opposing reactions to the story.
-                                  </div>
-                               </div>
-                             </h4>
-                             <p className="text-white/70 italic">"{topic.supportingSocialMediaMessage}"</p>
-                           </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
+                              Social Media Buzz
+                              <div className="relative group">
+                                <svg
+                                  className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                  To assist in semantic parsing of the given
+                                  story, {appName} generates several opposing
+                                  reactions to the story.
+                                </div>
+                              </div>
+                            </h4>
+                            <p className="text-white/70 italic">
+                              "{topic.supportingSocialMediaMessage}"
+                            </p>
+                          </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <h4 className="text-sm font-semibold text-red-300 mb-2">Skeptical View</h4>
-                              <p className="text-white/80 text-sm italic">"{topic.skepticalComment}"</p>
+                              <h4 className="text-sm font-semibold text-red-300 mb-2">
+                                Skeptical View
+                              </h4>
+                              <p className="text-white/80 text-sm italic">
+                                "{topic.skepticalComment}"
+                              </p>
                             </div>
                             <div>
-                              <h4 className="text-sm font-semibold text-green-300 mb-2">Supportive View</h4>
-                              <p className="text-white/80 text-sm italic">"{topic.gullibleComment}"</p>
+                              <h4 className="text-sm font-semibold text-green-300 mb-2">
+                                Supportive View
+                              </h4>
+                              <p className="text-white/80 text-sm italic">
+                                "{topic.gullibleComment}"
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -302,35 +341,65 @@ export default function Home() {
                   </div>
 
                   {/* Model Feedback */}
-                  {user?.role === 'admin' && selectedEdition.modelFeedbackAboutThePrompt.positive && (
-                    <div className="backdrop-blur-xl sparkly-bg border border-white/20 rounded-2xl p-8 shadow-2xl">
-                      <h2 className="text-xl font-bold text-white/90 mb-6">Editorial Notes</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h3 className="text-lg font-semibold text-green-300 mb-3">What Worked Well</h3>
-                          <p className="text-white/80">{selectedEdition.modelFeedbackAboutThePrompt.positive}</p>
+                  {user?.role === "admin" &&
+                    selectedEdition.modelFeedbackAboutThePrompt.positive && (
+                      <div className="backdrop-blur-xl sparkly-bg border border-white/20 rounded-2xl p-8 shadow-2xl">
+                        <h2 className="text-xl font-bold text-white/90 mb-6">
+                          Editorial Notes
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h3 className="text-lg font-semibold text-green-300 mb-3">
+                              What Worked Well
+                            </h3>
+                            <p className="text-white/80">
+                              {
+                                selectedEdition.modelFeedbackAboutThePrompt
+                                  .positive
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-red-300 mb-3">
+                              Areas for Improvement
+                            </h3>
+                            <p className="text-white/80">
+                              {
+                                selectedEdition.modelFeedbackAboutThePrompt
+                                  .negative
+                              }
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-red-300 mb-3">Areas for Improvement</h3>
-                          <p className="text-white/80">{selectedEdition.modelFeedbackAboutThePrompt.negative}</p>
+                      </div>
+                    )}
+
+                  {/* Generation Prompt */}
+                  <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-6 relative group">
+                      <h2 className="text-xl font-bold text-white/90">
+                        Generation Prompt
+                      </h2>
+                      <div className="relative group">
+                        <svg
+                          className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          To ensure full journalistic transparency, this is the
+                          exact prompt given to the AI model to generate this
+                          daily edition. This allows the user to verify that no
+                          funny business has taken place.
                         </div>
                       </div>
                     </div>
-                  )}
-
-                   {/* Generation Prompt */}
-                   <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
-                     <div className="flex items-center gap-2 mb-6 relative group">
-                        <h2 className="text-xl font-bold text-white/90">Generation Prompt</h2>
-                       <div className="relative group">
-                         <svg className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                         </svg>
-                         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                           To ensure full journalistic transparency, this is the exact prompt given to the AI model to generate this daily edition. This allows the user to verify that no funny business has taken place.
-                         </div>
-                       </div>
-                     </div>
                     <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-4 text-sm text-white/70 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto">
                       {selectedEdition.prompt}
                     </div>

@@ -1,6 +1,6 @@
-import { KpiName } from '../models/types';
-import { IDataStorageService } from './data-storage.interface';
-import OpenAI from 'openai';
+import { KpiName } from "../models/types";
+import { IDataStorageService } from "./data-storage.interface";
+import OpenAI from "openai";
 
 export class KpiService {
   private dataStorageService: IDataStorageService;
@@ -18,7 +18,7 @@ export class KpiService {
     dataStorageService: IDataStorageService
   ): Promise<void> {
     if (!response.usage) {
-      console.warn('No usage data in OpenAI response');
+      console.warn("No usage data in OpenAI response");
       return;
     }
     const kpiService = new KpiService(dataStorageService);
@@ -36,22 +36,33 @@ export class KpiService {
   }): Promise<void> {
     try {
       // Increment input tokens
-      await this.incrementKpi(KpiName.TOTAL_TEXT_INPUT_TOKENS, usage.promptTokens);
+      await this.incrementKpi(
+        KpiName.TOTAL_TEXT_INPUT_TOKENS,
+        usage.promptTokens
+      );
 
       // Increment output tokens
-      await this.incrementKpi(KpiName.TOTAL_TEXT_OUTPUT_TOKENS, usage.completionTokens);
+      await this.incrementKpi(
+        KpiName.TOTAL_TEXT_OUTPUT_TOKENS,
+        usage.completionTokens
+      );
 
       // Calculate and increment spend
-      const spendIncrement = await this.calculateSpend(usage.promptTokens, usage.completionTokens);
+      const spendIncrement = await this.calculateSpend(
+        usage.promptTokens,
+        usage.completionTokens
+      );
       await this.incrementKpi(KpiName.TOTAL_AI_API_SPEND, spendIncrement);
-
     } catch (error) {
-      console.error('Error incrementing KPIs:', error);
+      console.error("Error incrementing KPIs:", error);
       // Don't throw - KPI tracking should not break the main functionality
     }
   }
 
-  private async incrementKpi(kpiName: KpiName, increment: number): Promise<void> {
+  private async incrementKpi(
+    kpiName: KpiName,
+    increment: number
+  ): Promise<void> {
     const currentValue = await this.getKpiValue(kpiName);
     const newValue = currentValue + increment;
     await this.setKpiValue(kpiName, newValue);
@@ -75,10 +86,13 @@ export class KpiService {
     }
   }
 
-  private async calculateSpend(inputTokens: number, outputTokens: number): Promise<number> {
+  private async calculateSpend(
+    inputTokens: number,
+    outputTokens: number
+  ): Promise<number> {
     const editor = await this.dataStorageService.getEditor();
-    const inputTokenCost = editor?.inputTokenCost || 0.050; // Fallback to default
-    const outputTokenCost = editor?.outputTokenCost || 0.400; // Fallback to default
+    const inputTokenCost = editor?.inputTokenCost || 0.05; // Fallback to default
+    const outputTokenCost = editor?.outputTokenCost || 0.4; // Fallback to default
 
     const inputCost = (inputTokens / 1000000) * inputTokenCost;
     const outputCost = (outputTokens / 1000000) * outputTokenCost;

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'reporter' | 'user';
+  role: "admin" | "editor" | "reporter" | "user";
   createdAt: number;
   lastLoginAt?: number;
 }
@@ -18,11 +18,11 @@ export default function AccountPage() {
   const router = useRouter();
 
   // Form state for account info
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [bio, setBio] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [bio, setBio] = useState("");
 
   // Abilities state
   const [hasReader, setHasReader] = useState(false);
@@ -31,15 +31,15 @@ export default function AccountPage() {
 
   const checkAuthAndLoadUser = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -51,11 +51,11 @@ export default function AccountPage() {
         // Load abilities
         loadAbilities();
       } else {
-        router.push('/login');
+        router.push("/login");
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      router.push('/login');
+      console.error("Auth check failed:", error);
+      router.push("/login");
     } finally {
       setLoading(false);
     }
@@ -68,35 +68,36 @@ export default function AccountPage() {
   const loadAccountInfo = async () => {
     // Placeholder - in a real app, this would fetch from an API
     // For now, we'll just set some placeholder data
-    setFirstName('John');
-    setLastName('Doe');
-    setPhone('(555) 123-4567');
-    setCompany('Example Corp');
-    setBio('News enthusiast and content creator.');
+    setFirstName("John");
+    setLastName("Doe");
+    setPhone("(555) 123-4567");
+    setCompany("Example Corp");
+    setBio("News enthusiast and content creator.");
   };
 
   const loadAbilities = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) return;
 
-      const [readerResponse, reporterResponse, editorResponse] = await Promise.all([
-        fetch('/api/abilities/reader', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }),
-        fetch('/api/abilities/reporter', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }),
-        fetch('/api/abilities/editor', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-      ]);
+      const [readerResponse, reporterResponse, editorResponse] =
+        await Promise.all([
+          fetch("/api/abilities/reader", {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }),
+          fetch("/api/abilities/reporter", {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }),
+          fetch("/api/abilities/editor", {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
+        ]);
 
       if (readerResponse.ok) {
         const readerData = await readerResponse.json();
@@ -113,7 +114,7 @@ export default function AccountPage() {
         setHasEditor(editorData.hasEditor);
       }
     } catch {
-      console.error('Failed to load abilities');
+      console.error("Failed to load abilities");
     }
   };
 
@@ -121,16 +122,14 @@ export default function AccountPage() {
     setSaving(true);
     try {
       // Placeholder - in a real app, this would save to an API
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      alert('Account information saved successfully!');
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      alert("Account information saved successfully!");
     } catch {
-      alert('Failed to save account information.');
+      alert("Failed to save account information.");
     } finally {
       setSaving(false);
     }
   };
-
-
 
   if (loading) {
     return (
@@ -138,7 +137,10 @@ export default function AccountPage() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
 
         <div className="text-center relative z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
@@ -157,20 +159,27 @@ export default function AccountPage() {
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+        style={{ animationDelay: "1s" }}
+      ></div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <div className="backdrop-blur-xl bg-white/10 rounded-2xl shadow-2xl border border-white/20">
           {/* Header */}
           <div className="px-6 py-4 border-b border-white/20">
             <h1 className="text-2xl font-bold text-white">Account Settings</h1>
-            <p className="text-white/80 mt-1">Manage your account information and preferences</p>
+            <p className="text-white/80 mt-1">
+              Manage your account information and preferences
+            </p>
           </div>
 
           <div className="p-6 space-y-8">
             {/* Account Permissions */}
             <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
-              <h2 className="text-lg font-semibold text-white mb-4">Account Permissions</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Account Permissions
+              </h2>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <input
@@ -180,7 +189,10 @@ export default function AccountPage() {
                     disabled
                     className="h-4 w-4 text-white focus:ring-white border-white/30 rounded cursor-not-allowed bg-white/10"
                   />
-                  <label htmlFor="reader-permission" className="text-sm font-medium text-white/90">
+                  <label
+                    htmlFor="reader-permission"
+                    className="text-sm font-medium text-white/90"
+                  >
                     Reader
                   </label>
                 </div>
@@ -192,7 +204,10 @@ export default function AccountPage() {
                     disabled
                     className="h-4 w-4 text-white focus:ring-white border-white/30 rounded cursor-not-allowed bg-white/10"
                   />
-                  <label htmlFor="reporter-permission" className="text-sm font-medium text-white/90">
+                  <label
+                    htmlFor="reporter-permission"
+                    className="text-sm font-medium text-white/90"
+                  >
                     Reporter
                   </label>
                 </div>
@@ -204,7 +219,10 @@ export default function AccountPage() {
                     disabled
                     className="h-4 w-4 text-white focus:ring-white border-white/30 rounded cursor-not-allowed bg-white/10"
                   />
-                  <label htmlFor="editor-permission" className="text-sm font-medium text-white/90">
+                  <label
+                    htmlFor="editor-permission"
+                    className="text-sm font-medium text-white/90"
+                  >
                     Editor
                   </label>
                 </div>
@@ -219,9 +237,12 @@ export default function AccountPage() {
                   <div className="backdrop-blur-xl bg-white/5 rounded-xl p-4 border border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-white">Upgrade to Reader</h3>
+                        <h3 className="text-sm font-medium text-white">
+                          Upgrade to Reader
+                        </h3>
                         <p className="text-xs text-white/70 mt-1">
-                          Premium access to all published content and enhanced reading features
+                          Premium access to all published content and enhanced
+                          reading features
                         </p>
                       </div>
                       <a
@@ -240,9 +261,12 @@ export default function AccountPage() {
                   <div className="backdrop-blur-xl bg-white/5 rounded-xl p-4 border border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-white">Upgrade to Reporter</h3>
+                        <h3 className="text-sm font-medium text-white">
+                          Upgrade to Reporter
+                        </h3>
                         <p className="text-xs text-white/70 mt-1">
-                          Access AI-powered reporting tools and create professional news content
+                          Access AI-powered reporting tools and create
+                          professional news content
                         </p>
                       </div>
                       <a
@@ -261,9 +285,12 @@ export default function AccountPage() {
                   <div className="backdrop-blur-xl bg-white/5 rounded-xl p-4 border border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-medium text-white">Upgrade to Editor</h3>
+                        <h3 className="text-sm font-medium text-white">
+                          Upgrade to Editor
+                        </h3>
                         <p className="text-xs text-white/70 mt-1">
-                          Full editorial control with advanced publishing tools and team management
+                          Full editorial control with advanced publishing tools
+                          and team management
                         </p>
                       </div>
                       <a
@@ -281,10 +308,15 @@ export default function AccountPage() {
 
             {/* Personal Information */}
             <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
-              <h2 className="text-lg font-semibold text-white mb-4">Personal Information</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Personal Information
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="firstName"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     First Name
                   </label>
                   <input
@@ -298,7 +330,10 @@ export default function AccountPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="lastName"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     Last Name
                   </label>
                   <input
@@ -312,7 +347,10 @@ export default function AccountPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     Email Address
                   </label>
                   <input
@@ -322,11 +360,16 @@ export default function AccountPage() {
                     disabled
                     className="w-full px-3 py-2 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg text-white/70 cursor-not-allowed"
                   />
-                  <p className="text-xs text-white/50 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-white/50 mt-1">
+                    Email cannot be changed
+                  </p>
                 </div>
 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     Phone Number
                   </label>
                   <input
@@ -340,7 +383,10 @@ export default function AccountPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label htmlFor="company" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="company"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     Company/Organization
                   </label>
                   <input
@@ -354,7 +400,10 @@ export default function AccountPage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label htmlFor="bio" className="block text-sm font-medium text-white/90 mb-2">
+                  <label
+                    htmlFor="bio"
+                    className="block text-sm font-medium text-white/90 mb-2"
+                  >
                     Bio
                   </label>
                   <textarea
@@ -371,12 +420,16 @@ export default function AccountPage() {
 
             {/* Account Activity */}
             <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
-              <h2 className="text-lg font-semibold text-white mb-4">Account Activity</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Account Activity
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-white/70">Last Login</p>
                   <p className="font-medium text-white">
-                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : 'Never'}
+                    {user.lastLoginAt
+                      ? new Date(user.lastLoginAt).toLocaleString()
+                      : "Never"}
                   </p>
                 </div>
                 <div>
@@ -396,7 +449,9 @@ export default function AccountPage() {
                 className="group relative inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
-                <span className="relative">{saving ? 'Saving...' : 'Save Changes'}</span>
+                <span className="relative">
+                  {saving ? "Saving..." : "Save Changes"}
+                </span>
               </button>
             </div>
           </div>

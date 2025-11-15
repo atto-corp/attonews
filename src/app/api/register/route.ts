@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AuthService } from '../../services/auth.service';
-import { registerRequestSchema } from '../../models/schemas';
+import { NextRequest, NextResponse } from "next/server";
+import { withRedis } from "../../utils/redis";
+import { AuthService } from "../../services/auth.service";
+import { registerRequestSchema } from "../../models/schemas";
 
 export const POST = withRedis(async (request: NextRequest, redis) => {
   const body = await request.json();
@@ -10,7 +10,10 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
   const validationResult = registerRequestSchema.safeParse(body);
   if (!validationResult.success) {
     return NextResponse.json(
-      { message: 'Invalid request data', errors: validationResult.error.errors },
+      {
+        message: "Invalid request data",
+        errors: validationResult.error.errors
+      },
       { status: 400 }
     );
   }
@@ -28,7 +31,7 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
   // Return success response
   return NextResponse.json(
     {
-      message: 'User registered successfully',
+      message: "User registered successfully",
       user: {
         id: user.id,
         email: user.email,

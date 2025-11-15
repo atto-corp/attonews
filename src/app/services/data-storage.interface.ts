@@ -1,4 +1,3 @@
-
 import {
   Editor,
   Reporter,
@@ -8,7 +7,7 @@ import {
   Event,
   AdEntry,
   User
-} from '../models/types';
+} from "../models/types";
 
 export interface IDataStorageService {
   // Connection management
@@ -28,7 +27,11 @@ export interface IDataStorageService {
   saveArticle(article: Article): Promise<void>;
   getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]>;
   getAllArticles(limit?: number): Promise<Article[]>;
-  getArticlesInTimeRange(reporterId: string, startTime: number, endTime: number): Promise<Article[]>;
+  getArticlesInTimeRange(
+    reporterId: string,
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]>;
   getArticle(articleId: string): Promise<Article | null>;
 
   // Event operations
@@ -54,11 +57,13 @@ export interface IDataStorageService {
   getAllAds(): Promise<AdEntry[]>;
   getMostRecentAd(): Promise<AdEntry | null>;
   getAd(adId: string): Promise<AdEntry | null>;
-  updateAd(adId: string, updates: Partial<Omit<AdEntry, 'id'>>): Promise<void>;
+  updateAd(adId: string, updates: Partial<Omit<AdEntry, "id">>): Promise<void>;
   deleteAd(adId: string): Promise<void>;
 
   // User operations
-  createUser(user: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>): Promise<User>;
+  createUser(
+    user: Omit<User, "id" | "createdAt" | "lastLoginAt">
+  ): Promise<User>;
   getUserById(userId: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
   updateUserLastLogin(userId: string): Promise<void>;

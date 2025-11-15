@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '../../utils/auth';
-import { withRedis } from '../../utils/redis';
-import { ServiceContainer } from '../../services/service-container';
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "../../utils/auth";
+import { withRedis } from "../../utils/redis";
+import { ServiceContainer } from "../../services/service-container";
 
 let container: ServiceContainer | null = null;
 
@@ -12,15 +12,17 @@ async function getContainer(): Promise<ServiceContainer> {
   return container;
 }
 
-async function checkReporterPermission(request: NextRequest): Promise<{ user: any } | NextResponse> {
+async function checkReporterPermission(
+  request: NextRequest
+): Promise<{ user: any } | NextResponse> {
   const container = await getContainer();
   const authService = await container.getAuthService();
   const abilitiesService = await container.getAbilitiesService();
 
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return NextResponse.json(
-      { error: 'Authorization token required' },
+      { error: "Authorization token required" },
       { status: 401 }
     );
   }
@@ -29,7 +31,7 @@ async function checkReporterPermission(request: NextRequest): Promise<{ user: an
   const user = await authService.getUserFromToken(token);
   if (!user) {
     return NextResponse.json(
-      { error: 'Invalid or expired token' },
+      { error: "Invalid or expired token" },
       { status: 401 }
     );
   }
@@ -38,7 +40,7 @@ async function checkReporterPermission(request: NextRequest): Promise<{ user: an
   const hasPermission = abilitiesService.userIsReporter(user);
   if (!hasPermission) {
     return NextResponse.json(
-      { error: 'Reporter permission required' },
+      { error: "Reporter permission required" },
       { status: 403 }
     );
   }
@@ -53,28 +55,34 @@ export const GET = withRedis(async (_request: NextRequest, dataStorage) => {
 });
 
 // POST /api/reporters - Create new reporter
-export const POST = withAuth(async (request: NextRequest, user, dataStorage) => {
-  const container = await getContainer();
-  const reporterService = await container.getReporterService();
+export const POST = withAuth(
+  async (request: NextRequest, user, dataStorage) => {
+    const container = await getContainer();
+    const reporterService = await container.getReporterService();
 
-  const body = await request.json();
-  const { beats, prompt, enabled } = body;
+    const body = await request.json();
+    const { beats, prompt, enabled } = body;
 
-  if (!Array.isArray(beats) || typeof prompt !== 'string') {
+    if (!Array.isArray(beats) || typeof prompt !== "string") {
+      return NextResponse.json(
+        { error: "Beats must be an array and prompt must be a string" },
+        { status: 400 }
+      );
+    }
+
+    const reporter = await reporterService.createReporter({
+      beats,
+      prompt,
+      enabled: enabled ?? true // Default to true if not specified
+    });
+
     return NextResponse.json(
-      { error: 'Beats must be an array and prompt must be a string' },
-      { status: 400 }
+      {
+        ...reporter,
+        message: "Reporter created successfully"
+      },
+      { status: 201 }
     );
-  }
-
-  const reporter = await reporterService.createReporter({
-    beats,
-    prompt,
-    enabled: enabled ?? true // Default to true if not specified
-  });
-
-  return NextResponse.json({
-    ...reporter,
-    message: 'Reporter created successfully'
-  }, { status: 201 });
-}, { requiredPermission: 'reporter' });
+  },
+  { requiredPermission: "reporter" }
+);

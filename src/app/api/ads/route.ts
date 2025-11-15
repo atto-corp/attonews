@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
-import { AdEntry } from '../../models/types';
+import { NextRequest, NextResponse } from "next/server";
+import { withRedis } from "../../utils/redis";
+import { AdEntry } from "../../models/types";
 
 export const GET = withRedis(async (_request: NextRequest, redis) => {
   const ads = await redis.getAllAds();
@@ -13,15 +13,15 @@ export const POST = withRedis(async (request: NextRequest, redis) => {
 
   if (!name || bidPrice === undefined || !promptContent) {
     return NextResponse.json(
-      { error: 'name, bidPrice, and promptContent are required' },
+      { error: "name, bidPrice, and promptContent are required" },
       { status: 400 }
     );
   }
 
-  const adId = await redis.generateId('ad');
+  const adId = await redis.generateId("ad");
   const ad: AdEntry = {
     id: adId,
-    userId: '1', // Placeholder user ID as requested
+    userId: "1", // Placeholder user ID as requested
     name,
     bidPrice: parseFloat(bidPrice),
     promptContent

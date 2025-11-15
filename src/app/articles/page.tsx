@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Article {
   id: string;
@@ -18,7 +18,7 @@ interface Article {
 interface User {
   id: string;
   email: string;
-  role: 'admin' | 'editor' | 'reporter' | 'user';
+  role: "admin" | "editor" | "reporter" | "user";
   hasReader: boolean;
   hasReporter: boolean;
   hasEditor: boolean;
@@ -27,19 +27,23 @@ interface User {
 function ArticlesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const reporterId = searchParams.get('reporterId');
+  const reporterId = searchParams.get("reporterId");
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
-  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  const [error, setError] = useState("");
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(
+    new Set()
+  );
   const [_user, setUser] = useState<User | null>(null);
   const [hasReaderAccess, setHasReaderAccess] = useState(false);
-  const [appName, setAppName] = useState('Newsroom');
+  const [appName, setAppName] = useState("Newsroom");
 
   const checkUserAccess = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         // Allow public access - no redirect needed
         return;
@@ -47,9 +51,9 @@ function ArticlesContent() {
 
       // Check reader ability if no reporterId (all articles view)
       if (!reporterId) {
-        const response = await fetch('/api/abilities/reader', {
+        const response = await fetch("/api/abilities/reader", {
           headers: {
-            'Authorization': `Bearer ${token}`
+            Authorization: `Bearer ${token}`
           }
         });
 
@@ -63,9 +67,9 @@ function ArticlesContent() {
       }
 
       // Get user info for display
-      const userResponse = await fetch('/api/auth/verify', {
+      const userResponse = await fetch("/api/auth/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -74,7 +78,7 @@ function ArticlesContent() {
         setUser(userData.user);
       }
     } catch (error) {
-      console.error('Error checking user access:', error);
+      console.error("Error checking user access:", error);
       // Continue with public access if there's an error
     }
   }, [reporterId]);
@@ -88,13 +92,13 @@ function ArticlesContent() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config');
+        const response = await fetch("/api/config");
         if (response.ok) {
           const config = await response.json();
           setAppName(config.app.name);
         }
       } catch (error) {
-        console.error('Failed to load config:', error);
+        console.error("Failed to load config:", error);
       }
     };
     loadConfig();
@@ -108,17 +112,17 @@ function ArticlesContent() {
         response = await fetch(`/api/articles?reporterId=${reporterId}`);
       } else {
         // Check if user has reader access for all articles
-        const token = localStorage.getItem('accessToken');
+        const token = localStorage.getItem("accessToken");
         if (token && hasReaderAccess) {
           // User is authenticated and has reader access - fetch all articles
-          response = await fetch('/api/articles/all', {
+          response = await fetch("/api/articles/all", {
             headers: {
-              'Authorization': `Bearer ${token}`
+              Authorization: `Bearer ${token}`
             }
           });
         } else {
           // User is not authenticated or doesn't have reader access - fetch latest 5 articles
-          response = await fetch('/api/articles/public');
+          response = await fetch("/api/articles/public");
         }
       }
 
@@ -127,11 +131,11 @@ function ArticlesContent() {
         setArticles(data);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to load articles');
+        setError(errorData.error || "Failed to load articles");
       }
     } catch (error) {
-      setError('Error loading articles');
-      console.error('Error fetching articles:', error);
+      setError("Error loading articles");
+      console.error("Error fetching articles:", error);
     } finally {
       setLoading(false);
     }
@@ -147,12 +151,12 @@ function ArticlesContent() {
   }, [reporterId, fetchArticles]);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
   };
 
@@ -182,7 +186,10 @@ function ArticlesContent() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30 relative z-10"></div>
       </div>
     );
@@ -194,14 +201,29 @@ function ArticlesContent() {
         {/* Animated background elements */}
         <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+          style={{ animationDelay: "1s" }}
+        ></div>
         <div className="text-center relative z-10">
           <div className="w-16 h-16 backdrop-blur-xl bg-red-500/20 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-8 h-8 text-red-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-white/90 mb-2">Error Loading Articles</h2>
+          <h2 className="text-xl font-semibold text-white/90 mb-2">
+            Error Loading Articles
+          </h2>
           <p className="text-white/70">{error}</p>
         </div>
       </div>
@@ -213,22 +235,28 @@ function ArticlesContent() {
       {/* Animated background elements */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
       <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
+      <div
+        className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+        style={{ animationDelay: "1s" }}
+      ></div>
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 mb-8 shadow-2xl">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white/90 mb-2">
-                {reporterId ? 'Articles by Reporter' : (!hasReaderAccess ? 'Latest Articles' : 'All Articles')}
+                {reporterId
+                  ? "Articles by Reporter"
+                  : !hasReaderAccess
+                    ? "Latest Articles"
+                    : "All Articles"}
               </h1>
               <p className="text-white/70 text-lg">
                 {reporterId
-                  ? `Reporter ${reporterId.split('_')[2] || reporterId} (${articles.length} articles)`
+                  ? `Reporter ${reporterId.split("_")[2] || reporterId} (${articles.length} articles)`
                   : !hasReaderAccess
                     ? `Showing the ${articles.length} most recent articles (login with Reader access to see all articles)`
-                    : `Chronological list of all published articles (${articles.length} articles)`
-                }
+                    : `Chronological list of all published articles (${articles.length} articles)`}
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -256,18 +284,35 @@ function ArticlesContent() {
           {articles.length === 0 ? (
             <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-12 text-center shadow-2xl">
               <div className="w-16 h-16 backdrop-blur-sm bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="w-8 h-8 text-white/70"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-white/90 mb-2">No Articles Found</h3>
+              <h3 className="text-xl font-semibold text-white/90 mb-2">
+                No Articles Found
+              </h3>
               <p className="text-white/70">
-                {reporterId ? "This reporter hasn't written any articles yet." : "No articles have been published yet."}
+                {reporterId
+                  ? "This reporter hasn't written any articles yet."
+                  : "No articles have been published yet."}
               </p>
             </div>
           ) : (
             articles.map((article) => (
-              <div key={article.id} className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl hover:bg-white/15 transition-all duration-300">
+              <div
+                key={article.id}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl hover:bg-white/15 transition-all duration-300"
+              >
                 <div className="mb-4">
                   <Link
                     href={`/articles/${article.id}`}
@@ -278,8 +323,18 @@ function ArticlesContent() {
                     </h2>
                   </Link>
                   <div className="flex items-center text-sm text-white/70">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     {formatDate(article.generationTime)}
                   </div>
@@ -299,26 +354,43 @@ function ArticlesContent() {
                       className="flex items-center text-sm font-medium text-white/70 hover:text-white transition-colors"
                     >
                       <svg
-                        className={`w-4 h-4 mr-2 transition-transform ${expandedMessages.has(article.id) ? 'rotate-90' : ''}`}
+                        className={`w-4 h-4 mr-2 transition-transform ${expandedMessages.has(article.id) ? "rotate-90" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
-                      {expandedMessages.has(article.id) ? 'Hide Source Messages' : `Show Source Messages (${article.messageTexts.length})`}
+                      {expandedMessages.has(article.id)
+                        ? "Hide Source Messages"
+                        : `Show Source Messages (${article.messageTexts.length})`}
                     </button>
 
                     {expandedMessages.has(article.id) && (
                       <div className="mt-4 space-y-4">
-                        <h4 className="text-sm font-semibold text-white/90">Social Media Messages Used:</h4>
+                        <h4 className="text-sm font-semibold text-white/90">
+                          Social Media Messages Used:
+                        </h4>
                         {article.messageTexts.map((message, index) => (
-                          <div key={index} className="p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg">
+                          <div
+                            key={index}
+                            className="p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg"
+                          >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-white/70">Message {index + 1}</span>
-                              {article.messageIds && article.messageIds[index] && (
-                                <span className="text-xs text-white/50">ID: {article.messageIds[index]}</span>
-                              )}
+                              <span className="text-xs font-medium text-white/70">
+                                Message {index + 1}
+                              </span>
+                              {article.messageIds &&
+                                article.messageIds[index] && (
+                                  <span className="text-xs text-white/50">
+                                    ID: {article.messageIds[index]}
+                                  </span>
+                                )}
                             </div>
                             <div className="text-sm text-white/80 whitespace-pre-wrap">
                               {message}
@@ -337,29 +409,49 @@ function ArticlesContent() {
                     className="flex items-center text-sm font-medium text-white/70 hover:text-white transition-colors"
                   >
                     <svg
-                      className={`w-4 h-4 mr-2 transition-transform ${expandedPrompts.has(article.id) ? 'rotate-90' : ''}`}
+                      className={`w-4 h-4 mr-2 transition-transform ${expandedPrompts.has(article.id) ? "rotate-90" : ""}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
-                    {expandedPrompts.has(article.id) ? 'Hide Prompt' : 'Show Prompt'}
+                    {expandedPrompts.has(article.id)
+                      ? "Hide Prompt"
+                      : "Show Prompt"}
                   </button>
 
                   {expandedPrompts.has(article.id) && (
-                     <div className="mt-4 p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg">
-                       <div className="flex items-center gap-2 mb-2 relative group">
-                         <h4 className="text-sm font-semibold text-white/90">AI Generation Prompt:</h4>
-                         <div className="relative group">
-                           <svg className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                           </svg>
-                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                             To ensure full journalistic transparency, this is the exact prompt given to the AI model to generate this article. This allows the user to verify that no funny business has taken place.
-                           </div>
-                         </div>
-                       </div>
+                    <div className="mt-4 p-4 backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2 relative group">
+                        <h4 className="text-sm font-semibold text-white/90">
+                          AI Generation Prompt:
+                        </h4>
+                        <div className="relative group">
+                          <svg
+                            className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            To ensure full journalistic transparency, this is
+                            the exact prompt given to the AI model to generate
+                            this article. This allows the user to verify that no
+                            funny business has taken place.
+                          </div>
+                        </div>
+                      </div>
                       <pre className="text-xs text-white/70 whitespace-pre-wrap font-mono leading-relaxed">
                         {article.prompt}
                       </pre>
@@ -389,15 +481,20 @@ function ArticlesContent() {
 
 export default function ArticlesPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 flex items-center justify-center relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000" style={{animationDelay: '1s'}}></div>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30 relative z-10"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 flex items-center justify-center relative overflow-hidden">
+          {/* Animated background elements */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-600/20 via-gray-500/20 to-gray-400/20 animate-pulse duration-3000"></div>
+          <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-gray-400/30 to-gray-500/30 rounded-full blur-3xl duration-3000"></div>
+          <div
+            className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-gray-500/30 to-gray-400/30 rounded-full blur-3xl duration-3000"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30 relative z-10"></div>
+        </div>
+      }
+    >
       <ArticlesContent />
     </Suspense>
   );

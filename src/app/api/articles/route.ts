@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withRedis } from '../../utils/redis';
+import { NextRequest, NextResponse } from "next/server";
+import { withRedis } from "../../utils/redis";
 
 export const GET = withRedis(async (request: NextRequest, redis) => {
   const { searchParams } = new URL(request.url);
-  const reporterId = searchParams.get('reporterId');
-  const resultsParam = searchParams.get('results');
+  const reporterId = searchParams.get("reporterId");
+  const resultsParam = searchParams.get("results");
 
   if (!reporterId) {
     return NextResponse.json(
-      { error: 'reporterId query parameter is required' },
+      { error: "reporterId query parameter is required" },
       { status: 400 }
     );
   }
@@ -19,7 +19,7 @@ export const GET = withRedis(async (request: NextRequest, redis) => {
     const parsed = parseInt(resultsParam, 10);
     if (isNaN(parsed) || parsed <= 0) {
       return NextResponse.json(
-        { error: 'results parameter must be a positive integer' },
+        { error: "results parameter must be a positive integer" },
         { status: 400 }
       );
     }
