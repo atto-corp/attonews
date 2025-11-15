@@ -1,69 +1,25 @@
-import { Reporter, Article, Event, REDIS_KEYS } from '../models/types';
-import OpenAI from 'openai';
+import { Reporter, Article, Event } from '../models/types';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { dailyEditionSchema, reporterArticleSchema, eventGenerationResponseSchema } from '../models/schemas';
 import { IDataStorageService } from './data-storage.interface';
 import { KpiService } from './kpi.service';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 import { fetchLatestMessages } from './bluesky.service';
+import { AIPrompts } from './ai-prompts';
+import { AIResponseUtils } from './ai-response-utils';
+import { AIClient } from './ai-client';
 
 export class AIService {
-  private openai: OpenAI;
-  private modelName: string = 'gpt-5-nano';
+  private aiClient: AIClient;
   private dataStorageService: IDataStorageService;
 
   constructor(dataStorageService: IDataStorageService) {
     this.dataStorageService = dataStorageService;
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
-    }
-
-    // Initialize OpenAI client synchronously first, then update with baseUrl if available
-    this.openai = new OpenAI({
-      apiKey: apiKey,
-    });
-
-    // Initialize OpenAI client with configurable base URL asynchronously
-    this.initializeOpenAIClient(apiKey);
-
-    // Initialize modelName from Redis with default
-    this.initializeModelName();
-  }
-
-  private async initializeOpenAIClient(apiKey: string): Promise<void> {
-    try {
-      const editor = await this.dataStorageService.getEditor();
-      const baseUrl = editor?.baseUrl;
-
-      if (baseUrl) {
-        // Re-initialize with baseUrl if available
-        this.openai = new OpenAI({
-          apiKey: apiKey,
-          baseURL: baseUrl,
-        });
-      }
-    } catch (error) {
-      console.warn('Failed to fetch baseUrl from Redis, keeping default OpenAI API:', error);
-    }
-  }
-
-  private async initializeModelName(): Promise<void> {
-    try {
-      const storedModelName = await this.dataStorageService.getModelName();
-      this.modelName = storedModelName || 'gpt-5-nano';
-    } catch (error) {
-      console.warn('Failed to fetch modelName from Redis, using default:', error);
-      this.modelName = 'gpt-5-nano';
-    }
+    this.aiClient = new AIClient(dataStorageService);
   }
 
   getModelName(): string {
-    return this.modelName;
+    return this.aiClient.getModelName();
   }
-
-
 
   async generateStructuredArticle(reporter: Reporter, modelName?: string): Promise<{response: {
     id: string;
@@ -96,15 +52,7 @@ export class AIService {
 
     try {
       // Get configurable message slice count from Redis
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count from Redis, using default:', error);
-      }
+      const messageSliceCount = await this.aiClient.getMessageSliceCount();
 
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -114,7 +62,6 @@ export class AIService {
         console.warn('Failed to fetch social media messages:', error);
         // Continue with article generation even if social media fetch fails
       }
-
 
       // Fetch the most recent ad from data storage
       let mostRecentAd = null;
@@ -126,49 +73,14 @@ export class AIService {
       }
 
       // Format social media messages for the prompt with ad insertion
-      let socialMediaContext = '';
-      if (socialMediaMessages.length > 0) {
-        const formattedMessages: string[] = [];
+      const socialMediaContext = AIResponseUtils.formatSocialMediaContext(socialMediaMessages, true, mostRecentAd);
 
-        for (let i = 0; i < socialMediaMessages.length; i++) {
-          formattedMessages.push(`${i + 1}. "${socialMediaMessages[i].text}"`);
-
-          // Insert ad prompt after every 20 message entries
-          if ((i + 1) % 20 === 0 && mostRecentAd) {
-            formattedMessages.push(`\n\n${mostRecentAd.promptContent}\n\n`);
-          }
-        }
-
-        socialMediaContext = `\n\nRecent social media discussions:\n${formattedMessages.join('\n')}`;
-      }
-
-      const systemPrompt = `You are a professional journalist creating structured news articles. Generate comprehensive, well-researched articles with proper journalistic structure including lead paragraphs, key quotes, sources, and reporter notes. ${reporter.prompt}`;
-
-      const userPrompt = `Create a focused news article about one particular recent development. You have access to these beats: ${beatsList}. Choose one beat from this list and focus your article on a recent development within that chosen beat.
-
-First, scan the provided social media messages for information relevant to any of your available beats. Identify the single most significant or noteworthy recent development from these messages that aligns with one of your assigned beats. If there are zero relevant social media messages, stop processing and return empty strings for the rest of the fields.
-
-Focus the entire article on this one specific development, providing in-depth coverage rather than broad overview. Include:
-
-1. A compelling headline focused on this specific development
-2. A strong lead paragraph (2-3 sentences) that hooks readers with this particular story
-3. A detailed body (300-500 words) with deep context and analysis of this one development
-4. 2-4 key quotes specifically related to this development
-5. 3-5 credible sources focused on this particular development
-6. A brief social media summary (under 280 characters) about this specific story
-7. Reporter notes on research quality, source diversity, and factual accuracy for this development
-8. beat: Specify which beat from your assigned list you chose for this article
-9. messageIds: List the indices (1, 2, 3, etc.) of only the relevant messages you identified and actually used to inform or write this article about this specific development. If you didn't find any relevant messages or didn't use any specific messages, use an empty array.
-
-Make the article engaging, factual, and professionally written. Ensure all quotes are realistic and sources are credible. Focus exclusively on this one development to create a more targeted and impactful piece.${socialMediaContext}
-
-When generating the article, first scan the social media context for messages relevant to your available beats, choose the most appropriate beat for the best story available, identify the most significant single development within that beat, then focus the entire article on that specific development to create a more targeted and impactful story. After writing the article, re-scan the social media messages for any that may be potentially related to your story; include their numeric indices in the "potentialMessageIds" field.`;
-
+      const { systemPrompt, userPrompt } = AIPrompts.generateStructuredArticlePrompts(reporter, beatsList, socialMediaContext);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(`Calling openai article generation with model ${modelName || this.modelName}`);
-      const response = await this.openai.chat.completions.create({
-        model: modelName || this.modelName,
+      console.log(`Calling openai article generation with model ${modelName || this.getModelName()}`);
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model: modelName || this.getModelName(),
         messages: [
           {
             role: 'system',
@@ -187,29 +99,18 @@ When generating the article, first scan the social media context for messages re
         throw new Error('No response content from AI service');
       }
 
-       // Save the entire AI response to JSON file
-       try {
-         const responseFilePath = join(process.cwd(), 'api_responses', `article_${generationTime}.json`);
-         await writeFile(responseFilePath, JSON.stringify(response, null, 2));
-       } catch (error) {
-         console.warn('Failed to save AI response to file:', error);
-         // Continue with article generation even if file save fails
-       }
+      // Save the entire AI response to JSON file
+      await AIResponseUtils.saveResponseToFile(response, 'article', generationTime);
 
-       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
+      const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
 
-         // Add generated fields
-         parsedResponse.id = articleId;
-         parsedResponse.reporterId = reporter.id;
-         parsedResponse.generationTime = generationTime;
-         parsedResponse.wordCount = parsedResponse.body!.split(' ').length;
-         parsedResponse.modelName = modelName || this.modelName;
-         parsedResponse.inputTokenCount = response.usage?.prompt_tokens;
-         parsedResponse.outputTokenCount = response.usage?.completion_tokens;
+      // Add generated fields
+      AIResponseUtils.addArticleMetadata(parsedResponse, articleId, reporter.id, generationTime, modelName || this.getModelName(), response.usage);
 
-         return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
+      return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
       console.error('Error generating structured article:', error);
+      // Return fallback structured article
       throw error;
     }
   }
@@ -219,26 +120,16 @@ When generating the article, first scan the social media context for messages re
 
 
   async selectNewsworthyStories(articles: Article[], editorPrompt: string, modelName?: string): Promise<{ selectedArticles: Article[]; fullPrompt: string; modelName: string; inputTokenCount?: number; outputTokenCount?: number }> {
-    if (articles.length === 0) return { selectedArticles: [], fullPrompt: '', modelName: modelName || this.modelName };
+    if (articles.length === 0) return { selectedArticles: [], fullPrompt: '', modelName: modelName || this.getModelName() };
 
     try {
-      const articlesText = articles.map((article, index) =>
-        `Article ${index + 1}:\nHeadline: ${article.headline}\nContent: ${article.body.substring(0, 300)}...`
-      ).join('\n\n');
-
-      const systemPrompt = 'You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.';
-      const userPrompt = `Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below. Consider factors like timeliness, impact, audience interest, and editorial fit.
-
-Articles:
-${articlesText}
-
-Return only the article numbers (1, 2, 3, etc.) of the selected stories, separated by commas. Select between 3-5 articles based on their quality and newsworthiness.`;
-
+      const articlesText = AIResponseUtils.formatArticlesText(articles);
+      const { systemPrompt, userPrompt } = AIPrompts.selectNewsworthyStoriesPrompts(articlesText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(`Calling openai story selection with model ${modelName || this.modelName}`);
-      const response = await this.openai.chat.completions.create({
-        model: modelName || this.modelName,
+      console.log(`Calling openai story selection with model ${modelName || this.getModelName()}`);
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model: modelName || this.getModelName(),
         messages: [
           {
             role: 'system',
@@ -256,8 +147,8 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
 
       const selectedIndices = response.choices[0]?.message?.content?.trim()
         .split(',')
-        .map(num => parseInt(num.trim()) - 1)
-        .filter(index => index >= 0 && index < articles.length) || [];
+        .map((num: string) => parseInt(num.trim()) - 1)
+        .filter((index: number) => index >= 0 && index < articles.length) || [];
 
       // If AI selection fails or returns empty, fall back to random selection
       if (selectedIndices.length === 0) {
@@ -265,10 +156,10 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         const maxStories = Math.min(5, articles.length);
         const numStories = Math.floor(Math.random() * (maxStories - minStories + 1)) + minStories;
         const shuffled = [...articles].sort(() => 0.5 - Math.random());
-        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+        return { selectedArticles: shuffled.slice(0, numStories), fullPrompt, modelName: modelName || this.getModelName(), inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
       }
 
-      return { selectedArticles: selectedIndices.map(index => articles[index]), fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+      return { selectedArticles: selectedIndices.map((index: number) => articles[index]), fullPrompt, modelName: modelName || this.getModelName(), inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error selecting newsworthy stories:', error);
       // Fallback to random selection
@@ -281,7 +172,7 @@ Return only the article numbers (1, 2, 3, etc.) of the selected stories, separat
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
 User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
-        modelName: modelName || this.modelName,
+        modelName: modelName || this.getModelName(),
         inputTokenCount: 0,
         outputTokenCount: 0
       };
@@ -319,32 +210,14 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     }
 
     try {
-      const editionsText = editions.map((edition, index) => {
-        const articlesText = edition.articles.map((article, articleIndex) =>
-          `Article ${articleIndex + 1}:\nHeadline: ${article.headline}\nFirst Paragraph: ${article.body.split('\n')[0] || article.body.substring(0, 200)}`
-        ).join('\n\n');
-        return `Edition ${index + 1} (ID: ${edition.id}):\n${articlesText}`;
-      }).join('\n\n');
-
-      const systemPrompt = `You are a newspaper editor creating a comprehensive daily edition. Based on the available newspaper editions and their articles, create a structured daily newspaper with front page content, multiple topics, and editorial feedback. Create engaging, professional content that synthesizes the available editions into a cohesive daily newspaper.`;
-      const userPrompt = `Using the editorial guidelines: "${editorPrompt}", create a comprehensive daily newspaper edition based on these available newspaper editions and their articles:
-
-${editionsText}
-
-Generate a complete daily edition with:
-1. A compelling front page headline that captures the day's most important story
-2. A detailed front page article (300-500 words)
-3. 3-5 major topics, each with complete news coverage including headlines, two-paragraph stories, social media content, and contrasting viewpoints
-4. Feedback about the editorial prompt (both positive and negative aspects)
-
-Make the content engaging, balanced, and professionally written. Focus on creating a cohesive narrative that connects the various editions into a unified daily newspaper experience.`;
-
+      const editionsText = AIResponseUtils.formatEditionsText(editions);
+      const { systemPrompt, userPrompt } = AIPrompts.selectNotableEditionsPrompts(editionsText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(`Calling openai daily edition generation with model ${modelName || this.modelName}`);
+      console.log(`Calling openai daily edition generation with model ${modelName || this.getModelName()}`);
       console.log('Full prompt:', fullPrompt);
-      const response = await this.openai.chat.completions.create({
-        model: modelName || this.modelName,
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model: modelName || this.getModelName(),
         messages: [
           {
             role: 'system',
@@ -376,7 +249,7 @@ Make the content engaging, balanced, and professionally written. Focus on creati
          throw new Error('Invalid response structure from AI service');
        }
 
-        return { content: parsedResponse, fullPrompt, modelName: modelName || this.modelName, inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
+        return { content: parsedResponse, fullPrompt, modelName: modelName || this.getModelName(), inputTokenCount: response.usage?.prompt_tokens, outputTokenCount: response.usage?.completion_tokens };
     } catch (error) {
       console.error('Error generating daily edition:', error);
       throw error;
@@ -401,22 +274,10 @@ Make the content engaging, balanced, and professionally written. Focus on creati
   }> {
     try {
       // Format last events for context
-      const eventsContext = lastEvents.length > 0
-        ? lastEvents.map((event, index) =>
-            `Event ${index + 1}:\nTitle: ${event.title}\nFacts: ${event.facts.join(', ')}\nCreated: ${new Date(event.createdTime).toISOString()}`
-          ).join('\n\n')
-        : 'No previous events available.';
+      const eventsContext = AIResponseUtils.formatEventsContext(lastEvents);
 
       // Get configurable message slice count
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count for events, using default:', error);
-      }
+      const messageSliceCount = await this.aiClient.getMessageSliceCount();
 
       // Fetch recent social media messages
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -432,39 +293,12 @@ Make the content engaging, balanced, and professionally written. Focus on creati
         : 'No social media messages available.';
 
       const beatsList = reporter.beats.join(', ');
-
-      const systemPrompt = `You are an AI journalist tasked with identifying and tracking important events and developments. Your goal is to create structured event records that capture key facts about ongoing stories and developments. You specialize in these beats: ${beatsList}. ${reporter.prompt}`;
-
-       const userPrompt = `Based on the recent social media messages and the reporter's previous events, identify up to 5 significant events or developments that should be tracked. Focus on events and developments that align with your assigned beats: ${beatsList}. For each event:
-
-1. If this matches an existing event from the previous events list, use the existing event's numerical index and add any new facts to it
-2. If this is a new event, create a new title and initial facts
-3. Each event should have 1-5 key facts that capture the essential information
-4. messageIds: List the indices (1, 2, 3, etc.) of only the relevant messages you identified and actually used to create or update this event. If you didn't find any relevant messages or didn't use any specific messages, use an empty array.
-5. potentialMessageIds: After creating/updating the event, re-scan the social media messages for any that may be potentially related to this event; include their numeric indices in this field.
-
-Previous Events:
-${eventsContext}
-
-Recent Social Media Messages:
-${socialMediaContext}
-
-Instructions:
-- Review the social media messages for significant developments that align with your assigned beats: ${beatsList}
-- Prioritize events and developments within your beats over general news
-- Match new information to existing events where appropriate, or create new events for new developments
-- For each event, provide a clear title and 1-5 key facts
-- Focus on factual, verifiable information
-- Prioritize events that represent ongoing stories or important developments within your beats
-- Return up to 5 events maximum
-- IMPORTANT: Always include messageIds and potentialMessageIds arrays for each event, even if empty
- `;
-
+      const { systemPrompt, userPrompt } = AIPrompts.generateEventsPrompts(reporter, beatsList, eventsContext, socialMediaContext);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(`Calling openai event generation with model ${modelName || this.modelName}`);
-      const response = await this.openai.chat.completions.create({
-        model: modelName || this.modelName,
+      console.log(`Calling openai event generation with model ${modelName || this.getModelName()}`);
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model: modelName || this.getModelName(),
         messages: [
           {
             role: 'system',
@@ -491,7 +325,7 @@ Instructions:
         // Add modelName and token counts to each event
         const eventsWithModelName = (parsedResponse.events as any[]).map(event => ({
           ...event,
-          modelName: modelName || this.modelName,
+          modelName: modelName || this.getModelName(),
           inputTokenCount: response.usage?.prompt_tokens,
           outputTokenCount: response.usage?.completion_tokens
         }));
@@ -547,29 +381,13 @@ Instructions:
       const latestArticles = await this.dataStorageService.getArticlesByReporter(reporter.id, 5);
 
       // Format events for the prompt
-      const eventsContext = latestEvents.length > 0
-        ? latestEvents.map((event, index) =>
-            `Event ${index + 1}:\nTitle: ${event.title}\nFacts: ${event.facts.join(', ')}\nCreated: ${new Date(event.createdTime).toISOString()}`
-          ).join('\n\n')
-        : 'No previous events available for this reporter.';
+      const eventsContext = AIResponseUtils.formatEventsContext(latestEvents);
 
       // Format recent article headlines for context
-      const articlesContext = latestArticles.length > 0
-        ? latestArticles.map((article, index) =>
-            `Article ${index + 1}: "${article.headline}"`
-          ).join('\n')
-        : 'No previous articles available for this reporter.';
+      const articlesContext = AIResponseUtils.formatArticlesContext(latestArticles);
 
       // Get configurable message slice count
-      let messageSliceCount = 200; // Default fallback
-      try {
-        const editor = await this.dataStorageService.getEditor();
-        if (editor) {
-          messageSliceCount = editor.messageSliceCount;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch message slice count from Redis, using default:', error);
-      }
+      const messageSliceCount = await this.aiClient.getMessageSliceCount();
 
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{did: string; text: string; time: number}> = [];
@@ -581,49 +399,14 @@ Instructions:
       }
 
       // Format social media messages for the prompt
-      let socialMediaContext = '';
-      if (socialMediaMessages.length > 0) {
-        const formattedMessages: string[] = [];
+      const socialMediaContext = AIResponseUtils.formatSocialMediaContext(socialMediaMessages, false);
 
-        for (let i = 0; i < socialMediaMessages.length; i++) {
-          formattedMessages.push(`${i + 1}. "${socialMediaMessages[i].text}"`);
-        }
-
-        socialMediaContext = `\n\nRecent social media discussions:\n${formattedMessages.join('\n')}`;
-      }
-
-      const systemPrompt = `You are a professional journalist creating structured news articles. Generate comprehensive, well-researched articles with proper journalistic structure including lead paragraphs, key quotes, sources, and reporter notes. ${reporter.prompt}`;
-
-      const userPrompt = `Create a focused news article about one of your recent events. Your assigned beats are as follows: ${beatsList}.
-
-Here are your 5 latest events:
-${eventsContext}
-
-Here are the headlines of your 5 latest articles:
-${articlesContext}
-
-Choose ONE of the 5 events above and write a comprehensive news article about it. Follow these guidelines:
-
- *First, scan the provided social media messages for information relevant to any of your available beats. If there are zero relevant social media messages, stop processing and return empty strings for the rest of the fields. Include the numerical indexes of the messages relevant to the article you write in the "messageIds" field.
- * Write a compelling headline focused on this specific event
- * Create a strong lead paragraph (2-3 sentences) that hooks readers with this particular story
- * Write a detailed body (300-500 words) with deep context and analysis of this event
- * Include 2-4 key quotes specifically related to this event
- * List 3-5 credible sources focused on this particular event
- * Create a brief social media summary (under 280 characters) about this specific story
- * Provide reporter notes on research quality, source diversity, and factual accuracy for this event
- * Specify which beat from your assigned list you chose for this article
- * IMPORTANT: Do not write about topics you've covered in your recent articles unless there is newly developed information about that topic. If all recent events have been covered, choose the one with the most significant new developments.
-
-Make the article engaging, factual, and professionally written. Ensure all quotes are realistic and sources are credible. Focus exclusively on the chosen event to create a more targeted and impactful piece.${socialMediaContext}
-
-When generating the article, first review your recent articles to avoid repetition, then choose the most appropriate event from your list, and focus the entire article on that specific event to create a more targeted and impactful story. After writing the article, re-scan the social media messages for any that may be related to your chosen event; include their numeric indices in the "potentialMessageIds" field.`;
-
+      const { systemPrompt, userPrompt } = AIPrompts.generateArticlesFromEventsPrompts(reporter, beatsList, eventsContext, articlesContext, socialMediaContext);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(`Calling openai articles from events generation with model ${modelName || this.modelName}`);
-      const response = await this.openai.chat.completions.create({
-        model: modelName || this.modelName,
+      console.log(`Calling openai articles from events generation with model ${modelName || this.getModelName()}`);
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model: modelName || this.getModelName(),
         messages: [
           {
             role: 'system',
@@ -646,22 +429,12 @@ When generating the article, first review your recent articles to avoid repetiti
       }
 
       // Save the entire AI response to JSON file
-      try {
-        const responseFilePath = join(process.cwd(), 'api_responses', `article_from_events_${generationTime}.json`);
-        await writeFile(responseFilePath, JSON.stringify(response, null, 2));
-      } catch (error) {
-        console.warn('Failed to save AI response to file:', error);
-        // Continue with article generation even if file save fails
-      }
+      await AIResponseUtils.saveResponseToFile(response, 'article_from_events', generationTime);
 
-       const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
+      const parsedResponse = reporterArticleSchema.parse(JSON.parse(content)) as any;
 
-        // Add generated fields
-        parsedResponse.id = articleId;
-        parsedResponse.reporterId = reporter.id;
-        parsedResponse.generationTime = generationTime;
-        parsedResponse.wordCount = parsedResponse.body!.split(' ').length;
-        parsedResponse.modelName = modelName || this.modelName;
+      // Add generated fields
+      AIResponseUtils.addArticleMetadata(parsedResponse, articleId, reporter.id, generationTime, modelName || this.getModelName(), response.usage);
 
         return { response: parsedResponse, prompt: fullPrompt, messages: socialMediaMessages.map(x => x.text)} ;
     } catch (error) {
