@@ -126,12 +126,19 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden items-center space-x-4">
-            {user && (
+            {user ? (
               <Link
                 href="/editions"
                 className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                All Editions
+                editions
+              </Link>
+            ) : (
+              <Link
+                href="/editions"
+                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Editions
               </Link>
             )}
             <Link
@@ -148,12 +155,14 @@ export default function Navigation() {
                 Articles
               </Link>
             )}
-            <Link
-              href="/ads"
-              className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Ads
-            </Link>
+            {user && (
+              <Link
+                href="/ads"
+                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Ads
+              </Link>
+            )}
             {/* <Link
               href="/pricing"
               className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -263,13 +272,21 @@ export default function Navigation() {
       {/* Mobile menu */}
       <div className={`${isMobileMenuOpen ? "block" : "hidden"}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-slate-200">
-          {user && (
+          {user ? (
             <Link
               href="/editions"
               onClick={closeMobileMenu}
               className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
             >
-              All Editions
+              editions
+            </Link>
+          ) : (
+            <Link
+              href="/editions"
+              onClick={closeMobileMenu}
+              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            >
+              Editions
             </Link>
           )}
           <Link
@@ -288,13 +305,15 @@ export default function Navigation() {
               Articles
             </Link>
           )}
-          <Link
-            href="/ads"
-            onClick={closeMobileMenu}
-            className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-          >
-            Ads
-          </Link>
+          {user && (
+            <Link
+              href="/ads"
+              onClick={closeMobileMenu}
+              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            >
+              Ads
+            </Link>
+          )}
           {/* <Link
             href="/pricing"
             onClick={closeMobileMenu}

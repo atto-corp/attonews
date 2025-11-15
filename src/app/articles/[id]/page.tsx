@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import ExpandableSection from "../../components/ExpandableSection";
+import ExpandableSection from "@/components/ExpandableSection";
 
 interface Article {
   id: string;

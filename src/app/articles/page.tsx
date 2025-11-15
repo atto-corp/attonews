@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import PageContainer from "../../components/PageContainer";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import ContentCard from "../../components/ContentCard";
-import PageHeader from "../../components/PageHeader";
-import GradientButton from "../../components/GradientButton";
-import ExpandableSection from "../../components/ExpandableSection";
+import PageContainer from "@/components/PageContainer";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import ContentCard from "@/components/ContentCard";
+import PageHeader from "@/components/PageHeader";
+import GradientButton from "@/components/GradientButton";
+import ExpandableSection from "@/components/ExpandableSection";
 
 interface Article {
   id: string;
