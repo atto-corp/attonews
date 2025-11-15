@@ -85,6 +85,65 @@ export default function Navigation() {
     setIsMobileMenuOpen(false);
   };
 
+  // Navigation configuration
+  const navigationItems = [
+    { href: "/editions", text: "Editions", condition: true },
+    { href: "/reporters", text: "Reporters", condition: !!user },
+    { href: "/articles", text: "Articles", condition: !!user?.hasReader },
+    { href: "/ads", text: "Ads", condition: !!user },
+    { href: "/account", text: "Account", condition: !!user },
+    { href: "/events", text: "Events", condition: true }
+  ];
+
+  const adminItems = [
+    { href: "/users", text: "Users" },
+    { href: "/admin/bluesky-messages", text: "Bluesky Messages" },
+    { href: "/editor", text: "Editor Settings", isEditorButton: true }
+  ];
+
+  const renderNavigationLink = (
+    item: (typeof navigationItems)[0],
+    isMobile: boolean
+  ) => {
+    if (!item.condition) return null;
+
+    const baseClasses = isMobile
+      ? "text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+      : "text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors";
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={isMobile ? closeMobileMenu : undefined}
+        className={baseClasses}
+      >
+        {item.text}
+      </Link>
+    );
+  };
+
+  const renderAdminLink = (item: (typeof adminItems)[0], isMobile: boolean) => {
+    const baseClasses = isMobile
+      ? item.isEditorButton
+        ? "bg-blue-600 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700 transition-colors"
+        : "text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
+      : item.isEditorButton
+        ? "bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+        : "text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-xs font-medium transition-colors";
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={isMobile ? closeMobileMenu : undefined}
+        className={baseClasses}
+      >
+        {item.text}
+      </Link>
+    );
+  };
+
   return (
     <nav className="bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,86 +185,11 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden items-center space-x-4">
-            {user ? (
-              <Link
-                href="/editions"
-                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                editions
-              </Link>
-            ) : (
-              <Link
-                href="/editions"
-                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Editions
-              </Link>
-            )}
-            <Link
-              href="/reporters"
-              className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Reporters
-            </Link>
-            {user?.hasReader && (
-              <Link
-                href="/articles"
-                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Articles
-              </Link>
-            )}
-            {user && (
-              <Link
-                href="/ads"
-                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Ads
-              </Link>
-            )}
-            {/* <Link
-              href="/pricing"
-              className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Pricing
-            </Link> */}
-            {user && (
-              <Link
-                href="/account"
-                className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Account
-              </Link>
-            )}
-            <Link
-              href="/events"
-              className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Events
-            </Link>
+            {navigationItems.map((item) => renderNavigationLink(item, false))}
 
             {/* Admin-only links */}
             {user?.role === "admin" && (
-              <>
-                <Link
-                  href="/users"
-                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-xs font-medium transition-colors"
-                >
-                  Users
-                </Link>
-                <Link
-                  href="/admin/bluesky-messages"
-                  className="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-xs font-medium transition-colors"
-                >
-                  Bluesky Messages
-                </Link>
-                <Link
-                  href="/editor"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Editor Settings
-                </Link>
-              </>
+              <>{adminItems.map((item) => renderAdminLink(item, false))}</>
             )}
 
             {/* Show login/logout based on auth status */}
@@ -272,97 +256,11 @@ export default function Navigation() {
       {/* Mobile menu */}
       <div className={`${isMobileMenuOpen ? "block" : "hidden"}`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-slate-200">
-          {user ? (
-            <Link
-              href="/editions"
-              onClick={closeMobileMenu}
-              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-              editions
-            </Link>
-          ) : (
-            <Link
-              href="/editions"
-              onClick={closeMobileMenu}
-              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-              Editions
-            </Link>
-          )}
-          <Link
-            href="/reporters"
-            onClick={closeMobileMenu}
-            className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-          >
-            Reporters
-          </Link>
-          {user?.hasReader && (
-            <Link
-              href="/articles"
-              onClick={closeMobileMenu}
-              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-              Articles
-            </Link>
-          )}
-          {user && (
-            <Link
-              href="/ads"
-              onClick={closeMobileMenu}
-              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-              Ads
-            </Link>
-          )}
-          {/* <Link
-            href="/pricing"
-            onClick={closeMobileMenu}
-            className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-          >
-            Pricing
-          </Link> */}
-          {user && (
-            <Link
-              href="/account"
-              onClick={closeMobileMenu}
-              className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            >
-              Account
-            </Link>
-          )}
-          <Link
-            href="/events"
-            onClick={closeMobileMenu}
-            className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-          >
-            Events
-          </Link>
+          {navigationItems.map((item) => renderNavigationLink(item, true))}
 
           {/* Admin-only links */}
           {user?.role === "admin" && (
-            <>
-              <Link
-                href="/users"
-                onClick={closeMobileMenu}
-                className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Users
-              </Link>
-              <Link
-                href="/admin/bluesky-messages"
-                onClick={closeMobileMenu}
-                className="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Bluesky Messages
-              </Link>
-              <Link
-                href="/editor"
-                onClick={closeMobileMenu}
-                className="bg-blue-600 text-white block px-3 py-2 rounded-md text-base font-medium hover:bg-blue-700 transition-colors"
-              >
-                Editor Settings
-              </Link>
-            </>
+            <>{adminItems.map((item) => renderAdminLink(item, true))}</>
           )}
 
           {/* Mobile auth section */}
