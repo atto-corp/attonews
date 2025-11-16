@@ -43,3 +43,5 @@ next-env.d.ts
 dump.rdb
 deploy.sh
 opencode.json
+config.yaml
+native

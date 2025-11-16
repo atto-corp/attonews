@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -74,6 +75,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
 
   // Navigation configuration
   const navigationItems = [
+    { href: "/about", text: "About", condition: true },
     { href: "/editions", text: "Editions", condition: true },
     { href: "/reporters", text: "Reporters", condition: !!user },
     { href: "/articles", text: "Articles", condition: !!user?.hasReader },
@@ -137,33 +139,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
         <div className="flex justify-between h-12">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 5a2 2 0 012-2h14a2 2 0 012 2v2H3V5z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 12h.01M11 12h.01M15 12h.01M7 16h.01M11 16h.01M15 16h.01"
-                  />
-                </svg>
-              </div>
+              <Image src="/icon.png" alt="App icon" width={32} height={32} />
               <span className="text-base font-bold text-slate-800">
                 {appFullName}
               </span>
