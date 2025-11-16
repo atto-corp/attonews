@@ -85,20 +85,6 @@ export default function EditionsPage() {
 
   return (
     <PageContainer maxWidth="max-w-7xl">
-      <ContentCard className="p-8 mb-8">
-        <PageHeader
-          title="All Newspaper Editions"
-          description="Browse and view all available newspaper editions"
-        >
-          <Link
-            href="/"
-            className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
-          >
-            ← Back to Home
-          </Link>
-        </PageHeader>
-      </ContentCard>
-
       {/* Message */}
       {message && (
         <div className="mb-6 px-6 py-4 backdrop-blur-sm rounded-xl text-center font-medium bg-red-500/20 border border-red-500/30 text-red-200">
