@@ -1,7 +1,7 @@
-# AI Newsroom Data Storage Strategy
+# attonews Data Storage Strategy
 
 ## Overview
-This document outlines the Redis data storage strategy for the AI Newsroom application. All data will be stored in Redis using keys with structured naming conventions and appropriate data types for efficient access and querying.
+This document outlines the Redis data storage strategy for the attonews application. All data will be stored in Redis using keys with structured naming conventions and appropriate data types for efficient access and querying.
 
 ## Data Types and Structures
 

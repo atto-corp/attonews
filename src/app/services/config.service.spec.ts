@@ -22,7 +22,7 @@ describe("ConfigService", () => {
       const mockConfig = {
         app: {
           name: "TestRoom",
-          fullName: "Test AI Newsroom"
+          fullName: "Test attonews"
         }
       };
 
@@ -40,7 +40,7 @@ describe("ConfigService", () => {
       const mockConfig = {
         app: {
           name: "Newsroom",
-          fullName: "AI Newsroom"
+          fullName: "attonews"
         }
       };
 
@@ -65,7 +65,7 @@ describe("ConfigService", () => {
       const config = await configService.loadConfig();
 
       expect(config.app.name).toBe("Newsroom");
-      expect(config.app.fullName).toBe("AI Newsroom");
+      expect(config.app.fullName).toBe("attonews");
     });
   });
 

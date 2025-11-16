@@ -17,7 +17,7 @@ export default function Navigation() {
   const [user, setUser] = useState<User | null>(null);
   const [_loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [appFullName, setAppFullName] = useState("AI Newsroom");
+  const [appFullName, setAppFullName] = useState("attonews");
   const pathname = usePathname();
 
   useEffect(() => {

@@ -35,7 +35,7 @@ export async function GET() {
     return NextResponse.json({
       app: {
         name: "Newsroom",
-        fullName: "AI Newsroom"
+        fullName: "attonews"
       }
     });
   }

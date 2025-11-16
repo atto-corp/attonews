@@ -48,8 +48,8 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  const [appName, setAppName] = useState("Newsroom");
-  const [appFullName, setAppFullName] = useState("AI Newsroom");
+  const [appName, setAppName] = useState("");
+  const [appFullName, setAppFullName] = useState("");
 
   // Check authentication status
   useEffect(() => {

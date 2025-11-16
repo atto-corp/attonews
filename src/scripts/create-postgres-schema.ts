@@ -3,7 +3,7 @@
 /**
  * PostgreSQL Database Schema Creation Script
  *
- * This script creates all the necessary tables and indexes for the AI Newsroom
+ * This script creates all the necessary tables and indexes for the attonews
  * PostgreSQL data storage backend.
  *
  * Usage: npx ts-node scripts/create-postgres-schema.ts

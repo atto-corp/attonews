@@ -46,7 +46,7 @@ export class ConfigService {
       this.config = {
         app: {
           name: "Newsroom",
-          fullName: "AI Newsroom"
+          fullName: "attonews"
         }
       };
       return this.config;
