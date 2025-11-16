@@ -171,7 +171,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             {navigationItems.map((item) => renderNavigationLink(item, false))}
 
             {/* Admin-only links */}
