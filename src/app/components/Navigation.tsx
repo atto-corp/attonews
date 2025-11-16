@@ -13,11 +13,14 @@ interface User {
   hasEditor: boolean;
 }
 
-export default function Navigation() {
+interface NavigationProps {
+  appFullName: string;
+}
+
+export default function Navigation({ appFullName }: NavigationProps) {
   const [user, setUser] = useState<User | null>(null);
   const [_loading, setLoading] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [appFullName, setAppFullName] = useState("attonews");
   const pathname = usePathname();
 
   useEffect(() => {
@@ -28,22 +31,6 @@ export default function Navigation() {
   useEffect(() => {
     checkAuthStatus();
   }, [pathname]);
-
-  // Load app configuration
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppFullName(config.app.fullName);
-        }
-      } catch (error) {
-        console.error("Failed to load config:", error);
-      }
-    };
-    loadConfig();
-  }, []);
 
   const checkAuthStatus = async () => {
     try {

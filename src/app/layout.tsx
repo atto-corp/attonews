@@ -24,17 +24,20 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const configService = await ServiceContainer.getInstance().getConfigService();
+  const appFullName = await configService.getAppFullName();
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navigation />
+        <Navigation appFullName={appFullName} />
         {children}
       </body>
     </html>
