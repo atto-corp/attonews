@@ -20,7 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: fullName,
-    description: "AI-powered newsroom with automated reporting and editing"
+    description: "AI-powered newsroom with automated reporting and editing",
+    icons: {
+      icon: "/icon.png"
+    }
   };
 }
 
