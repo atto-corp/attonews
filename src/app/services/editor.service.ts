@@ -11,24 +11,13 @@ export class EditorService {
   async generateHourlyEdition(): Promise<NewspaperEdition> {
     console.log("Editor: Starting newspaper edition generation...");
 
-    // Get all reporters
-    const reporters = await this.dataStorageService.getAllReporters();
-    if (reporters.length === 0) {
-      throw new Error("No reporters available to generate articles");
-    }
-
-    // Get articles from the last 3 hours
+    // Get articles from the last 3 hours using global index (single query)
     const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
-    const allRecentArticles: Article[] = [];
-
-    for (const reporter of reporters) {
-      const articles = await this.dataStorageService.getArticlesInTimeRange(
-        reporter.id,
+    const allRecentArticles =
+      await this.dataStorageService.getArticlesInTimeRangeGlobal(
         threeHoursAgo,
         Date.now()
       );
-      allRecentArticles.push(...articles);
-    }
 
     if (allRecentArticles.length === 0) {
       throw new Error("No articles found in the last 3 hours");

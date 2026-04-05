@@ -166,6 +166,7 @@ export const REDIS_KEYS = {
     `article:${articleId}:input_token_count`,
   ARTICLE_OUTPUT_TOKEN_COUNT: (articleId: string) =>
     `article:${articleId}:output_token_count`,
+  ARTICLE_REPORTER: (articleId: string) => `article:${articleId}:reporter_id`,
 
   // Newspaper Editions
   EDITIONS: "editions",
@@ -211,6 +212,7 @@ export const REDIS_KEYS = {
     `event:${eventId}:input_token_count`,
   EVENT_OUTPUT_TOKEN_COUNT: (eventId: string) =>
     `event:${eventId}:output_token_count`,
+  EVENT_REPORTER: (eventId: string) => `event:${eventId}:reporter_id`,
 
   // Ads
   ADS: "ads",

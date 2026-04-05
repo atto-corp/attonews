@@ -32,6 +32,10 @@ export interface IDataStorageService {
     startTime: number,
     endTime: number
   ): Promise<Article[]>;
+  getArticlesInTimeRangeGlobal(
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]>;
   getArticle(articleId: string): Promise<Article | null>;
 
   // Event operations

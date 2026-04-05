@@ -281,16 +281,37 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   /**
-   * O(n) where n = number of reporters. Sequential loop with n Redis round trips.
+   * O(r) where r = number of reporters. Uses pipeline to batch all GET commands.
    */
   async getAllReporters(): Promise<Reporter[]> {
     const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
-    const reporters: Reporter[] = [];
+    if (reporterIds.length === 0) return [];
+
+    const multi = this.client.multi();
 
     for (const id of reporterIds) {
-      const reporter = await this.getReporter(id);
-      if (reporter) {
-        reporters.push(reporter);
+      multi.sMembers(REDIS_KEYS.REPORTER_BEATS(id));
+      multi.get(REDIS_KEYS.REPORTER_PROMPT(id));
+      multi.get(REDIS_KEYS.REPORTER_ENABLED(id));
+    }
+
+    const results = await multi.exec();
+    if (!results) return [];
+
+    const reporters: Reporter[] = [];
+    for (let i = 0; i < reporterIds.length; i++) {
+      const baseIdx = i * 3;
+      const beats = results[baseIdx] as unknown as string[] | null;
+      const prompt = results[baseIdx + 1] as unknown as string | null;
+      const enabledStr = results[baseIdx + 2] as unknown as string | null;
+
+      if (prompt) {
+        reporters.push({
+          id: reporterIds[i],
+          beats: beats || [],
+          prompt,
+          enabled: enabledStr === null ? true : enabledStr === "true"
+        });
       }
     }
 
@@ -437,6 +458,13 @@ export class RedisDataStorageService implements IDataStorageService {
       );
     }
 
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.ARTICLE_REPORTER(articleId),
+      article.reporterId
+    );
+    multi.set(REDIS_KEYS.ARTICLE_REPORTER(articleId), article.reporterId);
+
     await multi.exec();
   }
 
@@ -515,7 +543,30 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   /**
-   * O(r) where r = number of reporters. Calls findReporterForArticle internally.
+   * O(m) where m = number of articles in the global time range.
+   * Uses ARTICLES_LATEST sorted set for efficient time-based retrieval.
+   */
+  async getArticlesInTimeRangeGlobal(
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]> {
+    const articleIds = await this.client.zRangeByScore(
+      REDIS_KEYS.ARTICLES_LATEST,
+      startTime,
+      endTime
+    );
+
+    if (articleIds.length === 0) return [];
+
+    const articles = await Promise.all(
+      articleIds.map((id) => this.getArticle(id))
+    );
+
+    return articles.filter((a): a is Article => a !== null);
+  }
+
+  /**
+   * O(r) where r = number of reporters. Uses mapping key when available (O(1)).
    */
   async getArticle(articleId: string): Promise<Article | null> {
     const [
@@ -542,9 +593,13 @@ export class RedisDataStorageService implements IDataStorageService {
 
     if (!headline || !body || !timeStr) return null;
 
-    // Extract reporter ID from the articles sorted set
-    // This is a bit complex, we need to find which reporter this article belongs to
-    const reporterId = await this.findReporterForArticle(articleId);
+    // Get reporter ID from mapping key (O(1)), fallback to legacy search if missing
+    let reporterId = await this.client.get(
+      REDIS_KEYS.ARTICLE_REPORTER(articleId)
+    );
+    if (!reporterId) {
+      reporterId = await this.findReporterForArticle(articleId);
+    }
     if (!reporterId) return null;
 
     // Parse messageIds and messageTexts JSON
@@ -734,6 +789,13 @@ export class RedisDataStorageService implements IDataStorageService {
       );
     }
 
+    console.log(
+      "Redis Write: SET",
+      REDIS_KEYS.EVENT_REPORTER(eventId),
+      event.reporterId
+    );
+    multi.set(REDIS_KEYS.EVENT_REPORTER(eventId), event.reporterId);
+
     await multi.exec();
   }
 
@@ -813,8 +875,11 @@ export class RedisDataStorageService implements IDataStorageService {
 
     if (!title || !createdTimeStr || !updatedTimeStr || !factsJson) return null;
 
-    // Extract reporter ID from the events sorted set
-    const reporterId = await this.findReporterForEvent(eventId);
+    // Get reporter ID from mapping key (O(1)), fallback to legacy search if missing
+    let reporterId = await this.client.get(REDIS_KEYS.EVENT_REPORTER(eventId));
+    if (!reporterId) {
+      reporterId = await this.findReporterForEvent(eventId);
+    }
     if (!reporterId) return null;
 
     // Parse facts JSON
@@ -1348,16 +1413,40 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   /**
-   * O(a) where a = number of ads. Sequential loop.
+   * O(a) where a = number of ads. Uses pipeline to batch all GET commands.
    */
   async getAllAds(): Promise<AdEntry[]> {
     const adIds = await this.client.sMembers(REDIS_KEYS.ADS);
-    const ads: AdEntry[] = [];
+    if (adIds.length === 0) return [];
+
+    const multi = this.client.multi();
 
     for (const adId of adIds) {
-      const ad = await this.getAd(adId);
-      if (ad) {
-        ads.push(ad);
+      multi.get(REDIS_KEYS.AD_NAME(adId));
+      multi.get(REDIS_KEYS.AD_BID_PRICE(adId));
+      multi.get(REDIS_KEYS.AD_PROMPT_CONTENT(adId));
+      multi.get(REDIS_KEYS.AD_USER_ID(adId));
+    }
+
+    const results = await multi.exec();
+    if (!results) return [];
+
+    const ads: AdEntry[] = [];
+    for (let i = 0; i < adIds.length; i++) {
+      const baseIdx = i * 4;
+      const name = results[baseIdx] as unknown as string | null;
+      const bidPriceStr = results[baseIdx + 1] as unknown as string | null;
+      const promptContent = results[baseIdx + 2] as unknown as string | null;
+      const userId = results[baseIdx + 3] as unknown as string | null;
+
+      if (name && bidPriceStr && promptContent && userId) {
+        ads.push({
+          id: adIds[i],
+          name,
+          bidPrice: parseFloat(bidPriceStr),
+          promptContent,
+          userId
+        });
       }
     }
 
@@ -1592,16 +1681,52 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   /**
-   * O(u) where u = number of users. Sequential loop.
+   * O(u) where u = number of users. Uses pipeline to batch all GET commands.
    */
   async getAllUsers(): Promise<User[]> {
     const userIds = await this.client.sMembers(REDIS_KEYS.USERS);
-    const users: User[] = [];
+    if (userIds.length === 0) return [];
+
+    const multi = this.client.multi();
 
     for (const userId of userIds) {
-      const user = await this.getUserById(userId);
-      if (user) {
-        users.push(user);
+      multi.get(REDIS_KEYS.USER_EMAIL(userId));
+      multi.get(REDIS_KEYS.USER_PASSWORD_HASH(userId));
+      multi.get(REDIS_KEYS.USER_ROLE(userId));
+      multi.get(REDIS_KEYS.USER_CREATED_AT(userId));
+      multi.get(REDIS_KEYS.USER_LAST_LOGIN_AT(userId));
+      multi.get(REDIS_KEYS.USER_HAS_READER(userId));
+      multi.get(REDIS_KEYS.USER_HAS_REPORTER(userId));
+      multi.get(REDIS_KEYS.USER_HAS_EDITOR(userId));
+    }
+
+    const results = await multi.exec();
+    if (!results) return [];
+
+    const users: User[] = [];
+    for (let i = 0; i < userIds.length; i++) {
+      const baseIdx = i * 8;
+      const email = results[baseIdx] as unknown as string | null;
+      const passwordHash = results[baseIdx + 1] as unknown as string | null;
+      const role = results[baseIdx + 2] as unknown as string | null;
+      const createdAtStr = results[baseIdx + 3] as unknown as string | null;
+      const lastLoginAtStr = results[baseIdx + 4] as unknown as string | null;
+      const hasReaderStr = results[baseIdx + 5] as unknown as string | null;
+      const hasReporterStr = results[baseIdx + 6] as unknown as string | null;
+      const hasEditorStr = results[baseIdx + 7] as unknown as string | null;
+
+      if (email && passwordHash && role && createdAtStr) {
+        users.push({
+          id: userIds[i],
+          email,
+          passwordHash,
+          role: role as User["role"],
+          createdAt: parseInt(createdAtStr),
+          lastLoginAt: lastLoginAtStr ? parseInt(lastLoginAtStr) : undefined,
+          hasReader: hasReaderStr === "true",
+          hasReporter: hasReporterStr === "true",
+          hasEditor: hasEditorStr === "true"
+        });
       }
     }
 

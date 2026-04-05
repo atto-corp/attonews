@@ -346,6 +346,27 @@ export class MongoDBDataStorageService implements IDataStorageService {
     }));
   }
 
+  async getArticlesInTimeRangeGlobal(startTime: number, endTime: number): Promise<Article[]> {
+    if (!this.articlesCollection) throw new Error('Database not connected');
+
+    const query = {
+      generationTime: { $gte: startTime, $lte: endTime }
+    };
+
+    const mongoArticles = await this.articlesCollection.find(query).sort({ generationTime: -1 }).toArray();
+    return mongoArticles.map((mongo: MongoArticle) => ({
+      id: mongo._id,
+      reporterId: mongo.reporterId,
+      headline: mongo.headline,
+      body: mongo.body,
+      generationTime: mongo.generationTime,
+      prompt: mongo.prompt,
+      messageIds: mongo.messageIds,
+      messageTexts: mongo.messageTexts,
+      modelName: mongo.modelName
+    }));
+  }
+
   async getArticle(articleId: string): Promise<Article | null> {
     if (!this.articlesCollection) throw new Error('Database not connected');
 

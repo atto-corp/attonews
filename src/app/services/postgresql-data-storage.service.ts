@@ -500,6 +500,40 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
+  async getArticlesInTimeRangeGlobal(
+    startTime: number,
+    endTime: number
+  ): Promise<Article[]> {
+    const client = await this.pool.connect();
+
+    try {
+      const result = await client.query(
+        `
+        SELECT * FROM articles
+        WHERE generation_time >= $1 AND generation_time <= $2
+        ORDER BY generation_time DESC
+      `,
+        [startTime, endTime]
+      );
+
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        reporterId: row.reporter_id,
+        headline: row.headline,
+        body: row.body,
+        generationTime: row.generation_time,
+        prompt: row.prompt,
+        messageIds: row.message_ids,
+        messageTexts: row.message_texts,
+        modelName: row.model_name,
+        inputTokenCount: row.input_token_count,
+        outputTokenCount: row.output_token_count
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
   async getArticle(articleId: string): Promise<Article | null> {
     const client = await this.pool.connect();
 
