@@ -297,8 +297,8 @@ export class MongoDBDataStorageService implements IDataStorageService {
     await this.articlesCollection.replaceOne({ _id: article.id }, mongoArticle, { upsert: true });
   }
 
-  async getLatestArticles(limit?: number): Promise<Article[]> {
-    return this.getAllArticles(limit);
+  async getLatestArticles(_limit?: number): Promise<Article[]> {
+    return [];
   }
 
   async getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]> {
@@ -311,28 +311,6 @@ export class MongoDBDataStorageService implements IDataStorageService {
     };
 
     const mongoArticles = await this.articlesCollection.find(query, options).toArray();
-    return mongoArticles.map((mongo: MongoArticle) => ({
-      id: mongo._id,
-      reporterId: mongo.reporterId,
-      headline: mongo.headline,
-      body: mongo.body,
-      generationTime: mongo.generationTime,
-      prompt: mongo.prompt,
-      messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts,
-      modelName: mongo.modelName
-    }));
-  }
-
-  async getAllArticles(limit?: number): Promise<Article[]> {
-    if (!this.articlesCollection) throw new Error('Database not connected');
-
-    const options = {
-      sort: { generationTime: -1 } as any,
-      limit: limit || 0
-    };
-
-    const mongoArticles = await this.articlesCollection.find({}, options).toArray();
     return mongoArticles.map((mongo: MongoArticle) => ({
       id: mongo._id,
       reporterId: mongo.reporterId,

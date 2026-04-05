@@ -20,7 +20,7 @@ export const GET = withAuth(
     }
 
     // Get all articles with limit
-    const articles = await redis.getAllArticles(limit);
+    const articles = await redis.getLatestArticles(limit);
 
     return NextResponse.json(articles);
   },

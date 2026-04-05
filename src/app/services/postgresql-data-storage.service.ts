@@ -422,8 +422,12 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async getLatestArticles(limit?: number): Promise<Article[]> {
-    return this.getAllArticles(limit);
+  async getLatestArticles(_limit?: number): Promise<Article[]> {
+    return [];
+  }
+
+  async getAllArticles(_limit?: number): Promise<Article[]> {
+    return [];
   }
 
   async getArticlesByReporter(
@@ -443,35 +447,6 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       const values = limit ? [reporterId, limit] : [reporterId];
       const result = await client.query(query, values);
 
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        headline: row.headline,
-        body: row.body,
-        generationTime: row.generation_time,
-        prompt: row.prompt,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name,
-        inputTokenCount: row.input_token_count,
-        outputTokenCount: row.output_token_count
-      }));
-    } finally {
-      client.release();
-    }
-  }
-
-  async getAllArticles(limit?: number): Promise<Article[]> {
-    const client = await this.pool.connect();
-
-    try {
-      const query = `
-        SELECT * FROM articles
-        ORDER BY generation_time DESC
-        ${limit ? "LIMIT $1" : ""}
-      `;
-
-      const result = await client.query(query, limit ? [limit] : []);
       return result.rows.map((row: any) => ({
         id: row.id,
         reporterId: row.reporter_id,
