@@ -280,6 +280,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(n) where n = number of reporters. Sequential loop with n Redis round trips.
+   */
   async getAllReporters(): Promise<Reporter[]> {
     const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
     const reporters: Reporter[] = [];
@@ -294,6 +297,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return reporters;
   }
 
+  /**
+   * O(1) - parallel GET for beats, prompt, enabled.
+   */
   async getReporter(id: string): Promise<Reporter | null> {
     const [beats, prompt, enabledStr] = await Promise.all([
       this.client.sMembers(REDIS_KEYS.REPORTER_BEATS(id)),
@@ -434,6 +440,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(m) where m = number of articles returned (limited to 100). Sequential loop.
+   */
   async getLatestArticles(limit?: number): Promise<Article[]> {
     const count = limit || 100;
     const articleIds = await this.client.ZRANGE(
@@ -454,6 +463,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return articles;
   }
 
+  /**
+   * O(m) where m = number of articles for this reporter.
+   */
   async getArticlesByReporter(
     reporterId: string,
     limit?: number
@@ -477,6 +489,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return articles;
   }
 
+  /**
+   * O(m) where m = number of articles in the time range for this reporter.
+   */
   async getArticlesInTimeRange(
     reporterId: string,
     startTime: number,
@@ -499,6 +514,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return articles;
   }
 
+  /**
+   * O(r) where r = number of reporters. Calls findReporterForArticle internally.
+   */
   async getArticle(articleId: string): Promise<Article | null> {
     const [
       headline,
@@ -572,6 +590,9 @@ export class RedisDataStorageService implements IDataStorageService {
     };
   }
 
+  /**
+   * O(r) where r = number of reporters. Scans ALL reporter sorted sets to find ownership.
+   */
   private async findReporterForArticle(
     articleId: string
   ): Promise<string | null> {
@@ -716,6 +737,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(m) where m = number of events for this reporter.
+   */
   async getEventsByReporter(
     reporterId: string,
     limit?: number
@@ -739,6 +763,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return events;
   }
 
+  /**
+   * O(m) where m = number of events returned (limited to 100). Uses Promise.all for parallel fetch.
+   */
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
     const eventIds = await this.client.ZRANGE(
       REDIS_KEYS.EVENTS_LATEST,
@@ -754,6 +781,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return events.filter((e): e is Event => e !== null);
   }
 
+  /**
+   * O(r) where r = number of reporters. Calls findReporterForEvent internally.
+   */
   async getEvent(eventId: string): Promise<Event | null> {
     const [
       title,
@@ -841,6 +871,9 @@ export class RedisDataStorageService implements IDataStorageService {
     };
   }
 
+  /**
+   * O(r) where r = number of reporters. Scans ALL reporter sorted sets to find ownership.
+   */
   private async findReporterForEvent(eventId: string): Promise<string | null> {
     const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
 
@@ -953,6 +986,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(m) where m = number of editions. Sequential loop.
+   */
   async getNewspaperEditions(limit?: number): Promise<NewspaperEdition[]> {
     const count = limit || -1;
     const editionIds = await this.client.ZRANGE(
@@ -973,6 +1009,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return editions;
   }
 
+  /**
+   * O(m) where m = number of editions returned (limited to 50). Uses Promise.all for parallel fetch.
+   */
   async getLatestEditions(limit?: number): Promise<NewspaperEdition[]> {
     const count = limit || 50;
     const editionIds = await this.client.ZRANGE(
@@ -989,6 +1028,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return editions.filter((e): e is NewspaperEdition => e !== null);
   }
 
+  /**
+   * O(s) where s = number of stories in the edition (SMEMBERS call).
+   */
   async getNewspaperEdition(
     editionId: string
   ): Promise<NewspaperEdition | null> {
@@ -1173,6 +1215,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(m) where m = number of daily editions. Sequential loop.
+   */
   async getDailyEditions(limit?: number): Promise<DailyEdition[]> {
     const count = limit || -1;
     const dailyEditionIds = await this.client.ZRANGE(
@@ -1195,6 +1240,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return dailyEditions;
   }
 
+  /**
+   * O(e) where e = number of editions referenced in this daily edition.
+   */
   async getDailyEdition(dailyEditionId: string): Promise<DailyEdition | null> {
     const [
       editions,
@@ -1299,6 +1347,9 @@ export class RedisDataStorageService implements IDataStorageService {
     await multi.exec();
   }
 
+  /**
+   * O(a) where a = number of ads. Sequential loop.
+   */
   async getAllAds(): Promise<AdEntry[]> {
     const adIds = await this.client.sMembers(REDIS_KEYS.ADS);
     const ads: AdEntry[] = [];
@@ -1313,6 +1364,9 @@ export class RedisDataStorageService implements IDataStorageService {
     return ads;
   }
 
+  /**
+   * O(a) where a = number of ads. Fetches all then sorts in-memory by timestamp.
+   */
   async getMostRecentAd(): Promise<AdEntry | null> {
     const adIds = await this.client.sMembers(REDIS_KEYS.ADS);
     if (adIds.length === 0) return null;
@@ -1537,6 +1591,9 @@ export class RedisDataStorageService implements IDataStorageService {
     );
   }
 
+  /**
+   * O(u) where u = number of users. Sequential loop.
+   */
   async getAllUsers(): Promise<User[]> {
     const userIds = await this.client.sMembers(REDIS_KEYS.USERS);
     const users: User[] = [];
