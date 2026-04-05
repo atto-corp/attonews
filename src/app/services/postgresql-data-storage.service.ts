@@ -422,6 +422,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
+  async getLatestArticles(limit?: number): Promise<Article[]> {
+    return this.getAllArticles(limit);
+  }
+
   async getArticlesByReporter(
     reporterId: string,
     limit?: number

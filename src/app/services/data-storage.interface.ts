@@ -25,6 +25,7 @@ export interface IDataStorageService {
 
   // Article operations
   saveArticle(article: Article): Promise<void>;
+  getLatestArticles(limit?: number): Promise<Article[]>;
   getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]>;
   getAllArticles(limit?: number): Promise<Article[]>;
   getArticlesInTimeRange(

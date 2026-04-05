@@ -297,6 +297,10 @@ export class MongoDBDataStorageService implements IDataStorageService {
     await this.articlesCollection.replaceOne({ _id: article.id }, mongoArticle, { upsert: true });
   }
 
+  async getLatestArticles(limit?: number): Promise<Article[]> {
+    return this.getAllArticles(limit);
+  }
+
   async getArticlesByReporter(reporterId: string, limit?: number): Promise<Article[]> {
     if (!this.articlesCollection) throw new Error('Database not connected');
 

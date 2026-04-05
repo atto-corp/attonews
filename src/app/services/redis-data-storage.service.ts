@@ -333,6 +333,29 @@ export class RedisDataStorageService implements IDataStorageService {
       value: articleId
     });
 
+    // Add to global latest articles sorted set
+    console.log("Redis Write: ZADD", REDIS_KEYS.ARTICLES_LATEST, {
+      score: article.generationTime,
+      value: articleId
+    });
+    multi.zAdd(REDIS_KEYS.ARTICLES_LATEST, {
+      score: article.generationTime,
+      value: articleId
+    });
+
+    // Prune old entries if exceeding max length
+    console.log(
+      "Redis Write: ZREMRANGEBYRANK",
+      REDIS_KEYS.ARTICLES_LATEST,
+      0,
+      -(REDIS_KEYS.ARTICLES_LATEST_MAX_LENGTH + 1)
+    );
+    multi.zRemRangeByRank(
+      REDIS_KEYS.ARTICLES_LATEST,
+      0,
+      -(REDIS_KEYS.ARTICLES_LATEST_MAX_LENGTH + 1)
+    );
+
     // Store article data
     console.log(
       "Redis Write: SET",
@@ -409,6 +432,26 @@ export class RedisDataStorageService implements IDataStorageService {
     }
 
     await multi.exec();
+  }
+
+  async getLatestArticles(limit?: number): Promise<Article[]> {
+    const count = limit || 100;
+    const articleIds = await this.client.ZRANGE(
+      REDIS_KEYS.ARTICLES_LATEST,
+      0,
+      count - 1,
+      { REV: true }
+    );
+
+    const articles: Article[] = [];
+    for (const articleId of articleIds) {
+      const article = await this.getArticle(articleId);
+      if (article) {
+        articles.push(article);
+      }
+    }
+
+    return articles;
   }
 
   async getArticlesByReporter(

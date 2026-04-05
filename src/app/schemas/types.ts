@@ -151,6 +151,8 @@ export const REDIS_KEYS = {
 
   // Articles
   ARTICLES_BY_REPORTER: (reporterId: string) => `articles:${reporterId}`,
+  ARTICLES_LATEST: "articles:latest",
+  ARTICLES_LATEST_MAX_LENGTH: 100,
   ARTICLE_HEADLINE: (articleId: string) => `article:${articleId}:headline`,
   ARTICLE_BODY: (articleId: string) => `article:${articleId}:body`,
   ARTICLE_TIME: (articleId: string) => `article:${articleId}:time`,
