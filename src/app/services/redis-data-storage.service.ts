@@ -729,39 +729,6 @@ export class RedisDataStorageService implements IDataStorageService {
     return events;
   }
 
-  async getAllEvents(limit?: number): Promise<Event[]> {
-    const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
-
-    // Collect all events with their timestamps
-    const allEvents: { event: Event; timestamp: number }[] = [];
-
-    for (const reporterId of reporterIds) {
-      const eventIds = await this.client.ZRANGE(
-        REDIS_KEYS.EVENTS_BY_REPORTER(reporterId),
-        0,
-        -1
-      );
-
-      for (const eventId of eventIds) {
-        const event = await this.getEvent(eventId);
-        if (event) {
-          allEvents.push({
-            event,
-            timestamp: event.createdTime
-          });
-        }
-      }
-    }
-
-    // Sort by timestamp (most recent first)
-    allEvents.sort((a, b) => b.timestamp - a.timestamp);
-
-    // Apply limit if specified
-    const limitedEvents = limit ? allEvents.slice(0, limit) : allEvents;
-
-    return limitedEvents.map((item) => item.event);
-  }
-
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
     const eventIds = await this.client.ZRANGE(
       REDIS_KEYS.EVENTS_LATEST,

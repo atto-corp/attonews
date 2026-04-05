@@ -632,37 +632,6 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async getAllEvents(limit?: number): Promise<Event[]> {
-    const client = await this.pool.connect();
-
-    try {
-      const query = `
-        SELECT * FROM events
-        ORDER BY updated_time DESC
-        ${limit ? "LIMIT $1" : ""}
-      `;
-
-      const result = await client.query(query, limit ? [limit] : []);
-      return result.rows.map((row: any) => ({
-        id: row.id,
-        reporterId: row.reporter_id,
-        title: row.title,
-        createdTime: row.created_time,
-        updatedTime: row.updated_time,
-        facts: row.facts,
-        where: row.location,
-        when: row.event_time,
-        messageIds: row.message_ids,
-        messageTexts: row.message_texts,
-        modelName: row.model_name,
-        inputTokenCount: row.input_token_count,
-        outputTokenCount: row.output_token_count
-      }));
-    } finally {
-      client.release();
-    }
-  }
-
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
     const client = await this.pool.connect();
 

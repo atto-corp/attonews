@@ -21,8 +21,8 @@ export const GET = withAuth(
       limit = parsed;
     }
 
-    // Get all events
-    const events = await redis.getAllEvents(limit);
+    // Get events sorted by updated time (most recent first)
+    const events = await redis.getLatestUpdatedEvents(limit);
 
     return NextResponse.json({ events });
   },

@@ -429,30 +429,6 @@ export class MongoDBDataStorageService implements IDataStorageService {
     }));
   }
 
-  async getAllEvents(limit?: number): Promise<Event[]> {
-    if (!this.eventsCollection) throw new Error('Database not connected');
-
-    const options = {
-      sort: { updatedTime: -1 } as any,
-      limit: limit || 0
-    };
-
-    const mongoEvents = await this.eventsCollection.find({}, options).toArray();
-    return mongoEvents.map((mongo: MongoEvent) => ({
-      id: mongo._id,
-      reporterId: mongo.reporterId,
-      title: mongo.title,
-      createdTime: mongo.createdTime,
-      updatedTime: mongo.updatedTime,
-      facts: mongo.facts,
-      where: mongo.where,
-      when: mongo.when,
-      messageIds: mongo.messageIds,
-      messageTexts: mongo.messageTexts,
-      modelName: mongo.modelName
-    }));
-  }
-
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
     if (!this.eventsCollection) throw new Error('Database not connected');
 

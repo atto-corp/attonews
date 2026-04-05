@@ -37,7 +37,6 @@ export interface IDataStorageService {
   // Event operations
   saveEvent(event: Event): Promise<void>;
   getEventsByReporter(reporterId: string, limit?: number): Promise<Event[]>;
-  getAllEvents(limit?: number): Promise<Event[]>;
   getLatestUpdatedEvents(limit?: number): Promise<Event[]>;
   getEvent(eventId: string): Promise<Event | null>;
 
