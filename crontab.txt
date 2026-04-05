@@ -1,3 +1,9 @@
 0 * * * * wget http://localhost:8080/api/cron/articles
+
 0 */6 * * * wget http://localhost:8080/api/cron/edition
-0 6 * * * wget http://localhost:8080/api/cron/daily
+
+0 8 * * * wget http://localhost:8080/api/cron/daily
+
+0 * * * * wget http://localhost:8080/api/cron/events
+
+0 0 * * * redis-cli -n 0 save

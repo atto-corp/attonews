@@ -8,7 +8,7 @@ An AI-powered newsroom application where AI agents act as reporters and an edito
 
 attonews is an AI-powered news platform that revolutionizes journalism through automated content creation. Our system employs specialized AI reporters covering various beats (Politics, Technology, Business, etc.) who continuously generate articles based on real-time events and editorial guidelines. An AI editor then curates the most newsworthy stories into comprehensive newspaper editions and daily compilations.
 
-Unlike traditional newsrooms, attonews operates 24/7, producing fresh content every 15 minutes with editions compiled every 3 hours and daily newspapers every 24 hours. The platform combines human-like journalistic standards with the efficiency of AI to deliver timely, relevant news coverage.
+Unlike traditional newsrooms, attonews operates 24/7, producing fresh content hourly with editions compiled every 6 hours and daily newspapers every 24 hours. The platform combines human-like journalistic standards with the efficiency of AI to deliver timely, relevant news coverage.
 
 ## For Readers
 
@@ -31,7 +31,7 @@ All users can freely access recent content without registration. Visit the follo
 
 - **AI Reporters**: Specialized AI agents covering different beats (Politics, Technology, Business, etc.)
 - **AI Editor**: Curates and selects the most newsworthy stories for publication
-- **Configurable Scheduling**: Set the period for article generation (default 15 mins) and edition creation (3 hours), one system cron job to run them all
+- **External Scheduling**: System crontab triggers API endpoints for content generation
 - **Daily Editions**: Comprehensive newspaper editions compiled from recent articles
 - **Web Interface**: Next.js frontend for managing reporters, editor, articles   
 - **Admin Authentication**: Secure login system for editorial control
@@ -91,6 +91,76 @@ All users can freely access recent content without registration. Visit the follo
 - `src/app/` - Next.js app router pages and API routes
 - `src/services/` - Business logic services (AI, Redis, Editor, Reporter)
 - `src/models/` - TypeScript types and schemas
+- `crontab.txt` - System crontab for scheduling jobs
+
+## Content Pipelines
+
+The system operates through 4 interconnected pipelines triggered by system crontab:
+
+### Pipeline Overview
+
+| Pipeline | Cron Schedule | Endpoint | Description |
+|----------|---------------|----------|-------------|
+| Event Generation | Hourly (`:00`) | `/api/cron/events` | Fetches real-time social media from Bluesky, generates events per reporter |
+| Article Generation | Hourly (`:00`) | `/api/cron/articles` | Generates articles for each enabled reporter using Bluesky data |
+| Newspaper Edition | Every 6 hours | `/api/cron/edition` | Curates articles from last 3 hours into newspaper edition |
+| Daily Edition | Daily at 8am | `/api/cron/daily` | Aggregates 24h of editions into comprehensive daily newspaper |
+
+### Pipeline Details
+
+**1. Event Generation** (`/api/cron/events`)
+- Fetches real-time messages from Bluesky/Jetstream
+- For each enabled reporter, AI generates new events based on their beat + history
+- Updates existing events or creates new ones
+- Location: `src/app/services/reporter.service.ts:260`
+
+**2. Article Generation** (`/api/cron/articles`)
+- For each enabled reporter:
+  - Fetches latest Bluesky messages
+  - Retrieves most recent ad (for context)
+  - Calls AI to generate structured article
+  - Saves article to storage
+- Location: `src/app/services/reporter.service.ts:11`
+
+**3. Newspaper Edition** (`/api/cron/edition`)
+- Collects all articles from the last 3 hours
+- AI selects most newsworthy stories
+- Creates newspaper edition with selected story IDs
+- Location: `src/app/services/editor.service.ts:11`
+
+**4. Daily Edition** (`/api/cron/daily`)
+- Aggregates all newspaper editions from the last 24 hours
+- AI creates comprehensive front page headline/article
+- AI generates topic-by-topic breakdown with summaries
+- Displayed on home page `/`
+- Location: `src/app/services/editor.service.ts:85`
+
+### Scheduling
+
+The production system uses a system crontab (`crontab.txt`) to trigger API endpoints:
+
+```crontab
+0 * * * * wget http://localhost:8080/api/cron/articles
+0 * * * * wget http://localhost:8080/api/cron/events
+0 */6 * * * wget http://localhost:8080/api/cron/edition
+0 8 * * * wget http://localhost:8080/api/cron/daily
+0 0 * * * redis-cli -n 0 save
+```
+
+**Manual triggers**: Jobs can also be triggered manually via the Editor page (`/editor`).
+
+### Data Flow
+
+```
+Bluesky/Jetstream → Events → Articles → Newspaper Editions → Daily Edition → Home Page
+```
+
+### Key Services
+
+- **ReporterService**: Handles event and article generation per reporter
+- **EditorService**: Handles edition curation and compilation
+- **AIService**: All LLM calls (article, event, edition generation)
+- **BlueskyService**: Real-time social media ingestion
 
 ## Key Frontend Pages
 
