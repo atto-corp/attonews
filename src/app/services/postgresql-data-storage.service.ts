@@ -728,6 +728,10 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
+  async getLatestEditions(limit?: number): Promise<NewspaperEdition[]> {
+    return this.getNewspaperEditions(limit || 50);
+  }
+
   async getNewspaperEdition(
     editionId: string
   ): Promise<NewspaperEdition | null> {

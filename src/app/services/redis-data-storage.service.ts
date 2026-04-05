@@ -872,6 +872,29 @@ export class RedisDataStorageService implements IDataStorageService {
       value: editionId
     });
 
+    // Add to latest editions sorted set (limited to 50)
+    console.log("Redis Write: ZADD", REDIS_KEYS.EDITIONS_LATEST, {
+      score: edition.generationTime,
+      value: editionId
+    });
+    multi.zAdd(REDIS_KEYS.EDITIONS_LATEST, {
+      score: edition.generationTime,
+      value: editionId
+    });
+
+    // Prune old entries if exceeding max length
+    console.log(
+      "Redis Write: ZREMRANGEBYRANK",
+      REDIS_KEYS.EDITIONS_LATEST,
+      0,
+      -(REDIS_KEYS.EDITIONS_LATEST_MAX_LENGTH + 1)
+    );
+    multi.zRemRangeByRank(
+      REDIS_KEYS.EDITIONS_LATEST,
+      0,
+      -(REDIS_KEYS.EDITIONS_LATEST_MAX_LENGTH + 1)
+    );
+
     // Store edition data
     console.log("Redis Write: DEL", REDIS_KEYS.EDITION_STORIES(editionId));
     multi.del(REDIS_KEYS.EDITION_STORIES(editionId));
@@ -948,6 +971,22 @@ export class RedisDataStorageService implements IDataStorageService {
     }
 
     return editions;
+  }
+
+  async getLatestEditions(limit?: number): Promise<NewspaperEdition[]> {
+    const count = limit || 50;
+    const editionIds = await this.client.ZRANGE(
+      REDIS_KEYS.EDITIONS_LATEST,
+      0,
+      count - 1,
+      { REV: true }
+    );
+
+    const editions = await Promise.all(
+      editionIds.map((editionId) => this.getNewspaperEdition(editionId))
+    );
+
+    return editions.filter((e): e is NewspaperEdition => e !== null);
   }
 
   async getNewspaperEdition(

@@ -43,6 +43,7 @@ export interface IDataStorageService {
   // Newspaper Edition operations
   saveNewspaperEdition(edition: NewspaperEdition): Promise<void>;
   getNewspaperEditions(limit?: number): Promise<NewspaperEdition[]>;
+  getLatestEditions(limit?: number): Promise<NewspaperEdition[]>;
   getNewspaperEdition(editionId: string): Promise<NewspaperEdition | null>;
 
   // Daily Edition operations

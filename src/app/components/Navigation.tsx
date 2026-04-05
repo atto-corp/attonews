@@ -78,6 +78,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
     { href: "/about", text: "About", condition: true },
     { href: "/reporters", text: "Reporters", condition: !!user },
     { href: "/articles", text: "Articles", condition: !!user?.hasReader },
+    { href: "/editions", text: "Editions", condition: !!user?.hasReader },
     { href: "/ads", text: "Ads", condition: !!user },
     { href: "/account", text: "Account", condition: !!user },
     { href: "/events", text: "Events", condition: true }

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import PageContainer from "../../components/PageContainer";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import ContentCard from "../../components/ContentCard";
 import PageHeader from "../../components/PageHeader";
 import EmptyState from "../../components/EmptyState";
 
@@ -19,7 +18,7 @@ interface Article {
 
 interface NewspaperEdition {
   id: string;
-  stories: Article[];
+  stories: string[] | Article[];
   generationTime: number;
   prompt: string;
 }
@@ -29,13 +28,14 @@ export default function EditionsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [appName, setAppName] = useState("Newsroom");
+  const [expandedEdition, setExpandedEdition] = useState<string | null>(null);
+  const [loadingArticles, setLoadingArticles] = useState<string | null>(null);
+  const [showAllArticles, setShowAllArticles] = useState(true);
 
-  // Fetch newspaper editions on component mount
   useEffect(() => {
     fetchEditions();
   }, []);
 
-  // Load app configuration
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -53,10 +53,17 @@ export default function EditionsPage() {
 
   const fetchEditions = async () => {
     try {
-      const response = await fetch("/api/editions");
+      const response = await fetch("/api/editions/latest");
       if (response.ok) {
-        const data = await response.json();
-        setEditions(data);
+        const editionsData = await response.json();
+
+        const fullEditions = await Promise.all(
+          editionsData.map((edition: NewspaperEdition) =>
+            fetch(`/api/editions/${edition.id}`).then((res) => res.json())
+          )
+        );
+
+        setEditions(fullEditions);
       } else {
         setMessage("Failed to load newspaper editions");
       }
@@ -66,6 +73,26 @@ export default function EditionsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchEditionWithArticles = async (editionId: string) => {
+    setLoadingArticles(editionId);
+    try {
+      const response = await fetch(`/api/editions/${editionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEditions((prev) => prev.map((e) => (e.id === editionId ? data : e)));
+      }
+    } catch (error) {
+      console.error("Error fetching edition articles:", error);
+    } finally {
+      setLoadingArticles(null);
+      setExpandedEdition(editionId);
+    }
+  };
+
+  const toggleEdition = (editionId: string) => {
+    setExpandedEdition((prev) => (prev === editionId ? null : editionId));
   };
 
   const formatDate = (timestamp: number) => {
@@ -85,7 +112,11 @@ export default function EditionsPage() {
 
   return (
     <PageContainer maxWidth="max-w-7xl">
-      {/* Message */}
+      <PageHeader
+        title="Newspaper Editions"
+        description="Browse the latest AI-generated newspaper editions"
+      />
+
       {message && (
         <div className="mb-6 px-6 py-4 backdrop-blur-sm rounded-xl text-center font-medium bg-red-500/20 border border-red-500/30 text-red-200">
           {message}
@@ -114,90 +145,114 @@ export default function EditionsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {editions.map((edition: NewspaperEdition) => (
-            <div
-              key={edition.id}
-              className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl hover:bg-white/15 transition-all duration-300"
-            >
-              <div className="mb-4">
-                <h2 className="text-xl font-bold text-white/90 mb-2">
-                  Newspaper Edition
-                </h2>
-                <p className="text-sm text-white/70 mb-2">
-                  {formatDate(edition.generationTime)}
-                </p>
-                <p className="text-white/80 text-sm mb-4">
-                  {edition.stories.length} stories included
-                </p>
-              </div>
+          {editions.map((edition: NewspaperEdition) => {
+            const isExpanded = expandedEdition === edition.id;
+            const articles = edition.stories as Article[];
+            const hasFullArticles = articles[0] && "headline" in articles[0];
 
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-white/90 mb-2">
-                  Articles
-                </h4>
-                <div className="space-y-4">
-                  {edition.stories.map((article: Article, _index: number) => (
-                    <div
-                      key={article.id}
-                      className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-4"
-                    >
-                      <Link href={`/articles/${article.id}`} className="block">
-                        <h5 className="font-semibold text-white/90 mb-2 hover:text-white transition-colors cursor-pointer">
-                          {article.headline}
-                        </h5>
-                      </Link>
-                      <p className="text-white/80 text-sm leading-relaxed">
-                        {article.body}
-                      </p>
-                      <div className="mt-2 text-xs text-white/60">
-                        Reporter: {article.reporterId} | Generated:{" "}
-                        {new Date(article.generationTime).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
+            return (
+              <div
+                key={edition.id}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 shadow-2xl hover:bg-white/15 transition-all duration-300"
+              >
+                <div className="mb-4 flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-white/90 mb-2">
+                      Newspaper Edition
+                    </h2>
+                    <p className="text-sm text-white/70 mb-2">
+                      {formatDate(edition.generationTime)}
+                    </p>
+                    <p className="text-white/80 text-sm">
+                      {edition.stories.length} stories included
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAllArticles(!showAllArticles)}
+                    disabled={loadingArticles === edition.id}
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white/90 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {loadingArticles === edition.id
+                      ? "Loading..."
+                      : showAllArticles
+                        ? "Hide Articles"
+                        : "View Articles"}
+                  </button>
                 </div>
-              </div>
 
-              <div className="text-center text-sm text-white/70">
-                Edition ID: {edition.id.slice(0, 12)}...
-              </div>
-
-              {/* Prompt Display */}
-              <div className="mt-4 pt-4 border-t border-white/20">
-                <div className="flex items-center gap-2 mb-2 relative group">
-                  <h4 className="text-sm font-semibold text-white/90">
-                    Generation Prompt
-                  </h4>
-                  <div className="relative group">
-                    <svg
-                      className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                      To ensure full journalistic transparency, this is the
-                      exact prompt given to the AI model to generate this
-                      edition. This allows the user to verify that no funny
-                      business has taken place.
+                {showAllArticles && hasFullArticles && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-white/90 mb-2">
+                      Articles
+                    </h4>
+                    <div className="space-y-4">
+                      {articles.map((article: Article) => (
+                        <div
+                          key={article.id}
+                          className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-4"
+                        >
+                          <Link
+                            href={`/articles/${article.id}`}
+                            className="block"
+                          >
+                            <h5 className="font-semibold text-white/90 mb-2 hover:text-white transition-colors cursor-pointer">
+                              {article.headline}
+                            </h5>
+                          </Link>
+                          <p className="text-white/80 text-sm leading-relaxed">
+                            {article.body}
+                          </p>
+                          <div className="mt-2 text-xs text-white/60">
+                            Reporter: {article.reporterId} | Generated:{" "}
+                            {new Date(
+                              article.generationTime
+                            ).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
+
+                <div className="text-center text-sm text-white/70">
+                  Edition ID: {edition.id.slice(0, 12)}...
                 </div>
-                <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/70 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
-                  {edition.prompt}
+
+                <div className="mt-4 pt-4 border-t border-white/20">
+                  <div className="flex items-center gap-2 mb-2 relative group">
+                    <h4 className="text-sm font-semibold text-white/90">
+                      Generation Prompt
+                    </h4>
+                    <div className="relative group">
+                      <svg
+                        className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        To ensure full journalistic transparency, this is the
+                        exact prompt given to the AI model to generate this
+                        edition. This allows the user to verify that no funny
+                        business has taken place.
+                      </div>
+                    </div>
+                  </div>
+                  <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-lg p-3 text-xs text-white/70 font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
+                    {edition.prompt}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Footer */}
       <div className="text-center mt-12 text-white/50">
         <p>{appName} Edition Archive</p>
       </div>

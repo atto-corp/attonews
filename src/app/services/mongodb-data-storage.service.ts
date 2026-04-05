@@ -489,6 +489,10 @@ export class MongoDBDataStorageService implements IDataStorageService {
     }));
   }
 
+  async getLatestEditions(limit?: number): Promise<NewspaperEdition[]> {
+    return this.getNewspaperEditions(limit || 50);
+  }
+
   async getNewspaperEdition(editionId: string): Promise<NewspaperEdition | null> {
     if (!this.newspaperEditionsCollection) throw new Error('Database not connected');
 
