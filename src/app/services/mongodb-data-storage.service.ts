@@ -844,5 +844,14 @@ export class MongoDBDataStorageService implements IDataStorageService {
       await this.db.collection(collection.name).deleteMany({});
     }
   }
+
+  // Log operations (not persisted in MongoDB, just stub)
+  async addLog(_message: string): Promise<void> {
+    // No-op for MongoDB
+  }
+
+  async getAllLogs(): Promise<string[]> {
+    return [];
+  }
 }
 */

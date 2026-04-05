@@ -1639,6 +1639,33 @@ export class RedisDataStorageService implements IDataStorageService {
     await this.setKpiValue(kpiName, newValue);
   }
 
+  // Log operations
+  private readonly APP_LOGS_KEY = "app:logs";
+  private readonly MAX_LOG_ENTRIES = 500;
+
+  async addLog(message: string): Promise<void> {
+    const timestamp = Date.now();
+    const formattedMessage = `${new Date(timestamp).toISOString()} - ${message}`;
+
+    await this.client.zAdd(this.APP_LOGS_KEY, {
+      score: timestamp,
+      value: formattedMessage
+    });
+
+    const count = await this.client.zCard(this.APP_LOGS_KEY);
+    if (count > this.MAX_LOG_ENTRIES) {
+      const toRemove = count - this.MAX_LOG_ENTRIES;
+      await this.client.zRemRangeByRank(this.APP_LOGS_KEY, 0, toRemove - 1);
+    }
+  }
+
+  async getAllLogs(): Promise<string[]> {
+    const logs = await this.client.zRange(this.APP_LOGS_KEY, 0, -1, {
+      REV: true
+    });
+    return logs;
+  }
+
   async clearAllData(): Promise<void> {
     await this.client.flushAll();
   }

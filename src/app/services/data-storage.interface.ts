@@ -81,6 +81,10 @@ export interface IDataStorageService {
   setKpiValue(kpiName: string, value: number): Promise<void>;
   incrementKpiValue(kpiName: string, increment: number): Promise<void>;
 
+  // Log operations
+  addLog(message: string): Promise<void>;
+  getAllLogs(): Promise<string[]>;
+
   // Utility methods
   getModelName(): Promise<string | null>;
   generateId(prefix: string): Promise<string>;

@@ -1325,4 +1325,13 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
       client.release();
     }
   }
+
+  // Log operations (not persisted in PostgreSQL, just stub)
+  async addLog(_message: string): Promise<void> {
+    // No-op for PostgreSQL
+  }
+
+  async getAllLogs(): Promise<string[]> {
+    return [];
+  }
 }

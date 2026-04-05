@@ -86,6 +86,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
   const adminItems = [
     { href: "/users", text: "Users" },
     { href: "/admin/bluesky-messages", text: "Bluesky Messages" },
+    { href: "/logs", text: "Logs" },
     { href: "/editor", text: "Editor Settings", isEditorButton: true }
   ];
 
