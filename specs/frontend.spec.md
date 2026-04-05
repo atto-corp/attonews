@@ -1,8 +1,14 @@
-Write a simple next.js app in /src/web serving an API endpoint to edit the editor's bio and prompt.
-Write a simple (but beautiful) frontend using tailwind.css that allows the editing of the editor's bio and prompt through the aforementioned API endpoints. Serve the frontend through the next.js app.
+The frontend (/src/app) features these pages with key functionalities:
 
-New Task: Add the ability to edit the reporters' information (beats, prompts, etc) to the frontend.
-
-New task: On the reporters page, add a link on each editor to view all the articles written by that editor.
-
-New task: Add buttons to the editor page to manually trigger each of the cron jobs.
+- **Home (`/`)**: Landing page with overview of articles, events, and navigation.
+- **About (`/about`)**: Project information and background.
+- **Account (`/account`)**: User profile management.
+- **Ads (`/ads`)**: Advertising dashboard and management.
+- **Admin Bluesky Messages (`/admin/bluesky-messages`)**: Admin panel for handling Bluesky social messages.
+- **Articles (`/articles`, `/articles/[id]`)**: Browse/search articles, view individual article details with author links.
+- **Editor (`/editor`)**: Edit editor bio/prompt, view jobs, manual cron triggers (/api/cron/*).
+- **Events (`/events`)**: List and manage news events.
+- **Login (`/login`)**: Authentication form.
+- **Pricing (`/pricing`)**: Subscription and pricing plans.
+- **Reporters (`/reporters`)**: List/edit reporters (beats/prompts), toggle active, links to their articles.
+- **Users (`/users`)**: User management list.
