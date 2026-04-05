@@ -99,12 +99,12 @@ The system operates through 4 interconnected pipelines triggered by system cront
 
 ### Pipeline Overview
 
-| Pipeline | Cron Schedule | Endpoint | Description |
-|----------|---------------|----------|-------------|
-| Event Generation | Hourly (`:00`) | `/api/cron/events` | Fetches real-time social media from Bluesky, generates events per reporter |
-| Article Generation | Hourly (`:00`) | `/api/cron/articles` | Generates articles for each enabled reporter using Bluesky data |
-| Newspaper Edition | Every 6 hours | `/api/cron/edition` | Curates articles from last 3 hours into newspaper edition |
-| Daily Edition | Daily at 8am | `/api/cron/daily` | Aggregates 24h of editions into comprehensive daily newspaper |
+| Pipeline | Cron Schedule | Default Throttle | Endpoint | Description |
+|----------|---------------|------------------|----------|-------------|
+| Event Generation | Hourly (`:00`) | 30 min | `/api/cron/events` | Fetches real-time social media from Bluesky, generates events per reporter |
+| Article Generation | Hourly (`:00`) | 15 min | `/api/cron/articles` | Generates articles for each enabled reporter using Bluesky data |
+| Newspaper Edition | Every 6 hours | 180 min | `/api/cron/edition` | Curates articles from last 3 hours into newspaper edition |
+| Daily Edition | Daily at 8am | — | `/api/cron/daily` | Aggregates 24h of editions into comprehensive daily newspaper |
 
 ### Pipeline Details
 
@@ -135,9 +135,19 @@ The system operates through 4 interconnected pipelines triggered by system cront
 - Displayed on home page `/`
 - Location: `src/app/services/editor.service.ts:85`
 
+### Generation Period Throttling
+
+Each pipeline has a configurable "generation period" stored in editor settings. This acts as a throttle to prevent excessive runs:
+
+- **Article Generation**: Default 15 minutes (cron runs hourly, but skips if <15min since last run)
+- **Event Generation**: Default 30 minutes (cron runs hourly, but skips if <30min since last run)
+- **Edition Generation**: Default 180 minutes (cron runs every 6h, but skips if <3h since last run)
+
+The cron job will return `{ "skipped": true }` if the generation period hasn't elapsed. Configure these values on the Editor page (`/editor`).
+
 ### Scheduling
 
-The production system uses a system crontab (`crontab.txt`) to trigger API endpoints:
+The production system uses a system crontab (`crontab.txt`) to trigger API endpoints. These define the **maximum frequency** — actual runs may be skipped based on the generation period throttle settings:
 
 ```crontab
 0 * * * * wget http://localhost:8080/api/cron/articles
