@@ -193,6 +193,7 @@ export const REDIS_KEYS = {
 
   // Events
   EVENTS_BY_REPORTER: (reporterId: string) => `events:${reporterId}`,
+  EVENTS_LATEST: "events:latest",
   EVENT_TITLE: (eventId: string) => `event:${eventId}:title`,
   EVENT_CREATED_TIME: (eventId: string) => `event:${eventId}:created_time`,
   EVENT_UPDATED_TIME: (eventId: string) => `event:${eventId}:updated_time`,

@@ -599,6 +599,16 @@ export class RedisDataStorageService implements IDataStorageService {
       value: eventId
     });
 
+    // Add to global sorted set for fast retrieval of latest events
+    multi.zAdd(REDIS_KEYS.EVENTS_LATEST, {
+      score: event.updatedTime,
+      value: eventId
+    });
+
+    // Trim to keep only the latest MAX_EVENTS entries
+    const MAX_EVENTS = 50;
+    multi.zRemRangeByRank(REDIS_KEYS.EVENTS_LATEST, 0, -(MAX_EVENTS + 1));
+
     // Store event data
     console.log(
       "Redis Write: SET",
@@ -753,36 +763,18 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   async getLatestUpdatedEvents(limit?: number): Promise<Event[]> {
-    const reporterIds = await this.client.sMembers(REDIS_KEYS.REPORTERS);
+    const eventIds = await this.client.ZRANGE(
+      REDIS_KEYS.EVENTS_LATEST,
+      0,
+      (limit || 100) - 1,
+      { REV: true }
+    );
 
-    // Collect all events with their updated timestamps
-    const allEvents: { event: Event; timestamp: number }[] = [];
+    if (eventIds.length === 0) return [];
 
-    for (const reporterId of reporterIds) {
-      const eventIds = await this.client.ZRANGE(
-        REDIS_KEYS.EVENTS_BY_REPORTER(reporterId),
-        0,
-        -1
-      );
+    const events = await Promise.all(eventIds.map((id) => this.getEvent(id)));
 
-      for (const eventId of eventIds) {
-        const event = await this.getEvent(eventId);
-        if (event) {
-          allEvents.push({
-            event,
-            timestamp: event.updatedTime
-          });
-        }
-      }
-    }
-
-    // Sort by updated timestamp (most recent first)
-    allEvents.sort((a, b) => b.timestamp - a.timestamp);
-
-    // Apply limit if specified
-    const limitedEvents = limit ? allEvents.slice(0, limit) : allEvents;
-
-    return limitedEvents.map((item) => item.event);
+    return events.filter((e): e is Event => e !== null);
   }
 
   async getEvent(eventId: string): Promise<Event | null> {
