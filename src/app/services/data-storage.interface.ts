@@ -40,7 +40,6 @@ export interface IDataStorageService {
   getAllEvents(limit?: number): Promise<Event[]>;
   getLatestUpdatedEvents(limit?: number): Promise<Event[]>;
   getEvent(eventId: string): Promise<Event | null>;
-  updateEventFacts(eventId: string, newFacts: string[]): Promise<void>;
 
   // Newspaper Edition operations
   saveNewspaperEdition(edition: NewspaperEdition): Promise<void>;

@@ -880,32 +880,6 @@ export class RedisDataStorageService implements IDataStorageService {
     return null;
   }
 
-  async updateEventFacts(eventId: string, newFacts: string[]): Promise<void> {
-    const existingEvent = await this.getEvent(eventId);
-    if (!existingEvent) {
-      throw new Error(`Event ${eventId} not found`);
-    }
-
-    // Replace existing facts with new facts
-    const mergedFacts = newFacts;
-
-    const multi = this.client.multi();
-    console.log(
-      "Redis Write: SET",
-      REDIS_KEYS.EVENT_UPDATED_TIME(eventId),
-      Date.now().toString()
-    );
-    multi.set(REDIS_KEYS.EVENT_UPDATED_TIME(eventId), Date.now().toString());
-    console.log(
-      "Redis Write: SET",
-      REDIS_KEYS.EVENT_FACTS(eventId),
-      JSON.stringify(mergedFacts)
-    );
-    multi.set(REDIS_KEYS.EVENT_FACTS(eventId), JSON.stringify(mergedFacts));
-
-    await multi.exec();
-  }
-
   // Newspaper Edition operations
   async saveNewspaperEdition(edition: NewspaperEdition): Promise<void> {
     const editionId = edition.id;

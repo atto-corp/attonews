@@ -724,23 +724,6 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
     }
   }
 
-  async updateEventFacts(eventId: string, newFacts: string[]): Promise<void> {
-    const client = await this.pool.connect();
-
-    try {
-      await client.query(
-        `
-        UPDATE events
-        SET facts = $1, updated_time = $2
-        WHERE id = $3
-      `,
-        [JSON.stringify(newFacts), Date.now(), eventId]
-      );
-    } finally {
-      client.release();
-    }
-  }
-
   // Newspaper Edition operations
   async saveNewspaperEdition(edition: NewspaperEdition): Promise<void> {
     const client = await this.pool.connect();

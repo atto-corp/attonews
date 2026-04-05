@@ -308,19 +308,22 @@ export class ReporterService {
               new Set(aiEvent.potentialMessageIds || [])
             )
           ];
-          ids.forEach((x) =>
-            messageTexts.push(eventGenerationResult.messages[x - 1])
-          ); // -1 because ai service does a +1
+          ids.forEach((x) => {
+            const index = x - 1;
+            if (index >= 0 && index < eventGenerationResult.messages.length) {
+              messageTexts.push(eventGenerationResult.messages[index]);
+            } else {
+              console.warn(
+                `Invalid message index ${x} (1-based) - out of bounds for ${eventGenerationResult.messages.length} messages`
+              );
+            }
+          });
         }
 
         if (aiEvent.index) {
-          // Update existing event with new facts
+          // Update existing event
           const previousEventId = lastEvents[aiEvent.index - 1].id;
           console.log(`Updating existing event: ${previousEventId}`);
-          await this.dataStorageService.updateEventFacts(
-            previousEventId,
-            aiEvent.facts
-          );
 
           // Update message data and location/timing for existing event
           const existingEvent =
@@ -328,6 +331,7 @@ export class ReporterService {
           if (existingEvent) {
             const updatedEvent: Event = {
               ...existingEvent,
+              facts: aiEvent.facts,
               where: aiEvent.where || existingEvent.where,
               when: aiEvent.when || existingEvent.when,
               messageIds: aiEvent.messageIds || [],

@@ -498,20 +498,6 @@ export class MongoDBDataStorageService implements IDataStorageService {
     };
   }
 
-  async updateEventFacts(eventId: string, newFacts: string[]): Promise<void> {
-    if (!this.eventsCollection) throw new Error('Database not connected');
-
-    await this.eventsCollection.updateOne(
-      { _id: eventId },
-      {
-        $set: {
-          facts: newFacts,
-          updatedTime: Date.now()
-        }
-      }
-    );
-  }
-
   // Newspaper Edition operations
   async saveNewspaperEdition(edition: NewspaperEdition): Promise<void> {
     if (!this.newspaperEditionsCollection) throw new Error('Database not connected');
