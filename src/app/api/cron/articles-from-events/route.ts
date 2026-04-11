@@ -10,7 +10,6 @@ async function getContainer(): Promise<ServiceContainer> {
   return container;
 }
 
-// GET /api/cron/articles-from-events - Trigger reporter article generation from events job
 export async function GET(_request: NextRequest) {
   try {
     console.log("\n=== CRON JOB: REPORTER ARTICLES FROM EVENTS GENERATION ===");
@@ -19,72 +18,30 @@ export async function GET(_request: NextRequest) {
     );
 
     const container = await getContainer();
-    const redis = await container.getDataStorageService();
-    const reporterService = await container.getReporterService();
+    const editorService = await container.getEditorService();
 
-    // Check if we should skip generation based on time constraints
-    const editor = await redis.getEditor();
-    const currentTime = Date.now();
+    const result = await editorService.runJob("reporter", {
+      enforceTimeConstraint: true
+    });
 
-    if (
-      editor?.lastArticleGenerationTime &&
-      editor?.articleGenerationPeriodMinutes
-    ) {
-      const timeSinceLastGeneration =
-        (currentTime - editor.lastArticleGenerationTime) / (1000 * 60); // Convert to minutes
-      const requiredInterval = editor.articleGenerationPeriodMinutes;
-
-      if (timeSinceLastGeneration < requiredInterval) {
-        const remainingMinutes = Math.ceil(
-          requiredInterval - timeSinceLastGeneration
-        );
-        console.log(
-          `[${new Date().toISOString()}] Skipping article generation from events - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${requiredInterval} minutes. ${remainingMinutes} minutes remaining.`
-        );
-        console.log(
-          "Article generation from events cron job skipped due to time constraints\n"
-        );
-
-        return NextResponse.json({
-          success: true,
-          message: `Article generation from events skipped - ${remainingMinutes} minutes remaining until next allowed generation.`,
-          skipped: true,
-          nextGenerationInMinutes: remainingMinutes
-        });
-      }
-    }
-
-    // Proceed with generation
-    const results = await reporterService.generateArticlesFromEvents();
-    const totalArticles = Object.values(results).reduce(
-      (sum, articles) => sum + articles.length,
-      0
-    );
-
-    // Update the last generation time
-    if (editor) {
-      const updatedEditor = {
-        ...editor,
-        lastArticleGenerationTime: currentTime
-      };
-      await redis.saveEditor(updatedEditor);
+    if (result.skipped) {
       console.log(
-        `[${new Date().toISOString()}] Updated last article generation time to ${new Date(currentTime).toISOString()}`
+        "Article generation from events cron job skipped due to time constraints\n"
       );
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        skipped: true,
+        nextGenerationInMinutes: result.nextGenerationInMinutes
+      });
     }
 
-    console.log(
-      `[${new Date().toISOString()}] Successfully generated ${totalArticles} articles from events`
-    );
     console.log(
       "Article generation from events cron job completed successfully\n"
     );
-
     return NextResponse.json({
       success: true,
-      message: `Reporter article generation from events job completed successfully. Generated ${totalArticles} articles.`,
-      totalArticles,
-      lastGenerationTime: currentTime
+      message: result.message
     });
   } catch (error) {
     console.error(

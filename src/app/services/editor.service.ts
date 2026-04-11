@@ -1,12 +1,33 @@
-import { NewspaperEdition, DailyEdition, Article } from "../schemas/types";
+import {
+  NewspaperEdition,
+  DailyEdition,
+  Article,
+  Editor
+} from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 import { AIService } from "./ai.service";
+import { ReporterService } from "./reporter.service";
 import { PERSONA_DISPLAY_NAMES } from "./ai-prompts";
+
+export type JobType =
+  | "reporter"
+  | "newspaper"
+  | "daily"
+  | "comments"
+  | "events";
+
+export interface JobResult {
+  message: string;
+  jobType: JobType;
+  skipped?: boolean;
+  nextGenerationInMinutes?: number;
+}
 
 export class EditorService {
   constructor(
     private dataStorageService: IDataStorageService,
-    private aiService: AIService
+    private aiService: AIService,
+    private reporterService?: ReporterService
   ) {}
 
   async generateHourlyEdition(): Promise<NewspaperEdition> {
@@ -271,5 +292,234 @@ export class EditorService {
     await this.dataStorageService.saveDailyEdition(dailyEdition);
 
     return { topicIndex, author: newComment.author };
+  }
+
+  async runJob(
+    jobType: JobType,
+    options: { enforceTimeConstraint?: boolean } = {}
+  ): Promise<JobResult> {
+    const { enforceTimeConstraint = false } = options;
+    const currentTime = Date.now();
+    const editor = await this.dataStorageService.getEditor();
+
+    const skipResult = await this.checkTimeConstraint(
+      jobType,
+      currentTime,
+      editor,
+      enforceTimeConstraint
+    );
+    if (skipResult) {
+      return skipResult;
+    }
+
+    await this.dataStorageService.setJobRunning(jobType, true);
+    await this.dataStorageService.setJobLastRun(jobType, currentTime);
+    console.log(
+      `[${new Date().toISOString()}] Set ${jobType} job running=true and last_run=${currentTime}`
+    );
+
+    try {
+      const result = await this.executeJob(jobType, currentTime, editor);
+
+      await this.dataStorageService.setJobRunning(jobType, false);
+      await this.dataStorageService.setJobLastSuccess(jobType, currentTime);
+      console.log(
+        `[${new Date().toISOString()}] Set ${jobType} job running=false and last_success=${currentTime}`
+      );
+
+      return result;
+    } catch (error) {
+      await this.dataStorageService.setJobRunning(jobType, false);
+      console.log(
+        `[${new Date().toISOString()}] Set ${jobType} job running=false due to error`
+      );
+      throw error;
+    }
+  }
+
+  private async checkTimeConstraint(
+    jobType: JobType,
+    currentTime: number,
+    editor: Editor | null,
+    enforceTimeConstraint: boolean
+  ): Promise<JobResult | null> {
+    if (!enforceTimeConstraint || !editor) {
+      return null;
+    }
+
+    let lastGenerationTime: number | undefined;
+    let periodMinutes: number | undefined;
+
+    switch (jobType) {
+      case "events":
+        lastGenerationTime = editor.lastEventGenerationTime;
+        periodMinutes = editor.eventGenerationPeriodMinutes;
+        break;
+      case "reporter":
+        lastGenerationTime = editor.lastArticleGenerationTime;
+        periodMinutes = editor.articleGenerationPeriodMinutes;
+        break;
+      case "newspaper":
+        lastGenerationTime = editor.lastEditionGenerationTime;
+        periodMinutes = editor.editionGenerationPeriodMinutes;
+        break;
+      case "comments":
+        const lastSuccess =
+          await this.dataStorageService.getJobLastSuccess("comments");
+        if (lastSuccess) {
+          const hoursSinceLastSuccess =
+            (currentTime - lastSuccess) / (1000 * 60 * 60);
+          if (hoursSinceLastSuccess < 24) {
+            console.log(
+              `[${new Date().toISOString()}] Skipping comment generation: Only ${hoursSinceLastSuccess.toFixed(1)} hours since last run`
+            );
+            return {
+              message:
+                "Comment generation skipped: ran within the last 24 hours",
+              jobType,
+              skipped: true
+            };
+          }
+        }
+        return null;
+      case "daily":
+        return null;
+    }
+
+    if (!lastGenerationTime || !periodMinutes) {
+      return null;
+    }
+
+    const timeSinceLastGeneration =
+      (currentTime - lastGenerationTime) / (1000 * 60);
+    if (timeSinceLastGeneration < periodMinutes) {
+      const remainingMinutes = Math.ceil(
+        periodMinutes - timeSinceLastGeneration
+      );
+      console.log(
+        `[${new Date().toISOString()}] Skipping ${jobType} generation - only ${timeSinceLastGeneration.toFixed(1)} minutes have passed since last run. Need ${periodMinutes} minutes. ${remainingMinutes} minutes remaining.`
+      );
+      return {
+        message: `${jobType} generation skipped - ${remainingMinutes} minutes remaining until next allowed generation.`,
+        jobType,
+        skipped: true,
+        nextGenerationInMinutes: remainingMinutes
+      };
+    }
+
+    return null;
+  }
+
+  private async executeJob(
+    jobType: JobType,
+    currentTime: number,
+    editor: Editor | null
+  ): Promise<JobResult> {
+    switch (jobType) {
+      case "events": {
+        if (!this.reporterService) {
+          throw new Error("Reporter service not available");
+        }
+        const results = await this.reporterService.generateAllReporterEvents();
+        const totalEvents = Object.values(results).reduce(
+          (sum, events) => sum + events.length,
+          0
+        );
+
+        if (editor) {
+          const updatedEditor = {
+            ...editor,
+            lastEventGenerationTime: currentTime
+          };
+          await this.dataStorageService.saveEditor(updatedEditor);
+          console.log(
+            `[${new Date().toISOString()}] Updated last event generation time to ${new Date(currentTime).toISOString()}`
+          );
+        }
+
+        console.log(
+          `[${new Date().toISOString()}] Successfully generated ${totalEvents} events`
+        );
+        return {
+          message: `Reporter event generation job completed successfully. Generated ${totalEvents} events.`,
+          jobType
+        };
+      }
+
+      case "reporter": {
+        if (!this.reporterService) {
+          throw new Error("Reporter service not available");
+        }
+        const results = await this.reporterService.generateArticlesFromEvents();
+        const totalArticles = Object.values(results).reduce(
+          (sum, articles) => sum + articles.length,
+          0
+        );
+
+        if (editor) {
+          const updatedEditor = {
+            ...editor,
+            lastArticleGenerationTime: currentTime
+          };
+          await this.dataStorageService.saveEditor(updatedEditor);
+          console.log(
+            `[${new Date().toISOString()}] Updated last article generation time to ${new Date(currentTime).toISOString()}`
+          );
+        }
+
+        console.log(
+          `[${new Date().toISOString()}] Successfully generated ${totalArticles} articles from events`
+        );
+        return {
+          message: `Reporter article generation job completed successfully. Generated ${totalArticles} articles.`,
+          jobType
+        };
+      }
+
+      case "newspaper": {
+        const edition = await this.generateHourlyEdition();
+
+        if (editor) {
+          const updatedEditor = {
+            ...editor,
+            lastEditionGenerationTime: currentTime
+          };
+          await this.dataStorageService.saveEditor(updatedEditor);
+          console.log(
+            `[${new Date().toISOString()}] Updated last edition generation time to ${new Date(currentTime).toISOString()}`
+          );
+        }
+
+        console.log(
+          `[${new Date().toISOString()}] Successfully generated hourly edition ${edition.id}`
+        );
+        return {
+          message: `Newspaper edition generation job completed successfully. Created edition ${edition.id} with ${edition.stories.length} stories.`,
+          jobType
+        };
+      }
+
+      case "daily": {
+        const dailyEdition = await this.generateDailyEdition();
+        console.log(
+          `[${new Date().toISOString()}] Successfully generated daily edition ${dailyEdition.id}`
+        );
+        return {
+          message: `Daily edition generation job completed successfully. Created edition ${dailyEdition.id} with ${dailyEdition.editions.length} newspaper editions.`,
+          jobType
+        };
+      }
+
+      case "comments": {
+        const { topicIndex, author } = await this.generateComment();
+        console.log(
+          `[${new Date().toISOString()}] Successfully added comment to topic ${topicIndex} as ${author}`
+        );
+        return {
+          message: `Comment generation job completed successfully. Added comment to topic ${topicIndex} as ${author}.`,
+          jobType
+        };
+      }
+    }
   }
 }

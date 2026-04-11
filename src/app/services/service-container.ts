@@ -68,7 +68,12 @@ export class ServiceContainer {
     if (!this.editorService) {
       const dataStorage = await this.getDataStorageService();
       const aiService = await this.getAIService();
-      this.editorService = new EditorService(dataStorage, aiService);
+      const reporterService = await this.getReporterService();
+      this.editorService = new EditorService(
+        dataStorage,
+        aiService,
+        reporterService
+      );
     }
     return this.editorService;
   }

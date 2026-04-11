@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "../../../utils/auth";
 import { ServiceContainer } from "../../../services/service-container";
+import type { JobType } from "../../../services/editor.service";
 
 let container: ServiceContainer | null = null;
 
@@ -11,11 +12,17 @@ async function getContainer(): Promise<ServiceContainer> {
   return container;
 }
 
-// POST /api/editor/jobs/trigger - Trigger a specific job
+const VALID_JOB_TYPES: JobType[] = [
+  "reporter",
+  "newspaper",
+  "daily",
+  "comments",
+  "events"
+];
+
 export const POST = withAuth(
-  async (request: NextRequest, user, redis) => {
+  async (request: NextRequest, _user, _redis) => {
     const container = await getContainer();
-    const reporterService = await container.getReporterService();
     const editorService = await container.getEditorService();
 
     const body = await request.json();
@@ -28,101 +35,31 @@ export const POST = withAuth(
       );
     }
 
-    const currentTime = Date.now();
-
-    // Set job as running and update last run time
-    await redis.setJobRunning(jobType, true);
-    await redis.setJobLastRun(jobType, currentTime);
-
-    let result;
-    try {
-      switch (jobType) {
-        case "reporter":
-          const reporterResults =
-            await reporterService.generateAllReporterArticles();
-          const totalArticles = Object.values(reporterResults).reduce(
-            (sum, articles) => sum + articles.length,
-            0
-          );
-          result = {
-            message: `Reporter article generation job triggered successfully. Generated ${totalArticles} articles.`
-          };
-          break;
-        case "newspaper":
-          const edition = await editorService.generateHourlyEdition();
-          result = {
-            message: `Newspaper edition generation job triggered successfully. Created edition: ${edition.id} with ${edition.stories.length} stories.`
-          };
-          break;
-        case "daily":
-          const dailyEdition = await editorService.generateDailyEdition();
-          result = {
-            message: `Daily edition generation job triggered successfully. Created daily edition: ${dailyEdition.id} with ${dailyEdition.editions.length} newspaper editions.`
-          };
-          break;
-        case "comments": {
-          const { topicIndex, author } = await editorService.generateComment();
-          result = {
-            message: `Comment generation job triggered successfully. Added comment to topic ${topicIndex} as ${author}.`
-          };
-          break;
-        }
-        case "events": {
-          const eventResults =
-            await reporterService.generateAllReporterEvents();
-          const totalEvents = Object.values(eventResults).reduce(
-            (sum, events) => sum + events.length,
-            0
-          );
-          const editor = await redis.getEditor();
-          if (editor) {
-            const updatedEditor = {
-              ...editor,
-              lastEventGenerationTime: currentTime
-            };
-            await redis.saveEditor(updatedEditor);
-          }
-          result = {
-            message: `Event generation job triggered successfully. Generated ${totalEvents} events.`
-          };
-          break;
-        }
-        default:
-          // Mark job as not running for invalid job type
-          await redis.setJobRunning(jobType, false);
-          return NextResponse.json(
-            {
-              error:
-                "Invalid job type. Must be one of: reporter, newspaper, daily"
-            },
-            { status: 400 }
-          );
-      }
-
-      // Mark job as completed successfully
-      await redis.setJobRunning(jobType, false);
-      await redis.setJobLastSuccess(jobType, currentTime);
-    } catch (error) {
-      // Mark job as not running on error (don't update last_success)
-      await redis.setJobRunning(jobType, false);
-      throw error; // Re-throw to be handled by outer catch
+    if (!VALID_JOB_TYPES.includes(jobType as JobType)) {
+      return NextResponse.json(
+        {
+          error: `Invalid job type. Must be one of: ${VALID_JOB_TYPES.join(", ")}`
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(result);
+    const result = await editorService.runJob(jobType as JobType, {
+      enforceTimeConstraint: false
+    });
+
+    return NextResponse.json({ message: result.message });
   },
   { requiredRole: "admin" }
 );
 
-// GET /api/editor/jobs/status - Get job status and next run times
 export async function GET() {
   try {
     const container = await getContainer();
     const redis = await container.getDataStorageService();
 
-    // Get editor config for period calculations
     const editor = await redis.getEditor();
 
-    // Get job statuses from Redis
     const [reporterRunning, newspaperRunning, dailyRunning] = await Promise.all(
       [
         redis.getJobRunning("reporter"),
@@ -131,7 +68,6 @@ export async function GET() {
       ]
     );
 
-    // Get last run times from Redis
     const [reporterLastRun, newspaperLastRun, dailyLastRun] = await Promise.all(
       [
         redis.getJobLastRun("reporter"),
@@ -140,7 +76,6 @@ export async function GET() {
       ]
     );
 
-    // Calculate next run times based on last run + period
     const calculateNextRun = (
       lastRun: number | null,
       periodMinutes: number
@@ -165,8 +100,8 @@ export async function GET() {
           reporterLastRun,
           editor?.articleGenerationPeriodMinutes || 15
         ),
-        newspaperJob: calculateNextRun(newspaperLastRun, 60), // 1 hour for newspaper editions
-        dailyJob: calculateNextRun(dailyLastRun, 1440) // 24 hours for daily editions
+        newspaperJob: calculateNextRun(newspaperLastRun, 60),
+        dailyJob: calculateNextRun(dailyLastRun, 1440)
       }
     };
 
