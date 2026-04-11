@@ -427,6 +427,34 @@ export default function EditorPage() {
               </h2>
             </div>
             <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6 space-y-6">
+              {/* Legacy / Default Model Name */}
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Default Model Name
+                </label>
+                <input
+                  type="text"
+                  value={editorData.modelName}
+                  onChange={(e) =>
+                    setEditorData({
+                      ...editorData,
+                      modelName: e.target.value
+                    })
+                  }
+                  placeholder="Enter AI model name (e.g., gpt-5-nano)"
+                  className={`w-full p-4 backdrop-blur-sm bg-white/10 border border-white/20 rounded-lg text-white/90 placeholder-white/50 ${
+                    isAdmin
+                      ? "focus:ring-2 focus:ring-white/50 focus:border-white/30"
+                      : "bg-white/5 cursor-not-allowed opacity-60"
+                  }`}
+                  readOnly={!isAdmin}
+                />
+                <p className="text-sm text-white/70 mt-2">
+                  Default AI model used for thread replies and daily edition
+                  comments when specific model fields are empty.
+                </p>
+              </div>
+
               {/* Article Generation Model */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">

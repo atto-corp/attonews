@@ -90,5 +90,5 @@ export const eventGenerationResponseSchema = z.object({
 
 export const generatedCommentSchema = z.object({
   topicIndex: z.number().int().min(0),
-  comment: z.string().min(10).max(500)
+  comment: z.string().min(10).max(1000)
 });
