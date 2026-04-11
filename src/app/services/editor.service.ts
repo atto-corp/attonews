@@ -8,6 +8,7 @@ import { IDataStorageService } from "./data-storage.interface";
 import { AIService } from "./ai.service";
 import { ReporterService } from "./reporter.service";
 import { PERSONA_DISPLAY_NAMES } from "./ai-prompts";
+import { fetchLatestMessages } from "./bluesky.service";
 
 export type JobType =
   | "reporter"
@@ -240,12 +241,18 @@ export class EditorService {
 
     const dailyEdition = dailyEditions[0];
 
+    const originalIndices = dailyEdition.topics.map((_, i) => i);
+    const shuffledIndices = [...originalIndices].sort(
+      () => 0.5 - Math.random()
+    );
+    const shuffledTopics = shuffledIndices.map((i) => dailyEdition.topics[i]);
+
     const dailyEditionText = [
       `Front Page Headline: ${dailyEdition.frontPageHeadline}`,
       `Front Page Article: ${dailyEdition.frontPageArticle}`,
       "",
       "Stories:",
-      ...dailyEdition.topics.map(
+      ...shuffledTopics.map(
         (topic, index) =>
           `Story ${index}: ${topic.name}\nHeadline: ${topic.headline}\nSummary: ${topic.oneLineSummary}\nFirst Paragraph: ${topic.newsStoryFirstParagraph}\nSecond Paragraph: ${topic.newsStorySecondParagraph}`
       )
@@ -263,18 +270,29 @@ export class EditorService {
       }
     }
 
+    const recentPosts = await fetchLatestMessages(20)
+      .then((msgs) => msgs.map((m) => m.text))
+      .catch(() => []);
+
     const result = await this.aiService.generateComment(
       dailyEditionText,
-      existingComments
+      existingComments,
+      undefined,
+      recentPosts
     );
 
     if (!result) {
       throw new Error("Failed to generate comment");
     }
 
-    const topicIndex = result.topicIndex;
+    const shuffledTopicIndex = result.topicIndex;
+    if (shuffledTopicIndex < 0 || shuffledTopicIndex >= shuffledTopics.length) {
+      throw new Error(`Invalid shuffled topic index: ${shuffledTopicIndex}`);
+    }
+
+    const topicIndex = shuffledIndices[shuffledTopicIndex];
     if (topicIndex < 0 || topicIndex >= dailyEdition.topics.length) {
-      throw new Error(`Invalid topic index: ${topicIndex}`);
+      throw new Error(`Invalid original topic index: ${topicIndex}`);
     }
 
     if (!dailyEdition.topics[topicIndex].comments) {

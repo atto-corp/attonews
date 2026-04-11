@@ -244,8 +244,14 @@ export class AIService {
         modelName: modelName || this.getModelName()
       };
 
+    const originalIndices = articles.map((_, i) => i);
+    const shuffledIndices = [...originalIndices].sort(
+      () => 0.5 - Math.random()
+    );
+    const shuffledArticles = shuffledIndices.map((i) => articles[i]);
+
     try {
-      const articlesText = AIResponseUtils.formatArticlesText(articles);
+      const articlesText = AIResponseUtils.formatArticlesText(shuffledArticles);
       const { systemPrompt, userPrompt } =
         AIPrompts.selectNewsworthyStoriesPrompts(articlesText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
@@ -275,24 +281,26 @@ export class AIService {
 
       await this.logAIResponse("Story selection", response);
 
-      const selectedIndices =
+      const selectedShuffledIndices =
         response.choices[0]?.message?.content
           ?.trim()
           .split(",")
           .map((num: string) => parseInt(num.trim()) - 1)
-          .filter((index: number) => index >= 0 && index < articles.length) ||
-        [];
+          .filter(
+            (index: number) => index >= 0 && index < shuffledArticles.length
+          ) || [];
 
-      // If AI selection fails or returns empty, fall back to random selection
-      if (selectedIndices.length === 0) {
+      if (selectedShuffledIndices.length === 0) {
         const minStories = 3;
-        const maxStories = Math.min(5, articles.length);
+        const maxStories = Math.min(5, shuffledArticles.length);
         const numStories =
           Math.floor(Math.random() * (maxStories - minStories + 1)) +
           minStories;
-        const shuffled = [...articles].sort(() => 0.5 - Math.random());
+        const fallbackShuffled = [...shuffledArticles].sort(
+          () => 0.5 - Math.random()
+        );
         return {
-          selectedArticles: shuffled.slice(0, numStories),
+          selectedArticles: fallbackShuffled.slice(0, numStories),
           fullPrompt,
           modelName: modelName || this.getModelName(),
           inputTokenCount: response.usage?.prompt_tokens,
@@ -300,10 +308,15 @@ export class AIService {
         };
       }
 
+      const originalSelectedIndices = selectedShuffledIndices.map(
+        (shuffledIdx) => shuffledIndices[shuffledIdx]
+      );
+      const selectedArticles = originalSelectedIndices.map(
+        (origIdx) => articles[origIdx]
+      );
+
       return {
-        selectedArticles: selectedIndices.map(
-          (index: number) => articles[index]
-        ),
+        selectedArticles,
         fullPrompt,
         modelName: modelName || this.getModelName(),
         inputTokenCount: response.usage?.prompt_tokens,
@@ -316,14 +329,24 @@ export class AIService {
         undefined,
         error instanceof Error ? error.message : "Unknown error"
       );
-      // Fallback to random selection
       const minStories = 3;
-      const maxStories = Math.min(5, articles.length);
+      const maxStories = Math.min(5, shuffledArticles.length);
       const numStories =
         Math.floor(Math.random() * (maxStories - minStories + 1)) + minStories;
-      const shuffled = [...articles].sort(() => 0.5 - Math.random());
+      const fallbackShuffled = [...shuffledArticles].sort(
+        () => 0.5 - Math.random()
+      );
+      const fallbackIndices = fallbackShuffled
+        .slice(0, numStories)
+        .map((article) => shuffledArticles.indexOf(article));
+      const originalFallbackIndices = fallbackIndices.map(
+        (shuffledIdx) => shuffledIndices[shuffledIdx]
+      );
+      const selectedArticles = originalFallbackIndices.map(
+        (origIdx) => articles[origIdx]
+      );
       return {
-        selectedArticles: shuffled.slice(0, numStories),
+        selectedArticles,
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
 User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
@@ -846,7 +869,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
   async generateComment(
     dailyEditionText: string,
     existingComments: Array<{ author: string; content: string }>,
-    modelName?: string
+    modelName?: string,
+    recentPosts?: string[]
   ): Promise<{
     topicIndex: number;
     persona: Persona;
@@ -866,7 +890,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       const { systemPrompt, userPrompt } = AIPrompts.generateCommentPrompts(
         randomPersona,
         dailyEditionText,
-        existingCommentsText
+        existingCommentsText,
+        recentPosts
       );
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;

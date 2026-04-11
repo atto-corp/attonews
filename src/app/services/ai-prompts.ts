@@ -228,9 +228,15 @@ Return a JSON array of exactly 3 reply strings. No other text.`
   static generateCommentPrompts(
     persona: Persona,
     dailyEditionText: string,
-    existingCommentsText: string
+    existingCommentsText: string,
+    recentPosts?: string[]
   ): { systemPrompt: string; userPrompt: string } {
-    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${PERSONA_DISPLAY_NAMES[persona]}.
+    const recentPostsSection =
+      recentPosts && recentPosts.length > 0
+        ? `\n\nYou have recently performed a social media scrolling session, which resulted in you skimming the following short-form social media posts:\n${recentPosts.join("\n")}`
+        : "";
+
+    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${PERSONA_DISPLAY_NAMES[persona]}.${recentPostsSection}
 
 Daily Edition:
 ${dailyEditionText}
