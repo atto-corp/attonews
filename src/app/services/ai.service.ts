@@ -133,17 +133,21 @@ export class AIService {
         )
       });
 
+      await this.dataStorageService.addLog(
+        `Article generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
       }
 
       // Save the entire AI response to JSON file
-      await AIResponseUtils.saveResponseToFile(
-        response,
-        "article",
-        generationTime
-      );
+      // await AIResponseUtils.saveResponseToFile(
+      //   response,
+      //   "article",
+      //   generationTime
+      // );
 
       const parsedResponse = reporterArticleSchema.parse(
         JSON.parse(content)
@@ -166,6 +170,11 @@ export class AIService {
       };
     } catch (error) {
       console.error("Error generating structured article:", error);
+      await this.dataStorageService.addLog(
+        `Article generation failed for reporter ${reporter.id}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       // Return fallback structured article
       throw error;
     }
@@ -218,6 +227,10 @@ export class AIService {
         this.dataStorageService
       );
 
+      await this.dataStorageService.addLog(
+        `Story selection completed - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       const selectedIndices =
         response.choices[0]?.message?.content
           ?.trim()
@@ -254,6 +267,11 @@ export class AIService {
       };
     } catch (error) {
       console.error("Error selecting newsworthy stories:", error);
+      await this.dataStorageService.addLog(
+        `Story selection failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       // Fallback to random selection
       const minStories = 3;
       const maxStories = Math.min(5, articles.length);
@@ -331,6 +349,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
+      await this.dataStorageService.addLog(
+        `Daily edition generation completed - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
@@ -358,6 +380,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating daily edition:", error);
+      await this.dataStorageService.addLog(
+        `Daily edition generation failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       throw error;
     }
   }
@@ -448,6 +475,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
+      await this.dataStorageService.addLog(
+        `Event generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service for events");
@@ -474,6 +505,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating events:", error);
+      await this.dataStorageService.addLog(
+        `Event generation failed for reporter ${reporter.id}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       // Return empty events on error
       return {
         events: [],
@@ -592,17 +628,21 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
+      await this.dataStorageService.addLog(
+        `Article from events generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
       }
 
       // Save the entire AI response to JSON file
-      await AIResponseUtils.saveResponseToFile(
-        response,
-        "article_from_events",
-        generationTime
-      );
+      // await AIResponseUtils.saveResponseToFile(
+      //   response,
+      //   "article_from_events",
+      //   generationTime
+      // );
 
       const parsedResponse = reporterArticleSchema.parse(
         JSON.parse(content)
@@ -625,6 +665,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating article from events:", error);
+      await this.dataStorageService.addLog(
+        `Article from events generation failed for reporter ${reporter.id}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       return null;
     }
   }
@@ -713,11 +758,21 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
               }
 
               const parsed = JSON.parse(content);
+
+              await this.dataStorageService.addLog(
+                `Thread reply generation completed for thread ${thread.id} - OpenAI response: ${JSON.stringify(response)}`
+              );
+
               return parsed;
             } catch (error) {
               console.error(
                 `Error generating reply for thread ${thread.id}:`,
                 error
+              );
+              await this.dataStorageService.addLog(
+                `Thread reply generation failed for thread ${thread.id}: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`
               );
               return ["", "", ""];
             }
@@ -734,6 +789,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating thread reply options:", error);
+      await this.dataStorageService.addLog(
+        `Thread reply generation failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       throw error;
     }
   }
@@ -787,6 +847,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       const parsed = JSON.parse(content);
 
+      await this.dataStorageService.addLog(
+        `Comment generation completed for daily edition - OpenAI response: ${JSON.stringify(response)}`
+      );
+
       return {
         topicIndex: parsed.topicIndex,
         persona: randomPersona,
@@ -796,6 +860,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating comment:", error);
+      await this.dataStorageService.addLog(
+        `Comment generation failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
       return null;
     }
   }

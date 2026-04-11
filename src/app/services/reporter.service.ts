@@ -410,22 +410,12 @@ export class ReporterService {
       try {
         const events = await this.generateEventsForReporter(reporter.id);
         results[reporter.id] = events;
-
-        await this.dataStorageService.addLog(
-          `Event generation completed for reporter ${reporter.id} - Generated ${events.length} events`
-        );
       } catch (error) {
         console.error(
           `Failed to generate events for reporter ${reporter.id}:`,
           error
         );
         results[reporter.id] = [];
-
-        await this.dataStorageService.addLog(
-          `Event generation failed for reporter ${reporter.id}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
       }
     }
 
