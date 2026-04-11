@@ -76,6 +76,7 @@ export default function Navigation({ appFullName }: NavigationProps) {
   // Navigation configuration
   const navigationItems = [
     { href: "/about", text: "About", condition: true },
+    { href: "/forum", text: "Forum", condition: !!user },
     { href: "/reporters", text: "Reporters", condition: !!user },
     { href: "/articles", text: "Articles", condition: true },
     { href: "/editions", text: "Editions", condition: true },
