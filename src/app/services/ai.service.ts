@@ -878,6 +878,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       const response = await this.aiClient.getClient().chat.completions.create({
         model,
+        reasoning_effort: "minimal",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
