@@ -69,6 +69,7 @@ export default function ActAsPage() {
   const handlePersonaSelect = async (persona: Persona) => {
     setSelectedPersona(persona);
     setLoading(true);
+    setStep("reply");
     setError(null);
 
     try {
