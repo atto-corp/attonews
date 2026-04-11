@@ -7,7 +7,12 @@ import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 
-type Persona = "happy" | "loafy" | "awoken";
+type Persona =
+  | "happy"
+  | "loafy"
+  | "awoken"
+  | "american_business"
+  | "european_business";
 
 const personas: Record<
   Persona,
@@ -27,6 +32,16 @@ const personas: Record<
     title: "Awoken",
     description: "A user with strong convictions ready to share",
     color: "from-purple-500 to-indigo-600"
+  },
+  american_business: {
+    title: "New Money",
+    description: "Pro-disruption, competition-focused entrepreneur",
+    color: "from-blue-500 to-cyan-600"
+  },
+  european_business: {
+    title: "Old Money",
+    description: "Pro-stability, continuity-focused traditionalist",
+    color: "from-slate-600 to-slate-800"
   }
 };
 

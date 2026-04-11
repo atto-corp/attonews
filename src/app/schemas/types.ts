@@ -1,3 +1,10 @@
+export type Persona =
+  | "happy"
+  | "loafy"
+  | "awoken"
+  | "american_business"
+  | "european_business";
+
 export interface Editor {
   bio: string;
   prompt: string;
@@ -69,7 +76,7 @@ export interface DailyEditionComment {
   author: string;
   content: string;
   createdAt: number;
-  persona: "happy" | "loafy" | "awoken";
+  persona: Persona;
 }
 
 export interface DailyEdition {

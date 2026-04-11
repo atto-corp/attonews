@@ -7,7 +7,12 @@ interface DailyEditionComment {
   author: string;
   content: string;
   createdAt: number;
-  persona: "happy" | "loafy" | "awoken";
+  persona:
+    | "happy"
+    | "loafy"
+    | "awoken"
+    | "american_business"
+    | "european_business";
 }
 
 interface Topic {
@@ -306,7 +311,11 @@ export default function Home() {
                                   loafy:
                                     "bg-gray-500/20 border-gray-500/30 text-gray-200",
                                   awoken:
-                                    "bg-amber-500/20 border-amber-500/30 text-amber-200"
+                                    "bg-amber-500/20 border-amber-500/30 text-amber-200",
+                                  american_business:
+                                    "bg-blue-500/20 border-blue-500/30 text-blue-200",
+                                  european_business:
+                                    "bg-slate-500/20 border-slate-500/30 text-slate-200"
                                 };
                                 return (
                                   <div

@@ -20,7 +20,8 @@ import {
 import { IDataStorageService } from "./data-storage.interface";
 import { KpiService } from "./kpi.service";
 import { fetchLatestMessages } from "./bluesky.service";
-import { AIPrompts, Persona, PERSONA_DISPLAY_NAMES } from "./ai-prompts";
+import { AIPrompts, PERSONA_DISPLAY_NAMES } from "./ai-prompts";
+import { Persona } from "../schemas/types";
 import { AIResponseUtils } from "./ai-response-utils";
 import { AIClient } from "./ai-client";
 
@@ -843,6 +844,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
                 `Error generating reply for thread ${thread.id}:`,
                 error
               );
+              if (error && typeof error === "object" && "response" in error) {
+                const err = error as { response?: { data?: unknown } };
+                console.error("Response body:", err.response?.data);
+              }
               await this.logAIResponse(
                 `Thread reply generation for thread ${thread.id}`,
                 undefined,
