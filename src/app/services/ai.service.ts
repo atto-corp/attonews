@@ -1,6 +1,10 @@
 import { Reporter, Article, Event } from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import OpenAI from "openai";
+
+type OpenAIResponse = OpenAI.Chat.Completions.ChatCompletion;
+
 import {
   dailyEditionSchema,
   reporterArticleSchema,
@@ -35,6 +39,47 @@ export class AIService {
 
   getModelName(): string {
     return this.aiClient.getModelName();
+  }
+
+  private async logAIResponse(
+    eventDescription: string,
+    response?: OpenAIResponse,
+    errorMessage?: string
+  ): Promise<void> {
+    let strippedResponse: OpenAIResponse | undefined;
+
+    if (response) {
+      strippedResponse = this.stripReasoningDetails(response);
+    }
+
+    const message = errorMessage
+      ? `${eventDescription} failed: ${errorMessage}`
+      : `${eventDescription} completed - OpenAI response: ${JSON.stringify(strippedResponse)}`;
+
+    await this.dataStorageService.addLog(message);
+  }
+
+  private stripReasoningDetails(response: OpenAIResponse): OpenAIResponse {
+    if (!response.choices) {
+      return response;
+    }
+
+    return {
+      ...response,
+      choices: response.choices.map((choice) => {
+        if (!choice.message) {
+          return choice;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { reasoning_details, ...messageWithoutReasoning } =
+          choice.message as unknown as Record<string, unknown>;
+        return {
+          ...choice,
+          message:
+            messageWithoutReasoning as unknown as OpenAI.Chat.Completions.ChatCompletionMessage
+        };
+      })
+    };
   }
 
   async generateStructuredArticle(
@@ -133,8 +178,9 @@ export class AIService {
         )
       });
 
-      await this.dataStorageService.addLog(
-        `Article generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      await this.logAIResponse(
+        `Article generation for reporter ${reporter.id}`,
+        response
       );
 
       const content = response.choices[0]?.message?.content?.trim();
@@ -170,10 +216,10 @@ export class AIService {
       };
     } catch (error) {
       console.error("Error generating structured article:", error);
-      await this.dataStorageService.addLog(
-        `Article generation failed for reporter ${reporter.id}: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        `Article generation for reporter ${reporter.id}`,
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       // Return fallback structured article
       throw error;
@@ -227,9 +273,7 @@ export class AIService {
         this.dataStorageService
       );
 
-      await this.dataStorageService.addLog(
-        `Story selection completed - OpenAI response: ${JSON.stringify(response)}`
-      );
+      await this.logAIResponse("Story selection", response);
 
       const selectedIndices =
         response.choices[0]?.message?.content
@@ -267,10 +311,10 @@ export class AIService {
       };
     } catch (error) {
       console.error("Error selecting newsworthy stories:", error);
-      await this.dataStorageService.addLog(
-        `Story selection failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        "Story selection",
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       // Fallback to random selection
       const minStories = 3;
@@ -349,9 +393,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
-      await this.dataStorageService.addLog(
-        `Daily edition generation completed - OpenAI response: ${JSON.stringify(response)}`
-      );
+      await this.logAIResponse("Daily edition generation", response);
 
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) {
@@ -380,10 +422,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating daily edition:", error);
-      await this.dataStorageService.addLog(
-        `Daily edition generation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        "Daily edition generation",
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       throw error;
     }
@@ -475,8 +517,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
-      await this.dataStorageService.addLog(
-        `Event generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      await this.logAIResponse(
+        `Event generation for reporter ${reporter.id}`,
+        response
       );
 
       const content = response.choices[0]?.message?.content?.trim();
@@ -505,10 +548,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating events:", error);
-      await this.dataStorageService.addLog(
-        `Event generation failed for reporter ${reporter.id}: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        `Event generation for reporter ${reporter.id}`,
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       // Return empty events on error
       return {
@@ -628,8 +671,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         this.dataStorageService
       );
 
-      await this.dataStorageService.addLog(
-        `Article from events generation completed for reporter ${reporter.id} - OpenAI response: ${JSON.stringify(response)}`
+      await this.logAIResponse(
+        `Article from events for reporter ${reporter.id}`,
+        response
       );
 
       const content = response.choices[0]?.message?.content?.trim();
@@ -665,10 +709,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating article from events:", error);
-      await this.dataStorageService.addLog(
-        `Article from events generation failed for reporter ${reporter.id}: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        `Article from events for reporter ${reporter.id}`,
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       return null;
     }
@@ -759,8 +803,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
               const parsed = JSON.parse(content);
 
-              await this.dataStorageService.addLog(
-                `Thread reply generation completed for thread ${thread.id} - OpenAI response: ${JSON.stringify(response)}`
+              await this.logAIResponse(
+                `Thread reply generation for thread ${thread.id}`,
+                response
               );
 
               return parsed;
@@ -769,10 +814,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
                 `Error generating reply for thread ${thread.id}:`,
                 error
               );
-              await this.dataStorageService.addLog(
-                `Thread reply generation failed for thread ${thread.id}: ${
-                  error instanceof Error ? error.message : "Unknown error"
-                }`
+              await this.logAIResponse(
+                `Thread reply generation for thread ${thread.id}`,
+                undefined,
+                error instanceof Error ? error.message : "Unknown error"
               );
               return ["", "", ""];
             }
@@ -789,10 +834,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating thread reply options:", error);
-      await this.dataStorageService.addLog(
-        `Thread reply generation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        "Thread reply generation",
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       throw error;
     }
@@ -847,8 +892,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       const parsed = JSON.parse(content);
 
-      await this.dataStorageService.addLog(
-        `Comment generation completed for daily edition - OpenAI response: ${JSON.stringify(response)}`
+      await this.logAIResponse(
+        "Comment generation for daily edition",
+        response
       );
 
       return {
@@ -860,10 +906,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       };
     } catch (error) {
       console.error("Error generating comment:", error);
-      await this.dataStorageService.addLog(
-        `Comment generation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+      await this.logAIResponse(
+        "Comment generation for daily edition",
+        undefined,
+        error instanceof Error ? error.message : "Unknown error"
       );
       return null;
     }
