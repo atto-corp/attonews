@@ -1427,4 +1427,26 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
   }> {
     throw new Error("Forum not supported in PostgreSQL mode");
   }
+
+  async getMemoryInfo(): Promise<{
+    redis: { usedMemory: number; usedMemoryPeak: number };
+    system: { totalMemory: number; usedMemory: number; freeMemory: number };
+  }> {
+    const os = await import("os");
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+
+    return {
+      redis: {
+        usedMemory: 0,
+        usedMemoryPeak: 0
+      },
+      system: {
+        totalMemory,
+        usedMemory,
+        freeMemory
+      }
+    };
+  }
 }

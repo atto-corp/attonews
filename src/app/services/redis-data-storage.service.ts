@@ -2097,4 +2097,32 @@ export class RedisDataStorageService implements IDataStorageService {
       postCount: parseInt(data.postCount || "0")
     };
   }
+
+  async getMemoryInfo(): Promise<{
+    redis: { usedMemory: number; usedMemoryPeak: number };
+    system: { totalMemory: number; usedMemory: number; freeMemory: number };
+  }> {
+    const redisInfo = await this.client.info("memory");
+    const usedMemoryMatch = redisInfo.match(/used_memory:(\d+)/);
+    const usedMemoryPeakMatch = redisInfo.match(/used_memory_peak:(\d+)/);
+
+    const os = await import("os");
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+
+    return {
+      redis: {
+        usedMemory: usedMemoryMatch ? parseInt(usedMemoryMatch[1]) : 0,
+        usedMemoryPeak: usedMemoryPeakMatch
+          ? parseInt(usedMemoryPeakMatch[1])
+          : 0
+      },
+      system: {
+        totalMemory,
+        usedMemory,
+        freeMemory
+      }
+    };
+  }
 }

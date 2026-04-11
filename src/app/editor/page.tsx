@@ -30,6 +30,11 @@ interface KpiData {
   [KpiName.TOTAL_TEXT_OUTPUT_TOKENS]: number;
 }
 
+interface MemoryInfo {
+  redis: { usedMemory: number; usedMemoryPeak: number };
+  system: { totalMemory: number; usedMemory: number; freeMemory: number };
+}
+
 interface JobStatus {
   status: {
     reporterJob: boolean;
@@ -76,6 +81,7 @@ export default function EditorPage() {
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [kpiData, setKpiData] = useState<KpiData | null>(null);
+  const [memoryInfo, setMemoryInfo] = useState<MemoryInfo | null>(null);
   const [appName, setAppName] = useState("Newsroom");
   const router = useRouter();
 
@@ -85,6 +91,7 @@ export default function EditorPage() {
     fetchEditorData();
     fetchJobStatus();
     fetchKpiData();
+    fetchMemoryInfo();
   }, []);
 
   // Load app configuration
@@ -236,6 +243,18 @@ export default function EditorPage() {
       }
     } catch (error) {
       console.error("Error fetching KPI data:", error);
+    }
+  };
+
+  const fetchMemoryInfo = async () => {
+    try {
+      const response = await fetch("/api/editor/memory");
+      if (response.ok) {
+        const data = await response.json();
+        setMemoryInfo(data);
+      }
+    } catch (error) {
+      console.error("Error fetching memory info:", error);
     }
   };
 
@@ -1089,6 +1108,164 @@ export default function EditorPage() {
                 className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
               >
                 Refresh Metrics
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Memory Usage Section */}
+        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 mt-8 shadow-2xl">
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-white/80"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-white/90">
+                Memory Usage
+              </h2>
+            </div>
+
+            <p className="text-white/70">
+              Current memory usage for Redis and system resources.
+            </p>
+
+            {memoryInfo ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Redis Memory */}
+                <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-red-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-red-200"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white/90">Redis</h3>
+                      <p className="text-sm text-white/70">
+                        In-memory database
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/70">Used</span>
+                      <span className="text-lg font-semibold text-red-200">
+                        {(memoryInfo.redis.usedMemory / 1024 / 1024).toFixed(2)}{" "}
+                        MB
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/70">Peak</span>
+                      <span className="text-lg font-semibold text-red-200">
+                        {(
+                          memoryInfo.redis.usedMemoryPeak /
+                          1024 /
+                          1024
+                        ).toFixed(2)}{" "}
+                        MB
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Memory */}
+                <div className="backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-500/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-blue-200"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white/90">System</h3>
+                      <p className="text-sm text-white/70">Host machine</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/70">Total</span>
+                      <span className="text-lg font-semibold text-blue-200">
+                        {(
+                          memoryInfo.system.totalMemory /
+                          1024 /
+                          1024 /
+                          1024
+                        ).toFixed(2)}{" "}
+                        GB
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/70">Used</span>
+                      <span className="text-lg font-semibold text-blue-200">
+                        {(
+                          memoryInfo.system.usedMemory /
+                          1024 /
+                          1024 /
+                          1024
+                        ).toFixed(2)}{" "}
+                        GB
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/70">Free</span>
+                      <span className="text-lg font-semibold text-green-200">
+                        {(
+                          memoryInfo.system.freeMemory /
+                          1024 /
+                          1024 /
+                          1024
+                        ).toFixed(2)}{" "}
+                        GB
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/30 mx-auto mb-4"></div>
+                <p className="text-white/70">Loading memory info...</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-center pt-4">
+              <button
+                onClick={fetchMemoryInfo}
+                className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
+              >
+                Refresh Memory
               </button>
             </div>
           </div>

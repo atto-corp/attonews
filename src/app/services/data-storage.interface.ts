@@ -127,4 +127,10 @@ export interface IDataStorageService {
   getModelName(): Promise<string | null>;
   generateId(prefix: string): Promise<string>;
   clearAllData(): Promise<void>;
+
+  // Memory info
+  getMemoryInfo(): Promise<{
+    redis: { usedMemory: number; usedMemoryPeak: number };
+    system: { totalMemory: number; usedMemory: number; freeMemory: number };
+  }>;
 }
