@@ -8,7 +8,10 @@ import {
   Event,
   AdEntry,
   User,
-  REDIS_KEYS
+  REDIS_KEYS,
+  ForumSection,
+  ForumThread,
+  ForumPost
 } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
@@ -1889,5 +1892,209 @@ export class RedisDataStorageService implements IDataStorageService {
 
   async clearAllData(): Promise<void> {
     await this.client.flushAll();
+  }
+
+  async saveForumSections(sections: ForumSection[]): Promise<void> {
+    const multi = this.client.multi();
+    multi.set(REDIS_KEYS.FORUM_SECTIONS, JSON.stringify(sections));
+    await multi.exec();
+  }
+
+  async getForumSections(): Promise<ForumSection[] | null> {
+    const data = await this.client.get(REDIS_KEYS.FORUM_SECTIONS);
+    if (!data) return null;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  async createThread(
+    forumId: string,
+    title: string,
+    author: string,
+    firstPostContent: string
+  ): Promise<{ threadId: number; postId: number }> {
+    const threadId = await this.client.incr(REDIS_KEYS.FORUM_NEXT_THREAD_ID);
+    const postId = await this.client.incr(REDIS_KEYS.FORUM_NEXT_POST_ID);
+    const now = Date.now();
+
+    const multi = this.client.multi();
+
+    multi.zAdd(REDIS_KEYS.FORUM_THREADS(forumId), {
+      score: now,
+      value: threadId.toString()
+    });
+
+    multi.hSet(REDIS_KEYS.FORUM_THREAD(threadId), {
+      title,
+      forumId,
+      author,
+      createdAt: now.toString(),
+      replyCount: "0",
+      lastReplyTime: now.toString()
+    });
+
+    multi.zAdd(REDIS_KEYS.FORUM_POSTS(threadId), {
+      score: now,
+      value: postId.toString()
+    });
+
+    multi.set(
+      REDIS_KEYS.FORUM_POST(threadId, postId),
+      JSON.stringify({
+        id: postId,
+        content: firstPostContent,
+        author,
+        createdAt: now
+      })
+    );
+
+    multi.hIncrBy(REDIS_KEYS.FORUM_COUNTER(forumId), "threadCount", 1);
+    multi.hIncrBy(REDIS_KEYS.FORUM_COUNTER(forumId), "postCount", 1);
+
+    await multi.exec();
+    return { threadId, postId };
+  }
+
+  async createPost(
+    threadId: number,
+    content: string,
+    author: string
+  ): Promise<{ postId: number }> {
+    const postId = await this.client.incr(REDIS_KEYS.FORUM_NEXT_POST_ID);
+    const now = Date.now();
+
+    const threadData = await this.client.hGetAll(
+      REDIS_KEYS.FORUM_THREAD(threadId)
+    );
+    const forumId = threadData.forumId;
+
+    const multi = this.client.multi();
+
+    multi.zAdd(REDIS_KEYS.FORUM_POSTS(threadId), {
+      score: now,
+      value: postId.toString()
+    });
+
+    multi.set(
+      REDIS_KEYS.FORUM_POST(threadId, postId),
+      JSON.stringify({
+        id: postId,
+        content,
+        author,
+        createdAt: now
+      })
+    );
+
+    multi.hIncrBy(REDIS_KEYS.FORUM_THREAD(threadId), "replyCount", 1);
+    multi.hSet(
+      REDIS_KEYS.FORUM_THREAD(threadId),
+      "lastReplyTime",
+      now.toString()
+    );
+    multi.hIncrBy(REDIS_KEYS.FORUM_COUNTER(forumId), "postCount", 1);
+    multi.zAdd(REDIS_KEYS.FORUM_THREADS(forumId), {
+      score: now,
+      value: threadId.toString()
+    });
+
+    await multi.exec();
+    return { postId };
+  }
+
+  async getForumThreads(
+    forumId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ForumThread[]> {
+    const threadIds = await this.client.zRange(
+      REDIS_KEYS.FORUM_THREADS(forumId),
+      offset,
+      offset + limit - 1,
+      { REV: true }
+    );
+
+    if (threadIds.length === 0) return [];
+
+    const multi = this.client.multi();
+    for (const threadId of threadIds) {
+      multi.hGetAll(REDIS_KEYS.FORUM_THREAD(parseInt(threadId)));
+    }
+    const results = await multi.exec();
+
+    return threadIds
+      .map((threadId, i) => {
+        const data = results?.[i] as unknown as Record<string, string> | null;
+        if (!data) return null;
+        return {
+          id: parseInt(threadId),
+          title: data.title || "",
+          forumId: data.forumId || "",
+          author: data.author || "",
+          createdAt: parseInt(data.createdAt || "0"),
+          replyCount: parseInt(data.replyCount || "0"),
+          lastReplyTime: parseInt(data.lastReplyTime || "0")
+        };
+      })
+      .filter(Boolean) as ForumThread[];
+  }
+
+  async getThread(threadId: number): Promise<ForumThread | null> {
+    const data = await this.client.hGetAll(REDIS_KEYS.FORUM_THREAD(threadId));
+    if (!data || !data.title) return null;
+    return {
+      id: threadId,
+      title: data.title,
+      forumId: data.forumId,
+      author: data.author,
+      createdAt: parseInt(data.createdAt),
+      replyCount: parseInt(data.replyCount),
+      lastReplyTime: parseInt(data.lastReplyTime)
+    };
+  }
+
+  async getThreadPosts(
+    threadId: number,
+    offset = 0,
+    limit = 50
+  ): Promise<ForumPost[]> {
+    const postIds = await this.client.zRange(
+      REDIS_KEYS.FORUM_POSTS(threadId),
+      offset,
+      offset + limit - 1
+    );
+
+    if (postIds.length === 0) return [];
+
+    const multi = this.client.multi();
+    for (const postId of postIds) {
+      multi.get(REDIS_KEYS.FORUM_POST(threadId, parseInt(postId)));
+    }
+    const results = await multi.exec();
+
+    return postIds
+      .map((postId, i) => {
+        const data = results?.[i] as unknown as string | null;
+        if (!data) return null;
+        try {
+          return JSON.parse(data);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean) as ForumPost[];
+  }
+
+  async getForumCounters(forumId: string): Promise<{
+    threadCount: number;
+    postCount: number;
+  }> {
+    const data = await this.client.hGetAll(REDIS_KEYS.FORUM_COUNTER(forumId));
+    return {
+      threadCount: parseInt(data.threadCount || "0"),
+      postCount: parseInt(data.postCount || "0")
+    };
   }
 }

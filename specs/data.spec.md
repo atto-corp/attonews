@@ -162,9 +162,26 @@ Job status tracking is used to monitor the execution state of background jobs (a
 - `daily` - Daily edition compilation job
 - `newspaper` - Newspaper edition generation job (uses `reporter` job for tracking)
 
+### Forum
+The forum provides a discussion platform with sections, forums, threads, and posts.
+
+**Keys:**
+- `forum:sections` - JSON string array of forum sections
+- `forum:{forumId}:threads` - Sorted set where:
+  - Score: Creation time (milliseconds since epoch)
+  - Member: Thread ID
+- `forum:{forumId}:counter` - String containing thread and post counts
+- `forum:next_thread_id` - String containing next available thread ID
+- `forum:next_post_id` - String containing next available post ID
+- `forum:thread:{threadId}` - JSON string containing thread details (id, title, forumId, author, createdAt, replyCount, lastReplyTime)
+- `forum:thread:{threadId}:posts` - Sorted set where:
+  - Score: Creation time (milliseconds since epoch)
+  - Member: Post ID
+- `forum:thread:{threadId}:post:{postId}` - JSON string containing post details (id, content, author, createdAt)
+
 ## Key Naming Conventions
 - Use colons (`:`) as separators for hierarchical key names
-- Use descriptive prefixes (`editor:`, `reporter:`, `article:`, `edition:`, `daily_edition:`, `event:`, `ad:`, `user:`, `ai:`, `job:`, `kpi:`)
+- Use descriptive prefixes (`editor:`, `reporter:`, `article:`, `edition:`, `daily_edition:`, `event:`, `ad:`, `user:`, `ai:`, `job:`, `kpi:`, `forum:`)
 - Include IDs in curly braces for dynamic key generation
 - Use consistent data types (Strings for text, Sets for collections, Sorted Sets for time-ordered data)
 - Use reverse lookup patterns like `user_by_email:{email}` for efficient lookups by non-ID fields
@@ -191,6 +208,12 @@ Job status tracking is used to monitor the execution state of background jobs (a
 - **User lookup by email**: `GET user_by_email:{email}` to get user ID
 - **User details**: Direct key access with `GET user:{user_id}:email`, `GET user:{user_id}:role`, etc.
 - **Job status lookup**: `GET job:{job_name}:running`, `GET job:{job_name}:last_run`, `GET job:{job_name}:last_success` for current job status
+- **Forum sections**: `GET forum:sections` to get all forum sections with nested forums
+- **Forum threads**: `ZREVRANGE forum:{forumId}:threads 0 -1 WITHSCORES` for threads in a forum
+- **Forum counter**: `GET forum:{forumId}:counter` to get thread and post counts
+- **Thread details**: `GET forum:thread:{threadId}` to get thread metadata
+- **Thread posts**: `ZREVRANGE forum:thread:{threadId}:posts 0 -1 WITHSCORES` for posts in a thread
+- **Post details**: `GET forum:thread:{threadId}:post:{postId}` to get a specific post
 - **KPI lookup**: `GET kpi:{name}:value`, `GET kpi:{name}:last_updated` for KPI values
 
 ## Performance Considerations

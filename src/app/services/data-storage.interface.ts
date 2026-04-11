@@ -6,7 +6,10 @@ import {
   DailyEdition,
   Event,
   AdEntry,
-  User
+  User,
+  ForumSection,
+  ForumThread,
+  ForumPost
 } from "../schemas/types";
 
 export interface IDataStorageService {
@@ -89,6 +92,36 @@ export interface IDataStorageService {
   // Log operations
   addLog(message: string): Promise<void>;
   getAllLogs(): Promise<string[]>;
+
+  // Forum operations
+  saveForumSections(sections: ForumSection[]): Promise<void>;
+  getForumSections(): Promise<ForumSection[] | null>;
+  createThread(
+    forumId: string,
+    title: string,
+    author: string,
+    firstPostContent: string
+  ): Promise<{ threadId: number; postId: number }>;
+  createPost(
+    threadId: number,
+    content: string,
+    author: string
+  ): Promise<{ postId: number }>;
+  getForumThreads(
+    forumId: string,
+    offset?: number,
+    limit?: number
+  ): Promise<ForumThread[]>;
+  getThread(threadId: number): Promise<ForumThread | null>;
+  getThreadPosts(
+    threadId: number,
+    offset?: number,
+    limit?: number
+  ): Promise<ForumPost[]>;
+  getForumCounters(forumId: string): Promise<{
+    threadCount: number;
+    postCount: number;
+  }>;
 
   // Utility methods
   getModelName(): Promise<string | null>;

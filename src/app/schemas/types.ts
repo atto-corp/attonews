@@ -240,8 +240,51 @@ export const REDIS_KEYS = {
   // Jobs
   JOB_RUNNING: (jobName: string) => `job:${jobName}:running`,
   JOB_LAST_RUN: (jobName: string) => `job:${jobName}:last_run`,
-  JOB_LAST_SUCCESS: (jobName: string) => `job:${jobName}:last_success`
+  JOB_LAST_SUCCESS: (jobName: string) => `job:${jobName}:last_success`,
+
+  // Forum
+  FORUM_SECTIONS: "forum:sections",
+  FORUM_THREADS: (forumId: string) => `forum:${forumId}:threads`,
+  FORUM_POSTS: (threadId: number) => `forum:thread:${threadId}:posts`,
+  FORUM_THREAD: (threadId: number) => `forum:thread:${threadId}`,
+  FORUM_POST: (threadId: number, postId: number) =>
+    `forum:thread:${threadId}:post:${postId}`,
+  FORUM_COUNTER: (forumId: string) => `forum:${forumId}:counter`,
+  FORUM_NEXT_THREAD_ID: "forum:next_thread_id",
+  FORUM_NEXT_POST_ID: "forum:next_post_id"
 } as const;
+
+export interface ForumPost {
+  id: number;
+  content: string;
+  author: string;
+  createdAt: number;
+}
+
+export interface ForumThread {
+  id: number;
+  title: string;
+  forumId: string;
+  author: string;
+  createdAt: number;
+  replyCount: number;
+  lastReplyTime: number;
+}
+
+export interface Forum {
+  id: string;
+  title: string;
+  description: string;
+  threadCount: number;
+  postCount: number;
+  latestThread: ForumThread | null;
+}
+
+export interface ForumSection {
+  id: string;
+  title: string;
+  forums: Forum[];
+}
 
 // Utility types for Redis operations
 export interface RedisArticleData {

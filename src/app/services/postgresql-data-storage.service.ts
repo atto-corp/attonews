@@ -7,7 +7,10 @@ import {
   DailyEdition,
   Event,
   AdEntry,
-  User
+  User,
+  ForumSection,
+  ForumThread,
+  ForumPost
 } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
@@ -1371,5 +1374,57 @@ export class PostgreSQLDataStorageService implements IDataStorageService {
 
   async getAllLogs(): Promise<string[]> {
     return [];
+  }
+
+  async saveForumSections(_sections: ForumSection[]): Promise<void> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async getForumSections(): Promise<ForumSection[] | null> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async createThread(
+    _forumId: string,
+    _title: string,
+    _author: string,
+    _firstPostContent: string
+  ): Promise<{ threadId: number; postId: number }> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async createPost(
+    _threadId: number,
+    _content: string,
+    _author: string
+  ): Promise<{ postId: number }> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async getForumThreads(
+    _forumId: string,
+    _offset?: number,
+    _limit?: number
+  ): Promise<ForumThread[]> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async getThread(_threadId: number): Promise<ForumThread | null> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async getThreadPosts(
+    _threadId: number,
+    _offset?: number,
+    _limit?: number
+  ): Promise<ForumPost[]> {
+    throw new Error("Forum not supported in PostgreSQL mode");
+  }
+
+  async getForumCounters(_forumId: string): Promise<{
+    threadCount: number;
+    postCount: number;
+  }> {
+    throw new Error("Forum not supported in PostgreSQL mode");
   }
 }

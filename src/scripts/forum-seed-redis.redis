@@ -1,0 +1,163 @@
+SET forum:sections '[{"id":"atto","title":"Atto","forums":[{"id":"announcements","title":"Announcements","description":"Official news and updates about Atto","threadCount":8,"postCount":45,"latestThread":{"id":101,"title":"Welcome to Atto Newsroom","replyCount":12,"lastReplyTime":1736204400000,"author":"admin"}},{"id":"general","title":"General","description":"General discussion about Atto","threadCount":15,"postCount":89,"latestThread":{"id":115,"title":"What everyone working on this week?","replyCount":8,"lastReplyTime":1736200800000,"author":"user1"}},{"id":"suggestions","title":"Suggestions","description":"Feature requests and ideas","threadCount":12,"postCount":67,"latestThread":{"id":125,"title":"Add support for more social media sources","replyCount":5,"lastReplyTime":1736197200000,"author":"featurefan"}}]},{"id":"news","title":"News","forums":[{"id":"content","title":"Content","description":"Discussion about generated articles and content","threadCount":22,"postCount":156,"latestThread":{"id":201,"title":"Best headlines generated this week","replyCount":14,"lastReplyTime":1736214600000,"author":"editor"}},{"id":"sources","title":"Sources","description":"Social media sources and data collection","threadCount":18,"postCount":94,"latestThread":{"id":218,"title":"Bluesky integration working great","replyCount":7,"lastReplyTime":1736188200000,"author":"integrator"}},{"id":"methods","title":"Methods","description":"AI methods and prompt engineering","threadCount":25,"postCount":178,"latestThread":{"id":235,"title":"Optimizing reporter prompts for better coverage","replyCount":19,"lastReplyTime":1736205900000,"author":"promptmaster"}}]},{"id":"olds","title":"Olds","forums":[{"id":"history","title":"History","description":"Historical events and retrospective analysis","threadCount":30,"postCount":245,"latestThread":{"id":301,"title":"Events from last month - retrospective","replyCount":11,"lastReplyTime":1736175600000,"author":"historian"}},{"id":"prehistory","title":"Prehistory","description":"Very old events and archival discussions","threadCount":18,"postCount":112,"latestThread":{"id":315,"title":"Archive: First articles ever generated","replyCount":6,"lastReplyTime":1736108400000,"author":"archivist"}},{"id":"speculation","title":"Speculation","description":"Future predictions and speculation","threadCount":14,"postCount":89,"latestThread":{"id":325,"title":"Where is the AI news industry heading?","replyCount":22,"lastReplyTime":1736204400000,"author":"futurist"}}]},{"id":"etc","title":"Etc","forums":[{"id":"music","title":"Music","description":"Music discussions and recommendations","threadCount":45,"postCount":312,"latestThread":{"id":401,"title":"What are you listening to while coding?","replyCount":28,"lastReplyTime":1736223000000,"author":"coder1"}},{"id":"movies-tv","title":"Movies & TV","description":"Film and television discussions","threadCount":38,"postCount":267,"latestThread":{"id":415,"title":"Best documentaries about AI","replyCount":15,"lastReplyTime":1736197200000,"author":"filmmaker"}},{"id":"technology","title":"Technology","description":"General tech talk","threadCount":52,"postCount":389,"latestThread":{"id":430,"title":"New AI tools everyone should know about","replyCount":31,"lastReplyTime":1736204400000,"author":"earlyadopter"}},{"id":"politics","title":"Politics","description":"Political discussions","threadCount":28,"postCount":198,"latestThread":{"id":445,"title":"AI role in political journalism","replyCount":18,"lastReplyTime":1736175600000,"author":"journalist"}},{"id":"the-internet","title":"The Internet","description":"Web culture, memes, and online communities","threadCount":42,"postCount":356,"latestThread":{"id":460,"title":"Internet culture trends this month","replyCount":24,"lastReplyTime":1736200800000,"author":"trendspotter"}}]}]'
+
+HSET forum:announcements:counter threadCount 8 postCount 45
+HSET forum:general:counter threadCount 15 postCount 89
+HSET forum:suggestions:counter threadCount 12 postCount 67
+HSET forum:content:counter threadCount 22 postCount 156
+HSET forum:sources:counter threadCount 18 postCount 94
+HSET forum:methods:counter threadCount 25 postCount 178
+HSET forum:history:counter threadCount 30 postCount 245
+HSET forum:prehistory:counter threadCount 18 postCount 112
+HSET forum:speculation:counter threadCount 14 postCount 89
+HSET forum:music:counter threadCount 45 postCount 312
+HSET forum:movies-tv:counter threadCount 38 postCount 267
+HSET forum:technology:counter threadCount 52 postCount 389
+HSET forum:politics:counter threadCount 28 postCount 198
+HSET forum:the-internet:counter threadCount 42 postCount 356
+
+ZADD forum:announcements:threads 1736204400000 101
+ZADD forum:announcements:threads 1735580400000 102
+ZADD forum:announcements:threads 1735537200000 103
+ZADD forum:announcements:threads 1735486800000 104
+ZADD forum:announcements:threads 1735393200000 105
+ZADD forum:general:threads 1736200800000 115
+ZADD forum:general:threads 1736175600000 116
+ZADD forum:general:threads 1736146800000 117
+ZADD forum:general:threads 1736118000000 118
+ZADD forum:general:threads 1736046000000 119
+ZADD forum:suggestions:threads 1736197200000 125
+ZADD forum:suggestions:threads 1736188200000 126
+ZADD forum:suggestions:threads 1736159400000 127
+ZADD forum:suggestions:threads 1736146800000 128
+ZADD forum:suggestions:threads 1736118000000 129
+ZADD forum:content:threads 1736214600000 201
+ZADD forum:content:threads 1736188200000 202
+ZADD forum:content:threads 1736175600000 203
+ZADD forum:content:threads 1736159400000 204
+ZADD forum:content:threads 1736146800000 205
+ZADD forum:sources:threads 1736188200000 218
+ZADD forum:sources:threads 1736167800000 219
+ZADD forum:sources:threads 1736146800000 220
+ZADD forum:sources:threads 1736118000000 221
+ZADD forum:methods:threads 1736205900000 235
+ZADD forum:methods:threads 1736167800000 236
+ZADD forum:methods:threads 1736118000000 237
+ZADD forum:methods:threads 1736096400000 238
+ZADD forum:methods:threads 1736074800000 239
+ZADD forum:history:threads 1736175600000 301
+ZADD forum:history:threads 1736146800000 302
+ZADD forum:history:threads 1736118000000 303
+ZADD forum:history:threads 1736096400000 304
+ZADD forum:prehistory:threads 1736108400000 315
+ZADD forum:prehistory:threads 1736022000000 316
+ZADD forum:prehistory:threads 1735935600000 317
+ZADD forum:speculation:threads 1736204400000 325
+ZADD forum:speculation:threads 1736197200000 326
+ZADD forum:speculation:threads 1736175600000 327
+ZADD forum:music:threads 1736223000000 401
+ZADD forum:music:threads 1736204400000 402
+ZADD forum:music:threads 1736175600000 403
+ZADD forum:music:threads 1736134800000 404
+ZADD forum:movies-tv:threads 1736197200000 415
+ZADD forum:movies-tv:threads 1736175600000 416
+ZADD forum:movies-tv:threads 1736146800000 417
+ZADD forum:movies-tv:threads 1736118000000 418
+ZADD forum:technology:threads 1736204400000 430
+ZADD forum:technology:threads 1736188200000 431
+ZADD forum:technology:threads 1736175600000 432
+ZADD forum:technology:threads 1736159400000 433
+ZADD forum:politics:threads 1736175600000 445
+ZADD forum:politics:threads 1736146800000 446
+ZADD forum:politics:threads 1736118000000 447
+ZADD forum:the-internet:threads 1736200800000 460
+ZADD forum:the-internet:threads 1736197200000 461
+ZADD forum:the-internet:threads 1736175600000 462
+ZADD forum:the-internet:threads 1736146800000 463
+
+HSET forum:thread:101 title "Welcome to Atto Newsroom" forumId announcements author admin createdAt 1736204400000 replyCount 12 lastReplyTime 1736204400000
+HSET forum:thread:102 title "System maintenance scheduled" forumId announcements author system createdAt 1735580400000 replyCount 3 lastReplyTime 1735580400000
+HSET forum:thread:103 title "New feature: Daily edition emails" forumId announcements author admin createdAt 1735537200000 replyCount 8 lastReplyTime 1735537200000
+HSET forum:thread:104 title "Version 2.0 release notes" forumId announcements author dev createdAt 1735486800000 replyCount 15 lastReplyTime 1735486800000
+HSET forum:thread:105 title "Community guidelines update" forumId announcements author moderator createdAt 1735393200000 replyCount 5 lastReplyTime 1735393200000
+HSET forum:thread:115 title "What everyone working on this week?" forumId general author user1 createdAt 1736200800000 replyCount 8 lastReplyTime 1736200800000
+HSET forum:thread:116 title "Introductions thread" forumId general author newuser createdAt 1736175600000 replyCount 22 lastReplyTime 1736175600000
+HSET forum:thread:117 title "Best practices for using Atto" forumId general author expert createdAt 1736146800000 replyCount 11 lastReplyTime 1736146800000
+HSET forum:thread:118 title "Questions about the pipeline" forumId general author curious createdAt 1736118000000 replyCount 6 lastReplyTime 1736118000000
+HSET forum:thread:119 title "Show off your setup" forumId general author enthusiast createdAt 1736046000000 replyCount 14 lastReplyTime 1736046000000
+HSET forum:thread:125 title "Add support for more social media sources" forumId suggestions author featurefan createdAt 1736197200000 replyCount 5 lastReplyTime 1736197200000
+HSET forum:thread:126 title "Dark mode for the web interface" forumId suggestions author designer createdAt 1736188200000 replyCount 18 lastReplyTime 1736188200000
+HSET forum:thread:127 title "Export articles to PDF" forumId suggestions author user2 createdAt 1736159400000 replyCount 9 lastReplyTime 1736159400000
+HSET forum:thread:128 title "Improved search functionality" forumId suggestions author poweruser createdAt 1736146800000 replyCount 7 lastReplyTime 1736146800000
+HSET forum:thread:129 title "Email notifications for new editions" forumId suggestions author user3 createdAt 1736118000000 replyCount 12 lastReplyTime 1736118000000
+HSET forum:thread:201 title "Best headlines generated this week" forumId content author editor createdAt 1736214600000 replyCount 14 lastReplyTime 1736214600000
+HSET forum:thread:202 title "How to improve article quality" forumId content author writer createdAt 1736188200000 replyCount 19 lastReplyTime 1736188200000
+HSET forum:thread:203 title "Favorite beats to cover" forumId content author reporter1 createdAt 1736175600000 replyCount 11 lastReplyTime 1736175600000
+HSET forum:thread:204 title "Article length preferences" forumId content author user4 createdAt 1736159400000 replyCount 8 lastReplyTime 1736159400000
+HSET forum:thread:205 title "Tone and style discussions" forumId content author styleguide createdAt 1736146800000 replyCount 16 lastReplyTime 1736146800000
+HSET forum:thread:218 title "Bluesky integration working great" forumId sources author integrator createdAt 1736188200000 replyCount 7 lastReplyTime 1736188200000
+HSET forum:thread:219 title "Which social platforms do you use?" forumId sources author researcher createdAt 1736167800000 replyCount 13 lastReplyTime 1736167800000
+HSET forum:thread:220 title "Data quality tips" forumId sources author analyst createdAt 1736146800000 replyCount 9 lastReplyTime 1736146800000
+HSET forum:thread:221 title "Source reliability discussion" forumId sources author skeptic createdAt 1736118000000 replyCount 21 lastReplyTime 1736118000000
+HSET forum:thread:235 title "Optimizing reporter prompts for better coverage" forumId methods author promptmaster createdAt 1736205900000 replyCount 19 lastReplyTime 1736205900000
+HSET forum:thread:236 title "Temperature and creativity settings" forumId methods author tuner createdAt 1736167800000 replyCount 12 lastReplyTime 1736167800000
+HSET forum:thread:237 title "Using few-shot examples effectively" forumId methods author learner createdAt 1736118000000 replyCount 8 lastReplyTime 1736118000000
+HSET forum:thread:238 title "Chain of thought prompting tips" forumId methods author thinker createdAt 1736096400000 replyCount 14 lastReplyTime 1736096400000
+HSET forum:thread:239 title "Role-playing in prompts" forumId methods author actor createdAt 1736074800000 replyCount 16 lastReplyTime 1736074800000
+HSET forum:thread:301 title "Events from last month - retrospective" forumId history author historian createdAt 1736175600000 replyCount 11 lastReplyTime 1736175600000
+HSET forum:thread:302 title "Archive: First week of Atto" forumId history author founder createdAt 1736146800000 replyCount 25 lastReplyTime 1736146800000
+HSET forum:thread:303 title "Evolution of the editor selection" forumId history author oldtimer createdAt 1736118000000 replyCount 8 lastReplyTime 1736118000000
+HSET forum:thread:304 title "Milestones and achievements" forumId history author achiever createdAt 1736096400000 replyCount 17 lastReplyTime 1736096400000
+HSET forum:thread:315 title "Archive: First articles ever generated" forumId prehistory author archivist createdAt 1736108400000 replyCount 6 lastReplyTime 1736108400000
+HSET forum:thread:316 title "Early beta feedback" forumId prehistory author betatester createdAt 1736022000000 replyCount 32 lastReplyTime 1736022000000
+HSET forum:thread:317 title "Original concept sketches" forumId prehistory author visionary createdAt 1735935600000 replyCount 14 lastReplyTime 1735935600000
+HSET forum:thread:325 title "Where is the AI news industry heading?" forumId speculation author futurist createdAt 1736204400000 replyCount 22 lastReplyTime 1736204400000
+HSET forum:thread:326 title "Predictions for next year" forumId speculation author oracle createdAt 1736197200000 replyCount 18 lastReplyTime 1736197200000
+HSET forum:thread:327 title "What beats will AI cover next?" forumId speculation author planner createdAt 1736175600000 replyCount 9 lastReplyTime 1736175600000
+HSET forum:thread:401 title "What are you listening to while coding?" forumId music author coder1 createdAt 1736223000000 replyCount 28 lastReplyTime 1736223000000
+HSET forum:thread:402 title "Lo-fi beats for productivity" forumId music author musician createdAt 1736204400000 replyCount 15 lastReplyTime 1736204400000
+HSET forum:thread:403 title "Album of the month discussion" forumId music author listener createdAt 1736175600000 replyCount 21 lastReplyTime 1736175600000
+HSET forum:thread:404 title "Synthwave recommendations" forumId music author synthfan createdAt 1736134800000 replyCount 12 lastReplyTime 1736134800000
+HSET forum:thread:415 title "Best documentaries about AI" forumId movies-tv author filmmaker createdAt 1736197200000 replyCount 15 lastReplyTime 1736197200000
+HSET forum:thread:416 title "Sci-fi movies with realistic AI" forumId movies-tv author scifan createdAt 1736175600000 replyCount 19 lastReplyTime 1736175600000
+HSET forum:thread:417 title "TV shows about journalism" forumId movies-tv author viewer createdAt 1736146800000 replyCount 8 lastReplyTime 1736146800000
+HSET forum:thread:418 title "Must-watch for developers" forumId movies-tv author recommender createdAt 1736118000000 replyCount 11 lastReplyTime 1736118000000
+HSET forum:thread:430 title "New AI tools everyone should know about" forumId technology author earlyadopter createdAt 1736204400000 replyCount 31 lastReplyTime 1736204400000
+HSET forum:thread:431 title "Hardware setups for AI work" forumId technology author builder createdAt 1736188200000 replyCount 18 lastReplyTime 1736188200000
+HSET forum:thread:432 title "Open source vs proprietary" forumId technology author debater createdAt 1736175600000 replyCount 24 lastReplyTime 1736175600000
+HSET forum:thread:433 title "Programming languages in 2024" forumId technology author polyglot createdAt 1736159400000 replyCount 14 lastReplyTime 1736159400000
+HSET forum:thread:445 title "AI role in political journalism" forumId politics author journalist createdAt 1736175600000 replyCount 18 lastReplyTime 1736175600000
+HSET forum:thread:446 title "Bias in automated news" forumId politics author researcher createdAt 1736146800000 replyCount 27 lastReplyTime 1736146800000
+HSET forum:thread:447 title "Fact-checking automation" forumId politics author factchecker createdAt 1736118000000 replyCount 12 lastReplyTime 1736118000000
+HSET forum:thread:460 title "Internet culture trends this month" forumId the-internet author trendspotter createdAt 1736200800000 replyCount 24 lastReplyTime 1736200800000
+HSET forum:thread:461 title "Memes that explain programming" forumId the-internet author humorist createdAt 1736197200000 replyCount 19 lastReplyTime 1736197200000
+HSET forum:thread:462 title "Best tech YouTube channels" forumId the-internet author contentconsumer createdAt 1736175600000 replyCount 22 lastReplyTime 1736175600000
+HSET forum:thread:463 title "Subreddits worth following" forumId the-internet author aggregator createdAt 1736146800000 replyCount 16 lastReplyTime 1736146800000
+
+ZADD forum:thread:101:posts 1735599600000 1
+ZADD forum:thread:101:posts 1735682800000 2
+ZADD forum:thread:101:posts 1735766000000 3
+ZADD forum:thread:101:posts 1735849200000 4
+ZADD forum:thread:101:posts 1735932400000 5
+ZADD forum:thread:101:posts 1736108400000 6
+ZADD forum:thread:101:posts 1736108400000 7
+ZADD forum:thread:101:posts 1736108400000 8
+ZADD forum:thread:101:posts 1736108400000 9
+ZADD forum:thread:101:posts 1736108400000 10
+ZADD forum:thread:101:posts 1736108400000 11
+ZADD forum:thread:101:posts 1736204400000 12
+
+SET forum:thread:101:post:1 '{"id":1,"content":"Welcome to Atto Newsroom! This is the official announcement thread for our AI-powered journalism platform.","author":"admin","createdAt":1735599600000}'
+SET forum:thread:101:post:2 '{"id":2,"content":"So excited to be here! Can not wait to see what the AI reporters come up with.","author":"user1","createdAt":1735682800000}'
+SET forum:thread:101:post:3 '{"id":3,"content":"The editor selection seems really smart. Love how it curates the best stories.","author":"reader1","createdAt":1735766000000}'
+SET forum:thread:101:post:4 '{"id":4,"content":"How does the beat system work? Are reporters assigned specific topics?","author":"curious1","createdAt":1735849200000}'
+SET forum:thread:101:post:5 '{"id":5,"content":"Yes! Each reporter has specific beats they cover. Check the reporters page to see who covering what.","author":"admin","createdAt":1735932400000}'
+SET forum:thread:101:post:6 '{"id":6,"content":"This is exactly what I wanted - automated journalism done right!","author":"fan1","createdAt":1736108400000}'
+SET forum:thread:101:post:7 '{"id":7,"content":"The daily edition is fantastic. Love the editorial selection.","author":"reader2","createdAt":1736108400000}'
+SET forum:thread:101:post:8 '{"id":8,"content":"Just subscribed to the newsletter. Great stuff!","author":"subscriber1","createdAt":1736108400000}'
+SET forum:thread:101:post:9 '{"id":9,"content":"Can not wait for more features. This is just the beginning!","author":"optimist1","createdAt":1736108400000}'
+SET forum:thread:101:post:10 '{"id":10,"content":"The article quality keeps improving. Great work team!","author":"fan2","createdAt":1736108400000}'
+SET forum:thread:101:post:11 '{"id":11,"content":"Is there a way to suggest new beats for reporters?","author":"suggestion1","createdAt":1736108400000}'
+SET forum:thread:101:post:12 '{"id":12,"content":"Yes! Use the suggestions forum. The team reviews them regularly.","author":"admin","createdAt":1736204400000}'
+
+SET forum:next_thread_id 500
+SET forum:next_post_id 13

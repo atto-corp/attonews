@@ -52,12 +52,11 @@ All users can freely access recent content without registration. Visit the follo
    ```
 
 2. **Set up environment variables**:
-    Create a `.env.local` file with:
-    ```
-    NEWSROOM_ADMIN_PASS=your_admin_password
-    DATA_STORAGE_BACKEND=redis  # or 'postgres' for PostgreSQL
-    POSTGRES_URL=postgresql://localhost:5432/newsroom  # Only needed for PostgreSQL
-    ```
+     Create a `.env.local` file with:
+     ```
+     OPENAI_API_KEY=your_openai_api_key
+     DATA_STORAGE_BACKEND=redis  # or 'postgres' for PostgreSQL
+     ```
 
 3. **Database Configuration**:
 

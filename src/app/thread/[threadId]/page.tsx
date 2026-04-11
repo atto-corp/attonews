@@ -7,73 +7,22 @@ import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 
+interface Thread {
+  id: number;
+  title: string;
+  forumId: string;
+  author: string;
+  createdAt: number;
+  replyCount: number;
+  lastReplyTime: number;
+}
+
 interface Post {
   id: number;
   content: string;
   author: string;
   createdAt: number;
 }
-
-const threadTitles: Record<string, string> = {
-  "101": "Welcome to Atto Newsroom",
-  "102": "System maintenance scheduled",
-  "103": "New feature: Daily edition emails",
-  "104": "Version 2.0 release notes",
-  "105": "Community guidelines update",
-  "115": "What's everyone working on this week?",
-  "116": "Introductions thread",
-  "117": "Best practices for using Atto",
-  "118": "Questions about the pipeline",
-  "119": "Show off your setup",
-  "125": "Add support for more social media sources",
-  "126": "Dark mode for the web interface",
-  "127": "Export articles to PDF",
-  "128": "Improved search functionality",
-  "129": "Email notifications for new editions",
-  "201": "Best headlines generated this week",
-  "202": "How to improve article quality",
-  "203": "Favorite beats to cover",
-  "204": "Article length preferences",
-  "205": "Tone and style discussions",
-  "218": "Bluesky integration working great",
-  "219": "Which social platforms do you use?",
-  "220": "Data quality tips",
-  "221": "Source reliability discussion",
-  "235": "Optimizing reporter prompts for better coverage",
-  "236": "Temperature and creativity settings",
-  "237": "Using few-shot examples effectively",
-  "238": "Chain of thought prompting tips",
-  "239": "Role-playing in prompts",
-  "301": "Events from last month - retrospective",
-  "302": "Archive: First week of Atto",
-  "303": "Evolution of the editor selection",
-  "304": "Milestones and achievements",
-  "315": "Archive: First articles ever generated",
-  "316": "Early beta feedback",
-  "317": "Original concept sketches",
-  "325": "Where is the AI news industry heading?",
-  "326": "Predictions for next year",
-  "327": "What beats will AI cover next?",
-  "401": "What are you listening to while coding?",
-  "402": "Lo-fi beats for productivity",
-  "403": "Album of the month discussion",
-  "404": "Synthwave recommendations",
-  "415": "Best documentaries about AI",
-  "416": "Sci-fi movies with realistic AI",
-  "417": "TV shows about journalism",
-  "418": "Must-watch for developers",
-  "430": "New AI tools everyone should know about",
-  "431": "Hardware setups for AI work",
-  "432": "Open source vs proprietary",
-  "433": "Programming languages in 2024",
-  "445": "AI's role in political journalism",
-  "446": "Bias in automated news",
-  "447": "Fact-checking automation",
-  "460": "Internet culture trends this month",
-  "461": "Memes that explain programming",
-  "462": "Best tech YouTube channels",
-  "463": "Subreddits worth following"
-};
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString("en-US", {
@@ -86,9 +35,12 @@ function formatDate(timestamp: number): string {
 }
 
 export default function ThreadViewPage() {
+  const [thread, setThread] = useState<Thread | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newPost, setNewPost] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const params = useParams();
   const threadId = params.threadId as string;
@@ -99,21 +51,59 @@ export default function ThreadViewPage() {
       router.push("/login");
       return;
     }
-    fetchPosts();
+    fetchThread();
   }, [router, threadId]);
 
-  const fetchPosts = async () => {
+  const fetchThread = async () => {
     try {
       const response = await fetch(`/api/thread/${threadId}`);
       if (!response.ok) {
-        throw new Error("Failed to fetch posts");
+        throw new Error("Failed to fetch thread");
       }
       const data = await response.json();
-      setPosts(data);
+      setThread(data.thread);
+      setPosts(data.posts || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load posts");
+      setError(err instanceof Error ? err.message : "Failed to load thread");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmitPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPost.trim() || newPost.length > 4096) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/thread/${threadId}/post`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: newPost,
+          author: "user"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create post");
+      }
+
+      setNewPost("");
+      await fetchThread();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create post");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -128,7 +118,7 @@ export default function ThreadViewPage() {
         ></div>
         <div className="text-center relative z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-          <p className="mt-4 text-white/80">Loading posts...</p>
+          <p className="mt-4 text-white/80">Loading thread...</p>
         </div>
       </div>
     );
@@ -154,7 +144,7 @@ export default function ThreadViewPage() {
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-white/90 mb-2">
-            Error Loading Posts
+            Error Loading Thread
           </h2>
           <p className="text-white/70">{error}</p>
         </div>
@@ -162,7 +152,7 @@ export default function ThreadViewPage() {
     );
   }
 
-  const threadTitle = threadTitles[threadId] || `Thread #${threadId}`;
+  const threadTitle = thread?.title || `Thread #${threadId}`;
 
   return (
     <PageContainer>
@@ -176,6 +166,32 @@ export default function ThreadViewPage() {
           </Link>
         </PageHeader>
       </ContentCard>
+
+      <form onSubmit={handleSubmitPost} className="mb-8">
+        <ContentCard className="p-6">
+          <textarea
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
+            placeholder="Write a reply..."
+            maxLength={4096}
+            className="w-full bg-white/5 border border-white/20 rounded-xl p-4 text-white placeholder-white/50 focus:outline-none focus:border-white/40 resize-none"
+            rows={4}
+            disabled={submitting}
+          />
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-xs text-white/50">
+              {newPost.length}/4096 characters
+            </span>
+            <button
+              type="submit"
+              disabled={submitting || !newPost.trim()}
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-600 hover:to-purple-700 transition-all"
+            >
+              {submitting ? "Posting..." : "Post Reply"}
+            </button>
+          </div>
+        </ContentCard>
+      </form>
 
       <div className="space-y-4">
         {posts.length === 0 ? (
