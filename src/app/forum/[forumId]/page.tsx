@@ -162,6 +162,14 @@ export default function ForumViewPage() {
               + New Thread
             </Link>
           )}
+          {hasReader && (
+            <Link
+              href={`/forum/${forumId}/act-as`}
+              className="relative px-6 py-3 backdrop-blur-sm bg-purple-500/30 border border-purple-400/40 rounded-xl font-medium text-white/90 hover:bg-purple-500/50 transition-all duration-300"
+            >
+              Act as forum user
+            </Link>
+          )}
         </PageHeader>
       </ContentCard>
 

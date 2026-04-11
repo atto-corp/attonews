@@ -12,6 +12,18 @@ import { AIPrompts } from "./ai-prompts";
 import { AIResponseUtils } from "./ai-response-utils";
 import { AIClient } from "./ai-client";
 
+type Persona = "happy" | "loafy" | "awoken";
+
+interface ForumThread {
+  id: number;
+  title: string;
+  forumId: string;
+  author: string;
+  createdAt: number;
+  replyCount: number;
+  lastReplyTime: number;
+}
+
 export class AIService {
   private aiClient: AIClient;
   private dataStorageService: IDataStorageService;
@@ -614,6 +626,87 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     } catch (error) {
       console.error("Error generating article from events:", error);
       return null;
+    }
+  }
+
+  async generateThreadReplyOptions(
+    forumId: string,
+    persona: Persona,
+    modelName?: string
+  ): Promise<{
+    replies: string[];
+    fullPrompt: string;
+    modelName: string;
+  }> {
+    try {
+      const threads = await this.dataStorageService.getForumThreads(
+        forumId,
+        0,
+        3
+      );
+
+      if (threads.length === 0) {
+        return {
+          replies: [],
+          fullPrompt: "No threads available",
+          modelName: modelName || this.getModelName()
+        };
+      }
+
+      const replies: string[] = [];
+      const prompts: string[] = [];
+
+      for (const thread of threads) {
+        const allPosts = await this.dataStorageService.getThreadPosts(
+          thread.id,
+          0,
+          1000
+        );
+
+        const postContents = allPosts.map((p) => p.content);
+        const first10 = postContents.slice(0, 10);
+        const last15 = postContents.slice(-15);
+        const selectedPosts = [...first10, ...last15];
+
+        const { systemPrompt, userPrompt } =
+          AIPrompts.generateThreadReplyPrompts(
+            persona,
+            thread.title,
+            selectedPosts
+          );
+        const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
+        prompts.push(fullPrompt);
+
+        console.log(
+          `Calling openai thread reply generation for thread ${thread.id} with model ${modelName || this.getModelName()}`
+        );
+
+        const response = await this.aiClient
+          .getClient()
+          .chat.completions.create({
+            model: modelName || this.getModelName(),
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ]
+          });
+
+        const content = response.choices[0]?.message?.content?.trim();
+        if (!content) {
+          throw new Error("No response content from AI service");
+        }
+
+        replies.push(content);
+      }
+
+      return {
+        replies,
+        fullPrompt: prompts.join("\n\n---\n\n"),
+        modelName: modelName || this.getModelName()
+      };
+    } catch (error) {
+      console.error("Error generating thread reply options:", error);
+      throw error;
     }
   }
 }
