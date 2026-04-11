@@ -9,7 +9,7 @@ interface ContentCardProps {
 export default function ContentCard({
   children,
   className = "",
-  sheen = true
+  sheen = false
 }: ContentCardProps) {
   return (
     <div
