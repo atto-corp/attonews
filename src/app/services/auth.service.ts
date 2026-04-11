@@ -116,7 +116,7 @@ export class AuthService {
       email,
       passwordHash,
       role: "user",
-      hasReader: false,
+      hasReader: true,
       hasReporter: false,
       hasEditor: false
     });
