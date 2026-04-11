@@ -25,11 +25,7 @@ async function testDailyEditionStorage(): Promise<void> {
             "This is the first paragraph of a test news story.",
           newsStorySecondParagraph:
             "This is the second paragraph providing additional context.",
-          oneLineSummary: "Test news summary in one line.",
-          supportingSocialMediaMessage: "Breaking: Test news story! #TestNews",
-          skepticalComment: "Is this really news or just a test?",
-          gullibleComment:
-            "This is absolutely the most important test news ever!"
+          oneLineSummary: "Test news summary in one line."
         }
       ],
       modelFeedbackAboutThePrompt: {

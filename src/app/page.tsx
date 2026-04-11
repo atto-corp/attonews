@@ -16,9 +16,6 @@ interface Topic {
   newsStoryFirstParagraph: string;
   newsStorySecondParagraph: string;
   oneLineSummary: string;
-  supportingSocialMediaMessage?: string;
-  skepticalComment?: string;
-  gullibleComment?: string;
   comments?: DailyEditionComment[];
 }
 
