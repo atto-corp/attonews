@@ -48,6 +48,7 @@ export default function ForumViewPage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasReader, setHasReader] = useState(false);
   const router = useRouter();
   const params = useParams();
   const forumId = params.forumId as string;
@@ -59,7 +60,24 @@ export default function ForumViewPage() {
       return;
     }
     fetchThreads();
+    checkReaderPermission();
   }, [router, forumId]);
+
+  const checkReaderPermission = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+      const response = await fetch("/api/abilities/reader", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHasReader(data.hasReader);
+      }
+    } catch (err) {
+      console.error("Failed to check reader permission", err);
+    }
+  };
 
   const fetchThreads = async () => {
     try {
@@ -136,6 +154,14 @@ export default function ForumViewPage() {
           >
             ← Back to Forum
           </Link>
+          {hasReader && (
+            <Link
+              href={`/forum/${forumId}/new`}
+              className="relative px-6 py-3 backdrop-blur-sm bg-blue-500/30 border border-blue-400/40 rounded-xl font-medium text-white/90 hover:bg-blue-500/50 transition-all duration-300"
+            >
+              + New Thread
+            </Link>
+          )}
         </PageHeader>
       </ContentCard>
 

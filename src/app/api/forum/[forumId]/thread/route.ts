@@ -52,5 +52,5 @@ export const POST = withAuth(
       postId: result.postId
     });
   },
-  { requiredPermission: "editor" }
+  { requiredPermission: "reader" }
 );
