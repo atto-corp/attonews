@@ -948,7 +948,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     }
 
     try {
-      const personas: Persona[] = Object.keys(PERSONA_DISPLAY_NAMES) as Persona[];
+      const personas: Persona[] = Object.keys(
+        PERSONA_DISPLAY_NAMES
+      ) as Persona[];
       const randomPersona =
         personas[Math.floor(Math.random() * personas.length)];
 
