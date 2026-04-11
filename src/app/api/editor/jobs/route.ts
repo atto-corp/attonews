@@ -60,6 +60,33 @@ export const POST = withAuth(
             message: `Daily edition generation job triggered successfully. Created daily edition: ${dailyEdition.id} with ${dailyEdition.editions.length} newspaper editions.`
           };
           break;
+        case "comments": {
+          const { topicIndex, author } = await editorService.generateComment();
+          result = {
+            message: `Comment generation job triggered successfully. Added comment to topic ${topicIndex} as ${author}.`
+          };
+          break;
+        }
+        case "events": {
+          const eventResults =
+            await reporterService.generateAllReporterEvents();
+          const totalEvents = Object.values(eventResults).reduce(
+            (sum, events) => sum + events.length,
+            0
+          );
+          const editor = await redis.getEditor();
+          if (editor) {
+            const updatedEditor = {
+              ...editor,
+              lastEventGenerationTime: currentTime
+            };
+            await redis.saveEditor(updatedEditor);
+          }
+          result = {
+            message: `Event generation job triggered successfully. Generated ${totalEvents} events.`
+          };
+          break;
+        }
         default:
           // Mark job as not running for invalid job type
           await redis.setJobRunning(jobType, false);

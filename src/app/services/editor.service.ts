@@ -1,6 +1,7 @@
 import { NewspaperEdition, DailyEdition, Article } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 import { AIService } from "./ai.service";
+import { PERSONA_DISPLAY_NAMES } from "./ai-prompts";
 
 export class EditorService {
   constructor(
@@ -206,5 +207,69 @@ export class EditorService {
     }
 
     return { dailyEdition, editions };
+  }
+
+  async generateComment(): Promise<{ topicIndex: number; author: string }> {
+    const currentTime = Date.now();
+
+    const dailyEditions = await this.dataStorageService.getDailyEditions(1);
+    if (dailyEditions.length === 0) {
+      throw new Error("No daily editions available to comment on");
+    }
+
+    const dailyEdition = dailyEditions[0];
+
+    const dailyEditionText = [
+      `Front Page Headline: ${dailyEdition.frontPageHeadline}`,
+      `Front Page Article: ${dailyEdition.frontPageArticle}`,
+      "",
+      "Stories:",
+      ...dailyEdition.topics.map(
+        (topic, index) =>
+          `Story ${index}: ${topic.name}\nHeadline: ${topic.headline}\nSummary: ${topic.oneLineSummary}\nFirst Paragraph: ${topic.newsStoryFirstParagraph}\nSecond Paragraph: ${topic.newsStorySecondParagraph}`
+      )
+    ].join("\n\n");
+
+    const existingComments: Array<{ author: string; content: string }> = [];
+    for (const topic of dailyEdition.topics) {
+      if (topic.comments) {
+        for (const comment of topic.comments) {
+          existingComments.push({
+            author: comment.author,
+            content: comment.content
+          });
+        }
+      }
+    }
+
+    const result = await this.aiService.generateComment(
+      dailyEditionText,
+      existingComments
+    );
+
+    if (!result) {
+      throw new Error("Failed to generate comment");
+    }
+
+    const topicIndex = result.topicIndex;
+    if (topicIndex < 0 || topicIndex >= dailyEdition.topics.length) {
+      throw new Error(`Invalid topic index: ${topicIndex}`);
+    }
+
+    if (!dailyEdition.topics[topicIndex].comments) {
+      dailyEdition.topics[topicIndex].comments = [];
+    }
+
+    const newComment = {
+      author: PERSONA_DISPLAY_NAMES[result.persona],
+      content: result.commentText,
+      createdAt: currentTime,
+      persona: result.persona
+    };
+    dailyEdition.topics[topicIndex].comments!.push(newComment);
+
+    await this.dataStorageService.saveDailyEdition(dailyEdition);
+
+    return { topicIndex, author: newComment.author };
   }
 }
