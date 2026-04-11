@@ -1,5 +1,6 @@
 import { Reporter, Article, Event } from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 import {
   dailyEditionSchema,
   reporterArticleSchema,
@@ -634,8 +635,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     persona: Persona,
     modelName?: string
   ): Promise<{
-    replies: string[];
+    replies: string[][];
     threadIds: number[];
+    threadTitles: string[];
     fullPrompt: string;
     modelName: string;
   }> {
@@ -650,6 +652,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         return {
           replies: [],
           threadIds: [],
+          threadTitles: [],
           fullPrompt: "No threads available",
           modelName: modelName || this.getModelName()
         };
@@ -681,6 +684,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       const model = modelName || this.getModelName();
 
+      const threadRepliesSchema = z.array(z.string()).length(3);
+
       const replies = await Promise.all(
         promptData.map(
           async ({ thread, systemPrompt, userPrompt, fullPrompt }) => {
@@ -696,21 +701,26 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
                   messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userPrompt }
-                  ]
+                  ],
+                  response_format: zodResponseFormat(
+                    threadRepliesSchema,
+                    "replies"
+                  )
                 });
 
-              const content = response.choices[0]?.message?.content?.trim();
+              const content = response.choices[0]?.message?.content;
               if (!content) {
                 throw new Error("No response content from AI service");
               }
 
-              return content;
+              const parsed = JSON.parse(content);
+              return parsed;
             } catch (error) {
               console.error(
                 `Error generating reply for thread ${thread.id}:`,
                 error
               );
-              return "";
+              return ["", "", ""];
             }
           }
         )
@@ -719,6 +729,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       return {
         replies,
         threadIds: threads.map((t) => t.id),
+        threadTitles: threads.map((t) => t.title),
         fullPrompt: promptData.map((p) => p.fullPrompt).join("\n\n---\n\n"),
         modelName: model
       };

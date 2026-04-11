@@ -41,6 +41,7 @@ export const GET = withAuth(
 
       return NextResponse.json({
         replies: result.replies,
+        threadTitles: result.threadTitles,
         persona
       });
     } catch (error) {

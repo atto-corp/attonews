@@ -33,8 +33,9 @@ const personas: Record<
 export default function ActAsPage() {
   const [step, setStep] = useState<"persona" | "reply">("persona");
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
-  const [replyOptions, setReplyOptions] = useState<string[]>([]);
-  const [threadIds, setThreadIds] = useState<string[]>([]);
+  const [replyOptions, setReplyOptions] = useState<string[][]>([]);
+  const [threadIds, setThreadIds] = useState<number[]>([]);
+  const [threadTitles, setThreadTitles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasReader, setHasReader] = useState(false);
@@ -94,6 +95,7 @@ export default function ActAsPage() {
       const data = await response.json();
       setReplyOptions(data.replies || []);
       setThreadIds(data.threadIds || []);
+      setThreadTitles(data.threadTitles || []);
       setStep("reply");
     } catch (err) {
       setError(
@@ -148,6 +150,7 @@ export default function ActAsPage() {
       setSelectedPersona(null);
       setReplyOptions([]);
       setThreadIds([]);
+      setThreadTitles([]);
     }
   };
 
@@ -257,27 +260,65 @@ export default function ActAsPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {replyOptions.map((reply, index) => (
-              <button
-                key={index}
-                onClick={() => handleReplySelect(reply, index)}
-                disabled={submitting}
-                className="group text-left"
-              >
-                <ContentCard className="p-6 h-full border border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <div className="text-white/90 whitespace-pre-wrap">
-                    {reply.length > 200
-                      ? reply.substring(0, 200) + "..."
-                      : reply}
-                  </div>
-                  <div className="mt-4 text-sm text-white/50">
-                    {reply.length} characters
-                  </div>
-                </ContentCard>
-              </button>
-            ))}
-          </div>
+          {replyOptions.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="p-4 text-left text-white/50 text-sm font-medium w-16">
+                      Reply Options
+                    </th>
+                    {threadTitles.map((title, idx) => (
+                      <th
+                        key={idx}
+                        className="p-4 text-left text-white/80 text-sm font-semibold bg-white/5 border-b border-white/10"
+                      >
+                        <div className="max-w-xs truncate" title={title}>
+                          {title}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[0, 1, 2].map((replyIndex) => (
+                    <tr key={replyIndex}>
+                      <td className="p-4 text-white/50 text-sm font-medium align-top">
+                        Option {replyIndex + 1}
+                      </td>
+                      {replyOptions.map((threadReplies, threadIdx) => (
+                        <td
+                          key={threadIdx}
+                          className="p-4 align-top border-b border-white/5"
+                        >
+                          <button
+                            onClick={() =>
+                              handleReplySelect(
+                                threadReplies[replyIndex],
+                                threadIdx
+                              )
+                            }
+                            disabled={submitting}
+                            className="w-full text-left group"
+                          >
+                            <ContentCard className="p-4 h-full border border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed">
+                              <div className="text-white/90 whitespace-pre-wrap text-sm">
+                                {threadReplies[replyIndex] ||
+                                  "(No reply generated)"}
+                              </div>
+                              <div className="mt-2 text-xs text-white/50">
+                                {threadReplies[replyIndex]?.length || 0} chars
+                              </div>
+                            </ContentCard>
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {replyOptions.length === 0 && (
             <ContentCard className="p-8">

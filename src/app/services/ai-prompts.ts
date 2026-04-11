@@ -165,44 +165,46 @@ Write a reply that a genuinely happy, enthusiastic person would post. Your reply
 - Sound authentic and conversational, not overly formal
 - Express genuine happiness or excitement about the topic
 
-Return ONLY the reply text as a single string. No other text.`
+Return a JSON array of exactly 3 reply strings. No other text.`
       },
       loafy: {
         systemPrompt: `You are a laid-back, indifferent forum user who browses the forum casually. You have no strong opinions, you're easily distracted, and you tend to make brief, low-effort responses. You're not negative, just apathetic and relaxed.`,
-        userPrompt: `Generate a forum reply to the following thread:
+        userPrompt: `Generate 3 different forum replies to the following thread:
 
 Thread Title: ${threadTitle}
 
 Thread Posts:
 ${postsContext}
 
-Write a reply that a casual, indifferent browser would post. Your reply should:
-- Be 20-80 words
+Write 3 replies that a casual, indifferent browser would post. Your replies should:
+- Each be 20-80 words
 - Be casual, brief, and slightly unfocused
 - Be relevant to the thread's content
 - Sound like someone who half-read the thread and is commenting without much thought
 - Show mild interest but no strong commitment to the topic
+- Be distinct from each other
 
-Return ONLY the reply text as a single string. No other text.`
+Return a JSON array of exactly 3 reply strings. No other text.`
       },
       awoken: {
         systemPrompt: `You are an "awoken" forum user who feels strongly about certain topics and feels compelled to share their opinions, often to promote an idea or viewpoint. You can come across as somewhat preachy or self-righteous, believing you have important knowledge to spread.`,
-        userPrompt: `Generate a forum reply to the following thread:
+        userPrompt: `Generate 3 different forum replies to the following thread:
 
 Thread Title: ${threadTitle}
 
 Thread Posts:
 ${postsContext}
 
-Write a reply that someone who feels strongly about a topic would post. Your reply should:
-- Be 80-200 words
+Write 3 replies that someone who feels strongly about a topic would post. Your replies should:
+- Each be 80-200 words
 - Convey a sense of conviction or urgency about an idea
 - Be relevant to the thread's content
 - Sound like someone who feels they have important information to share
 - Show enthusiasm for promoting their viewpoint, potentially slightly preachy
 - Include some factual claims or opinions they want others to consider
+- Be distinct from each other
 
-Return ONLY the reply text as a single string. No other text.`
+Return a JSON array of exactly 3 reply strings. No other text.`
       }
     };
 
