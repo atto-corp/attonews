@@ -63,14 +63,14 @@ export const POST = withAuth(
   ): Promise<NextResponse> => {
     const { forumId } = await params;
 
-    let body: { persona?: string; replyText?: string };
+    let body: { persona?: string; replyText?: string; threadIndex?: number };
     try {
       body = await request.json();
     } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { persona, replyText } = body;
+    const { persona, replyText, threadIndex } = body;
 
     if (!persona || !["happy", "loafy", "awoken"].includes(persona)) {
       return NextResponse.json({ error: "Invalid persona" }, { status: 400 });
@@ -91,7 +91,7 @@ export const POST = withAuth(
     }
 
     try {
-      const threads = await dataStorage.getForumThreads(forumId, 0, 1);
+      const threads = await dataStorage.getForumThreads(forumId, 0, 3);
       if (threads.length === 0) {
         return NextResponse.json(
           { error: "No threads in this forum to reply to" },
@@ -99,7 +99,8 @@ export const POST = withAuth(
         );
       }
 
-      const threadId = threads[0].id;
+      const threadIndex = body.threadIndex ?? 0;
+      const threadId = threads[threadIndex]?.id || threads[0].id;
       const author = personaAuthors[persona];
 
       const result = await dataStorage.createPost(threadId, replyText, author);

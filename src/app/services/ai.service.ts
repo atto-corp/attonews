@@ -635,6 +635,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     modelName?: string
   ): Promise<{
     replies: string[];
+    threadIds: number[];
     fullPrompt: string;
     modelName: string;
   }> {
@@ -648,6 +649,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       if (threads.length === 0) {
         return {
           replies: [],
+          threadIds: [],
           fullPrompt: "No threads available",
           modelName: modelName || this.getModelName()
         };
@@ -701,6 +703,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       return {
         replies,
+        threadIds: threads.map((t) => t.id),
         fullPrompt: prompts.join("\n\n---\n\n"),
         modelName: modelName || this.getModelName()
       };

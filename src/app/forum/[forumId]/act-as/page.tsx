@@ -34,6 +34,7 @@ export default function ActAsPage() {
   const [step, setStep] = useState<"persona" | "reply">("persona");
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [replyOptions, setReplyOptions] = useState<string[]>([]);
+  const [threadIds, setThreadIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasReader, setHasReader] = useState(false);
@@ -91,6 +92,7 @@ export default function ActAsPage() {
 
       const data = await response.json();
       setReplyOptions(data.replies || []);
+      setThreadIds(data.threadIds || []);
       setStep("reply");
     } catch (err) {
       setError(
@@ -101,7 +103,7 @@ export default function ActAsPage() {
     }
   };
 
-  const handleReplySelect = async (replyText: string) => {
+  const handleReplySelect = async (replyText: string, threadIndex: number) => {
     if (!selectedPersona) return;
 
     setSubmitting(true);
@@ -120,7 +122,11 @@ export default function ActAsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ persona: selectedPersona, replyText })
+        body: JSON.stringify({
+          persona: selectedPersona,
+          replyText,
+          threadIndex
+        })
       });
 
       if (!response.ok) {
@@ -140,6 +146,7 @@ export default function ActAsPage() {
       setStep("persona");
       setSelectedPersona(null);
       setReplyOptions([]);
+      setThreadIds([]);
     }
   };
 
@@ -253,7 +260,7 @@ export default function ActAsPage() {
             {replyOptions.map((reply, index) => (
               <button
                 key={index}
-                onClick={() => handleReplySelect(reply)}
+                onClick={() => handleReplySelect(reply, index)}
                 disabled={submitting}
                 className="group text-left"
               >
