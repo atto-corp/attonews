@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withRedis } from "../../utils/redis";
 import { AuthService } from "../../services/auth.service";
-import { registerRequestSchema } from "../../schemas/schemas";
+import { registerRequestSchema } from "../../schemas/request-schemas";
 
 export const POST = withRedis(async (request: NextRequest, redis) => {
   const body = await request.json();

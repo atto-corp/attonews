@@ -4,16 +4,15 @@ import { z } from "zod";
 import {
   dailyEditionSchema,
   reporterArticleSchema,
-  eventGenerationResponseSchema
-} from "../schemas/schemas";
+  eventGenerationResponseSchema,
+  generatedCommentSchema
+} from "../schemas/response-schemas";
 import { IDataStorageService } from "./data-storage.interface";
 import { KpiService } from "./kpi.service";
 import { fetchLatestMessages } from "./bluesky.service";
-import { AIPrompts } from "./ai-prompts";
+import { AIPrompts, Persona, PERSONA_DISPLAY_NAMES } from "./ai-prompts";
 import { AIResponseUtils } from "./ai-response-utils";
 import { AIClient } from "./ai-client";
-
-type Persona = "happy" | "loafy" | "awoken";
 
 interface ForumThread {
   id: number;
@@ -736,6 +735,68 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     } catch (error) {
       console.error("Error generating thread reply options:", error);
       throw error;
+    }
+  }
+
+  async generateComment(
+    dailyEditionText: string,
+    existingComments: Array<{ author: string; content: string }>,
+    modelName?: string
+  ): Promise<{
+    topicIndex: number;
+    persona: Persona;
+    commentText: string;
+    fullPrompt: string;
+    modelName: string;
+  } | null> {
+    try {
+      const personas: Persona[] = ["happy", "loafy", "awoken"];
+      const randomPersona =
+        personas[Math.floor(Math.random() * personas.length)];
+
+      const existingCommentsText = existingComments
+        .map((c) => `- ${c.author}: ${c.content}`)
+        .join("\n");
+
+      const { systemPrompt, userPrompt } = AIPrompts.generateCommentPrompts(
+        randomPersona,
+        dailyEditionText,
+        existingCommentsText
+      );
+
+      const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
+      const model = modelName || this.getModelName();
+
+      console.log(
+        `Generating comment for daily edition with persona: ${randomPersona}, model: ${model}`
+      );
+
+      const response = await this.aiClient.getClient().chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        response_format: zodResponseFormat(generatedCommentSchema, "comment")
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error("No response content from AI service");
+      }
+
+      const parsed = JSON.parse(content);
+
+      return {
+        topicIndex: parsed.topicIndex,
+        persona: randomPersona,
+        commentText: parsed.comment,
+        fullPrompt,
+        modelName: model
+      };
+    } catch (error) {
+      console.error("Error generating comment:", error);
+      return null;
     }
   }
 }

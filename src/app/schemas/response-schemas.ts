@@ -45,42 +45,6 @@ export const reporterArticleSchema = z.object({
   outputTokenCount: z.number().nullable()
 });
 
-export const reporterResponseSchema = z.object({
-  reporterId: z.string(),
-  reporterName: z.string(),
-  articles: z.array(reporterArticleSchema),
-  totalArticlesGenerated: z.number(),
-  generationTimestamp: z.number(),
-  coverageSummary: z.object({
-    beatsCovered: z.array(z.string()),
-    totalWordCount: z.number(),
-    keyThemes: z.array(z.string())
-  }),
-  modelFeedback: z.object({
-    positive: z.string(),
-    negative: z.string(),
-    suggestions: z.string()
-  })
-});
-
-export const userSchema = z.object({
-  id: z.string(),
-  email: z.string().email(),
-  passwordHash: z.string(),
-  role: z.enum(["admin", "editor", "reporter", "user"]),
-  createdAt: z.number(),
-  lastLoginAt: z.number().optional()
-});
-
-export const eventSchema = z.object({
-  id: z.string(),
-  reporterId: z.string(),
-  title: z.string(),
-  createdTime: z.number(),
-  updatedTime: z.number(),
-  facts: z.array(z.string())
-});
-
 export const eventGenerationResponseSchema = z.object({
   events: z
     .array(
@@ -91,9 +55,9 @@ export const eventGenerationResponseSchema = z.object({
           .optional()
           .describe(
             "The index of the existing event that this updates. If this is a new event, leave blank"
-          ), // Optional for new events
+          ),
         title: z.string(),
-        facts: z.array(z.string()).max(5), // Max 5 facts per event
+        facts: z.array(z.string()).max(5),
         where: z
           .string()
           .nullable()
@@ -121,15 +85,10 @@ export const eventGenerationResponseSchema = z.object({
         outputTokenCount: z.number().nullable()
       })
     )
-    .max(5) // Max 5 events
+    .max(5)
 });
 
-export const loginRequestSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
-});
-
-export const registerRequestSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
+export const generatedCommentSchema = z.object({
+  topicIndex: z.number().int().min(0),
+  comment: z.string().min(10).max(500)
 });

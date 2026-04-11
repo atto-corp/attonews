@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+interface DailyEditionComment {
+  author: string;
+  content: string;
+  createdAt: number;
+  persona: "happy" | "loafy" | "awoken";
+}
+
 interface Topic {
   name: string;
   headline: string;
@@ -12,6 +19,7 @@ interface Topic {
   supportingSocialMediaMessage?: string;
   skepticalComment?: string;
   gullibleComment?: string;
+  comments?: DailyEditionComment[];
 }
 
 interface DailyEdition {
@@ -288,54 +296,48 @@ export default function Home() {
                           </p>
                         </div>
 
-                        {/* Social Media & Comments
-                        <div className="border-t border-white/20 pt-6 space-y-4">
-                          <div>
-                            <h4 className="text-sm font-semibold text-white/90 mb-2 flex items-center gap-2">
-                              Social Media Buzz
-                              <div className="relative group">
-                                <svg
-                                  className="w-4 h-4 text-white/60 hover:text-white/80 cursor-help"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                  To assist in semantic parsing of the given
-                                  story, {appName} generates several opposing
-                                  reactions to the story.
-                                </div>
-                              </div>
+                        {topic.comments && topic.comments.length > 0 && (
+                          <div className="border-t border-white/20 pt-6 space-y-4">
+                            <h4 className="text-sm font-semibold text-white/90 mb-3 flex items-center gap-2">
+                              Comments
                             </h4>
-                            <p className="text-white/70 italic">
-                              "{topic.supportingSocialMediaMessage}"
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-semibold text-red-300 mb-2">
-                                Skeptical View
-                              </h4>
-                              <p className="text-white/80 text-sm italic">
-                                "{topic.skepticalComment}"
-                              </p>
+                            <div className="space-y-3">
+                              {topic.comments.map((comment, commentIndex) => {
+                                const personaColors = {
+                                  happy:
+                                    "bg-green-500/20 border-green-500/30 text-green-200",
+                                  loafy:
+                                    "bg-gray-500/20 border-gray-500/30 text-gray-200",
+                                  awoken:
+                                    "bg-amber-500/20 border-amber-500/30 text-amber-200"
+                                };
+                                return (
+                                  <div
+                                    key={commentIndex}
+                                    className={`p-4 rounded-xl border ${personaColors[comment.persona]}`}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-semibold">
+                                        {comment.author}
+                                      </span>
+                                      <span className="text-xs text-white/60">
+                                        {new Date(
+                                          comment.createdAt
+                                        ).toLocaleTimeString("en-US", {
+                                          hour: "2-digit",
+                                          minute: "2-digit"
+                                        })}
+                                      </span>
+                                    </div>
+                                    <p className="text-white/80 text-sm">
+                                      {comment.content}
+                                    </p>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <div>
-                              <h4 className="text-sm font-semibold text-green-300 mb-2">
-                                Supportive View
-                              </h4>
-                              <p className="text-white/80 text-sm italic">
-                                "{topic.gullibleComment}"
-                              </p>
-                            </div>
                           </div>
-                        </div> */}
+                        )}
                       </div>
                     ))}
                   </div>

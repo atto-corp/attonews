@@ -1,5 +1,19 @@
 import { Reporter } from "../schemas/types";
 
+export type Persona = "happy" | "loafy" | "awoken";
+
+export const PERSONA_SYSTEM_PROMPTS: Record<Persona, string> = {
+  happy: `You are a genuinely happy, enthusiastic forum user who loves engaging with community content. You're optimistic, supportive, and always looking for the positive side of things. You express joy and excitement in your responses.`,
+  loafy: `You are a laid-back, indifferent forum user who browses the forum casually. You have no strong opinions, you're easily distracted, and you tend to make brief, low-effort responses. You're not negative, just apathetic and relaxed.`,
+  awoken: `You are an "awoken" forum user who feels strongly about certain topics and feels compelled to share their opinions, often to promote an idea or viewpoint. You can come across as somewhat preachy or self-righteous, believing you have important knowledge to spread.`
+};
+
+export const PERSONA_DISPLAY_NAMES: Record<Persona, string> = {
+  happy: "Happy",
+  loafy: "Loafy",
+  awoken: "Awoken"
+};
+
 export class AIPrompts {
   static generateStructuredArticlePrompts(
     reporter: Reporter,
@@ -140,7 +154,7 @@ When generating the article, first review your recent articles to avoid repetiti
   }
 
   static generateThreadReplyPrompts(
-    persona: "happy" | "loafy" | "awoken",
+    persona: Persona,
     threadTitle: string,
     threadPosts: string[]
   ): { systemPrompt: string; userPrompt: string } {
@@ -150,7 +164,7 @@ When generating the article, first review your recent articles to avoid repetiti
 
     const personaPrompts = {
       happy: {
-        systemPrompt: `You are a genuinely happy, enthusiastic forum user who loves engaging with community content. You're optimistic, supportive, and always looking for the positive side of things. You express joy and excitement in your responses.`,
+        systemPrompt: PERSONA_SYSTEM_PROMPTS.happy,
         userPrompt: `Generate a forum reply to the following thread:
 
 Thread Title: ${threadTitle}
@@ -168,7 +182,7 @@ Write a reply that a genuinely happy, enthusiastic person would post. Your reply
 Return a JSON array of exactly 3 reply strings. No other text.`
       },
       loafy: {
-        systemPrompt: `You are a laid-back, indifferent forum user who browses the forum casually. You have no strong opinions, you're easily distracted, and you tend to make brief, low-effort responses. You're not negative, just apathetic and relaxed.`,
+        systemPrompt: PERSONA_SYSTEM_PROMPTS.loafy,
         userPrompt: `Generate 3 different forum replies to the following thread:
 
 Thread Title: ${threadTitle}
@@ -187,7 +201,7 @@ Write 3 replies that a casual, indifferent browser would post. Your replies shou
 Return a JSON array of exactly 3 reply strings. No other text.`
       },
       awoken: {
-        systemPrompt: `You are an "awoken" forum user who feels strongly about certain topics and feels compelled to share their opinions, often to promote an idea or viewpoint. You can come across as somewhat preachy or self-righteous, believing you have important knowledge to spread.`,
+        systemPrompt: PERSONA_SYSTEM_PROMPTS.awoken,
         userPrompt: `Generate 3 different forum replies to the following thread:
 
 Thread Title: ${threadTitle}
@@ -209,5 +223,35 @@ Return a JSON array of exactly 3 reply strings. No other text.`
     };
 
     return personaPrompts[persona];
+  }
+
+  static generateCommentPrompts(
+    persona: Persona,
+    dailyEditionText: string,
+    existingCommentsText: string
+  ): { systemPrompt: string; userPrompt: string } {
+    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${PERSONA_DISPLAY_NAMES[persona]}.
+
+Daily Edition:
+${dailyEditionText}
+
+Existing Comments:
+${existingCommentsText || "No existing comments yet."}
+
+Your task:
+1. Read through all the stories in this daily edition
+2. Choose ONE story (by its index) that you want to comment on
+3. Write a comment that a ${persona} persona would make about that specific story
+4. Your comment should be authentic to the ${persona} personality
+
+Return a JSON object with these fields:
+- "topicIndex": the index number (0, 1, 2, etc.) of the story you're commenting on
+- "comment": your comment text (50-200 words for happy/loafy, 80-250 words for awoken)
+
+Return ONLY valid JSON, no other text.`;
+
+    const systemPrompt = PERSONA_SYSTEM_PROMPTS[persona];
+
+    return { systemPrompt, userPrompt };
   }
 }

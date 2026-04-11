@@ -49,6 +49,13 @@ export interface NewspaperEdition {
   outputTokenCount?: number; // Number of output tokens used in the API call
 }
 
+export interface DailyEditionComment {
+  author: string;
+  content: string;
+  createdAt: number;
+  persona: "happy" | "loafy" | "awoken";
+}
+
 export interface DailyEdition {
   id: string;
   editions: string[]; // edition IDs
@@ -65,6 +72,7 @@ export interface DailyEdition {
     supportingSocialMediaMessage?: string;
     skepticalComment?: string;
     gullibleComment?: string;
+    comments?: DailyEditionComment[];
   }>;
   modelFeedbackAboutThePrompt?: {
     positive: string;
