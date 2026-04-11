@@ -1772,9 +1772,6 @@ export class RedisDataStorageService implements IDataStorageService {
   }
 
   // Utility methods
-  async getModelName(): Promise<string | null> {
-    return await this.client.get(REDIS_KEYS.MODEL_NAME);
-  }
 
   async generateId(prefix: string): Promise<string> {
     const timestamp = Date.now();

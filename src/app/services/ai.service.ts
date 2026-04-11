@@ -44,10 +44,6 @@ export class AIService {
     this.aiClient = new AIClient(dataStorageService);
   }
 
-  getModelName(): string {
-    return this.aiClient.getModelName();
-  }
-
   private async logAIResponse(
     eventDescription: string,
     response?: OpenAIResponse,
@@ -127,6 +123,15 @@ export class AIService {
       // Get configurable message slice count from Redis
       const messageSliceCount = await this.aiClient.getMessageSliceCount();
 
+      // Fetch editor for model name
+      let editor;
+      try {
+        editor = await this.dataStorageService.getEditor();
+      } catch (error) {
+        console.warn("Failed to fetch editor for model name:", error);
+        editor = { modelName: "gpt-5-nano" };
+      }
+
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{
         did: string;
@@ -164,11 +169,10 @@ export class AIService {
         );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(
-        `Calling openai article generation with model ${modelName || this.getModelName()}`
-      );
+      const model = modelName || editor!.modelName;
+      console.log(`Calling openai article generation with model ${model}`);
       const response = await this.aiClient.getClient().chat.completions.create({
-        model: modelName || this.getModelName(),
+        model,
         messages: [
           {
             role: "system",
@@ -210,7 +214,7 @@ export class AIService {
         articleId,
         reporter.id,
         generationTime,
-        modelName || this.getModelName(),
+        modelName || editor!.modelName,
         parsedResponse.body,
         response.usage
       );
@@ -243,11 +247,20 @@ export class AIService {
     inputTokenCount?: number;
     outputTokenCount?: number;
   }> {
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     if (articles.length === 0)
       return {
         selectedArticles: [],
         fullPrompt: "",
-        modelName: modelName || this.getModelName()
+        modelName: modelName || editor!.modelName
       };
 
     const originalIndices = articles.map((_, i) => i);
@@ -262,11 +275,10 @@ export class AIService {
         AIPrompts.selectNewsworthyStoriesPrompts(articlesText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(
-        `Calling openai story selection with model ${modelName || this.getModelName()}`
-      );
+      const model = modelName || editor!.modelName;
+      console.log(`Calling openai story selection with model ${model}`);
       const response = await this.aiClient.getClient().chat.completions.create({
-        model: modelName || this.getModelName(),
+        model,
         messages: [
           {
             role: "system",
@@ -308,7 +320,7 @@ export class AIService {
         return {
           selectedArticles: fallbackShuffled.slice(0, numStories),
           fullPrompt,
-          modelName: modelName || this.getModelName(),
+          modelName: modelName || editor!.modelName,
           inputTokenCount: response.usage?.prompt_tokens,
           outputTokenCount: response.usage?.completion_tokens
         };
@@ -324,7 +336,7 @@ export class AIService {
       return {
         selectedArticles,
         fullPrompt,
-        modelName: modelName || this.getModelName(),
+        modelName: modelName || editor!.modelName,
         inputTokenCount: response.usage?.prompt_tokens,
         outputTokenCount: response.usage?.completion_tokens
       };
@@ -356,7 +368,7 @@ export class AIService {
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
 User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
-        modelName: modelName || this.getModelName(),
+        modelName: modelName || editor!.modelName,
         inputTokenCount: 0,
         outputTokenCount: 0
       };
@@ -387,6 +399,15 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     inputTokenCount?: number;
     outputTokenCount?: number;
   }> {
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     if (editions.length === 0) {
       throw new Error("No editions available for daily edition generation");
     }
@@ -397,12 +418,13 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         AIPrompts.selectNotableEditionsPrompts(editionsText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      const model = modelName || editor!.modelName;
       console.log(
-        `Calling openai daily edition generation with model ${modelName || this.getModelName()}`
+        `Calling openai daily edition generation with model ${model}`
       );
       console.log("Full prompt:", fullPrompt);
       const response = await this.aiClient.getClient().chat.completions.create({
-        model: modelName || this.getModelName(),
+        model,
         messages: [
           {
             role: "system",
@@ -445,7 +467,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       return {
         content: parsedResponse,
         fullPrompt,
-        modelName: modelName || this.getModelName(),
+        modelName: modelName || editor!.modelName,
         inputTokenCount: response.usage?.prompt_tokens,
         outputTokenCount: response.usage?.completion_tokens
       };
@@ -480,6 +502,15 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     messages: string[];
   }> {
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     try {
       // Format last events for context
       const eventsContext = AIResponseUtils.formatEventsContext(lastEvents);
@@ -519,11 +550,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      console.log(
-        `Calling openai event generation with model ${modelName || this.getModelName()}`
-      );
+      const model = modelName || editor!.modelName;
+      console.log(`Calling openai event generation with model ${model}`);
       const response = await this.aiClient.getClient().chat.completions.create({
-        model: modelName || this.getModelName(),
+        model,
         messages: [
           {
             role: "system",
@@ -561,7 +591,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
 
       const eventMetadata = AIResponseUtils.createEventMetadata(
-        modelName || this.getModelName(),
+        modelName || editor!.modelName,
         response.usage
       );
 
@@ -621,6 +651,15 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     prompt: string;
     messages: string[];
   } | null> {
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     const generationTime = Date.now();
     const articleId = `article_${generationTime}_${Math.random().toString(36).substring(2, 8)}`;
     const beatsList = reporter.beats.join(", ");
@@ -675,11 +714,12 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
+      const model = modelName || editor!.modelName;
       console.log(
-        `Calling openai articles from events generation with model ${modelName || this.getModelName()}`
+        `Calling openai articles from events generation with model ${model}`
       );
       const response = await this.aiClient.getClient().chat.completions.create({
-        model: modelName || this.getModelName(),
+        model,
         messages: [
           {
             role: "system",
@@ -727,7 +767,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         articleId,
         reporter.id,
         generationTime,
-        modelName || this.getModelName(),
+        modelName || editor!.modelName,
         parsedResponse.body,
         response.usage
       );
@@ -759,6 +799,15 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     modelName: string;
   }> {
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     try {
       const threads = await this.dataStorageService.getForumThreads(
         forumId,
@@ -772,7 +821,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
           threadIds: [],
           threadTitles: [],
           fullPrompt: "No threads available",
-          modelName: modelName || this.getModelName()
+          modelName: modelName || editor!.modelName
         };
       }
 
@@ -800,7 +849,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         return { thread, systemPrompt, userPrompt, fullPrompt };
       });
 
-      const model = modelName || this.getModelName();
+      const model = modelName || editor!.modelName;
 
       const threadRepliesSchema = z.array(z.string()).length(3);
 
@@ -889,8 +938,17 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     modelName: string;
   } | null> {
+    // Fetch editor for model name
+    let editor;
     try {
-      const personas: Persona[] = ["happy", "loafy", "awoken"];
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
+    try {
+      const personas: Persona[] = Object.keys(PERSONA_DISPLAY_NAMES) as Persona[];
       const randomPersona =
         personas[Math.floor(Math.random() * personas.length)];
 
@@ -906,8 +964,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
-      const model = modelName || this.getModelName();
 
+      const model = modelName || editor!.modelName;
       console.log(
         `Generating comment for daily edition with persona: ${randomPersona}, model: ${model}`
       );

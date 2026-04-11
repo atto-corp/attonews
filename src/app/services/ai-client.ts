@@ -3,7 +3,7 @@ import { IDataStorageService } from "./data-storage.interface";
 
 export class AIClient {
   private openai: OpenAI;
-  private modelName: string = "gpt-5-nano";
+
   private dataStorageService: IDataStorageService;
 
   constructor(dataStorageService: IDataStorageService) {
@@ -20,9 +20,6 @@ export class AIClient {
 
     // Initialize OpenAI client with configurable base URL asynchronously
     this.initializeOpenAIClient(apiKey);
-
-    // Initialize modelName from Redis with default
-    this.initializeModelName();
   }
 
   private async initializeOpenAIClient(apiKey: string): Promise<void> {
@@ -45,25 +42,8 @@ export class AIClient {
     }
   }
 
-  private async initializeModelName(): Promise<void> {
-    try {
-      const storedModelName = await this.dataStorageService.getModelName();
-      this.modelName = storedModelName || "gpt-5-nano";
-    } catch (error) {
-      console.warn(
-        "Failed to fetch modelName from Redis, using default:",
-        error
-      );
-      this.modelName = "gpt-5-nano";
-    }
-  }
-
   getClient(): OpenAI {
     return this.openai;
-  }
-
-  getModelName(): string {
-    return this.modelName;
   }
 
   async getMessageSliceCount(): Promise<number> {

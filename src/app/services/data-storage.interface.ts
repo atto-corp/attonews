@@ -124,7 +124,6 @@ export interface IDataStorageService {
   }>;
 
   // Utility methods
-  getModelName(): Promise<string | null>;
   generateId(prefix: string): Promise<string>;
   clearAllData(): Promise<void>;
 

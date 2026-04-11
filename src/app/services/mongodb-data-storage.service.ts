@@ -848,10 +848,6 @@ export class MongoDBDataStorageService implements IDataStorageService {
   }
 
   // Utility methods
-  async getModelName(): Promise<string | null> {
-    const editor = await this.getEditor();
-    return editor?.modelName || null;
-  }
 
   async generateId(prefix: string): Promise<string> {
     // Simple ID generation - in production you might want something more robust
