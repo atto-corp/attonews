@@ -29,8 +29,6 @@ export const reporterArticleSchema = z.object({
   body: z.string(),
   keyQuotes: z.array(z.string()),
   sources: z.array(z.string()),
-  wordCount: z.number(),
-  generationTime: z.number(),
   reporterNotes: z.object({
     researchQuality: z.string(),
     sourceDiversity: z.string(),
@@ -39,10 +37,7 @@ export const reporterArticleSchema = z.object({
   socialMediaSummary: z.string(),
   potentialMessageIds: z
     .array(z.number())
-    .describe("The indexes of potentially related social media messages"),
-  modelName: z.string(),
-  inputTokenCount: z.number().nullable(),
-  outputTokenCount: z.number().nullable()
+    .describe("The indexes of potentially related social media messages")
 });
 
 export const eventGenerationResponseSchema = z.object({
@@ -79,10 +74,7 @@ export const eventGenerationResponseSchema = z.object({
           .array(z.number())
           .optional()
           .default([])
-          .describe("The indexes of potentially related social media messages"),
-        modelName: z.string(),
-        inputTokenCount: z.number().nullable(),
-        outputTokenCount: z.number().nullable()
+          .describe("The indexes of potentially related social media messages")
       })
     )
     .max(5)

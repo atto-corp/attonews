@@ -25,6 +25,22 @@ export interface Reporter {
   enabled: boolean;
 }
 
+export interface ArticleGenerationMetadata {
+  id: string;
+  reporterId: string;
+  generationTime: number;
+  wordCount: number;
+  modelName: string;
+  inputTokenCount?: number;
+  outputTokenCount?: number;
+}
+
+export interface EventGenerationMetadata {
+  modelName: string;
+  inputTokenCount?: number;
+  outputTokenCount?: number;
+}
+
 export interface Article {
   id: string;
   reporterId: string;

@@ -1,5 +1,9 @@
 import { writeFile } from "fs/promises";
 import { join } from "path";
+import {
+  ArticleGenerationMetadata,
+  EventGenerationMetadata
+} from "../schemas/types";
 
 export class AIResponseUtils {
   static async saveResponseToFile(
@@ -20,21 +24,34 @@ export class AIResponseUtils {
     }
   }
 
-  static addArticleMetadata(
-    response: any,
+  static createArticleMetadata(
     articleId: string,
     reporterId: string,
     generationTime: number,
     modelName: string,
+    body: string,
     tokenUsage?: { prompt_tokens?: number; completion_tokens?: number }
-  ): void {
-    response.id = articleId;
-    response.reporterId = reporterId;
-    response.generationTime = generationTime;
-    response.wordCount = response.body!.split(" ").length;
-    response.modelName = modelName;
-    response.inputTokenCount = tokenUsage?.prompt_tokens;
-    response.outputTokenCount = tokenUsage?.completion_tokens;
+  ): ArticleGenerationMetadata {
+    return {
+      id: articleId,
+      reporterId,
+      generationTime,
+      wordCount: body.split(" ").length,
+      modelName,
+      inputTokenCount: tokenUsage?.prompt_tokens,
+      outputTokenCount: tokenUsage?.completion_tokens
+    };
+  }
+
+  static createEventMetadata(
+    modelName: string,
+    tokenUsage?: { prompt_tokens?: number; completion_tokens?: number }
+  ): EventGenerationMetadata {
+    return {
+      modelName,
+      inputTokenCount: tokenUsage?.prompt_tokens,
+      outputTokenCount: tokenUsage?.completion_tokens
+    };
   }
 
   static formatSocialMediaContext(

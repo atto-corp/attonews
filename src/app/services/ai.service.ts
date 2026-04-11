@@ -1,4 +1,10 @@
-import { Reporter, Article, Event } from "../schemas/types";
+import {
+  Reporter,
+  Article,
+  Event,
+  ArticleGenerationMetadata,
+  EventGenerationMetadata
+} from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -199,18 +205,17 @@ export class AIService {
         JSON.parse(content)
       ) as any;
 
-      // Add generated fields
-      AIResponseUtils.addArticleMetadata(
-        parsedResponse,
+      const metadata = AIResponseUtils.createArticleMetadata(
         articleId,
         reporter.id,
         generationTime,
         modelName || this.getModelName(),
+        parsedResponse.body,
         response.usage
       );
 
       return {
-        response: parsedResponse,
+        response: { ...parsedResponse, ...metadata },
         prompt: fullPrompt,
         messages: socialMediaMessages.map((x) => x.text)
       };
@@ -554,18 +559,20 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         JSON.parse(content)
       );
 
-      // Add modelName and token counts to each event
-      const eventsWithModelName = (parsedResponse.events as any[]).map(
+      const eventMetadata = AIResponseUtils.createEventMetadata(
+        modelName || this.getModelName(),
+        response.usage
+      );
+
+      const eventsWithMetadata = (parsedResponse.events as any[]).map(
         (event) => ({
           ...event,
-          modelName: modelName || this.getModelName(),
-          inputTokenCount: response.usage?.prompt_tokens,
-          outputTokenCount: response.usage?.completion_tokens
+          ...eventMetadata
         })
       );
 
       return {
-        events: eventsWithModelName,
+        events: eventsWithMetadata,
         fullPrompt,
         messages: socialMediaMessages.map((x) => x.text)
       };
@@ -715,18 +722,17 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         JSON.parse(content)
       ) as any;
 
-      // Add generated fields
-      AIResponseUtils.addArticleMetadata(
-        parsedResponse,
+      const metadata = AIResponseUtils.createArticleMetadata(
         articleId,
         reporter.id,
         generationTime,
         modelName || this.getModelName(),
+        parsedResponse.body,
         response.usage
       );
 
       return {
-        response: parsedResponse,
+        response: { ...parsedResponse, ...metadata },
         prompt: fullPrompt,
         messages: socialMediaMessages.map((x) => x.text)
       };
