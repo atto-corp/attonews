@@ -655,16 +655,14 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         };
       }
 
-      const replies: string[] = [];
-      const prompts: string[] = [];
+      const postsResults = await Promise.all(
+        threads.map((thread) =>
+          this.dataStorageService.getThreadPosts(thread.id, 0, 1000)
+        )
+      );
 
-      for (const thread of threads) {
-        const allPosts = await this.dataStorageService.getThreadPosts(
-          thread.id,
-          0,
-          1000
-        );
-
+      const promptData = postsResults.map((allPosts, index) => {
+        const thread = threads[index];
         const postContents = allPosts.map((p) => p.content);
         const first10 = postContents.slice(0, 10);
         const last15 = postContents.slice(-15);
@@ -677,35 +675,52 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
             selectedPosts
           );
         const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
-        prompts.push(fullPrompt);
 
-        console.log(
-          `Calling openai thread reply generation for thread ${thread.id} with model ${modelName || this.getModelName()}`
-        );
+        return { thread, systemPrompt, userPrompt, fullPrompt };
+      });
 
-        const response = await this.aiClient
-          .getClient()
-          .chat.completions.create({
-            model: modelName || this.getModelName(),
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt }
-            ]
-          });
+      const model = modelName || this.getModelName();
 
-        const content = response.choices[0]?.message?.content?.trim();
-        if (!content) {
-          throw new Error("No response content from AI service");
-        }
+      const replies = await Promise.all(
+        promptData.map(
+          async ({ thread, systemPrompt, userPrompt, fullPrompt }) => {
+            try {
+              console.log(
+                `Calling openai thread reply generation for thread ${thread.id} with model ${model}`
+              );
 
-        replies.push(content);
-      }
+              const response = await this.aiClient
+                .getClient()
+                .chat.completions.create({
+                  model,
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                  ]
+                });
+
+              const content = response.choices[0]?.message?.content?.trim();
+              if (!content) {
+                throw new Error("No response content from AI service");
+              }
+
+              return content;
+            } catch (error) {
+              console.error(
+                `Error generating reply for thread ${thread.id}:`,
+                error
+              );
+              return "";
+            }
+          }
+        )
+      );
 
       return {
         replies,
         threadIds: threads.map((t) => t.id),
-        fullPrompt: prompts.join("\n\n---\n\n"),
-        modelName: modelName || this.getModelName()
+        fullPrompt: promptData.map((p) => p.fullPrompt).join("\n\n---\n\n"),
+        modelName: model
       };
     } catch (error) {
       console.error("Error generating thread reply options:", error);
