@@ -8,23 +8,24 @@ import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 
 type Persona =
-  | "happy"
+  | "us_china_hawk"
   | "loafy"
   | "awoken"
   | "american_business"
   | "european_business"
   | "silicon_sage"
   | "geo_hawk"
-  | "space_visionary";
+  | "space_visionary"
+  | "ai_doomsayer";
 
 const personas: Record<
   Persona,
   { title: string; description: string; color: string }
 > = {
-  happy: {
-    title: "Happy",
-    description: "A genuinely enthusiastic and optimistic forum user",
-    color: "from-green-500 to-emerald-600"
+  us_china_hawk: {
+    title: "US-China Hawk",
+    description: "Realist tracking CCP threats & decoupling",
+    color: "from-orange-500 to-red-600"
   },
   loafy: {
     title: "Loafy",
@@ -60,6 +61,11 @@ const personas: Record<
     title: "Space Scaler",
     description: "Visionary on space+AI scaling vs Earth limits",
     color: "from-indigo-500 to-violet-600"
+  },
+  ai_doomsayer: {
+    title: "AI Doomsayer",
+    description: "Forecaster warning of AI existential risks",
+    color: "from-gray-900 to-slate-900"
   }
 };
 
