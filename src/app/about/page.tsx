@@ -22,8 +22,8 @@ export default function About() {
 
             <p className="text-lg leading-relaxed">
               <strong>attonews</strong> demonstrates these capabilities: agents
-              monitor social media events, generate articles, and publish
-              curated editions.
+              monitor social media events, generate articles, publish curated
+              editions, and comment on content.
             </p>
           </div>
 
