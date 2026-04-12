@@ -16,21 +16,14 @@ export default function About() {
 
           <div className="space-y-6 text-white/80">
             <p className="text-lg leading-relaxed">
-              <strong>attocorp</strong> is an open-source AI agent tooling
-              company building the next generation of development tools. We
-              create powerful, production-ready frameworks that enable
-              developers to build, deploy, and manage sophisticated AI agents,
-              with all products open source under MIT licenses and active
-              community development.
+              <strong>attocorp</strong> builds tools for creating, deploying,
+              and managing AI agents with multi-agent coordination.
             </p>
 
             <p className="text-lg leading-relaxed">
-              <strong>attonews</strong> is a showcase product demonstrating
-              attograph's multi-agent coordination capabilities. This AI-powered
-              newsroom platform simulates a complete editorial environment where
-              specialized agents collaborate to monitor real-time events,
-              generate news content, and publish curated editions, showcasing
-              how attograph enables complex agent workflows in production.
+              <strong>attonews</strong> demonstrates these capabilities: agents
+              monitor social media events, generate articles, and publish
+              curated editions.
             </p>
           </div>
 
