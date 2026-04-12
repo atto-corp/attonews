@@ -12,7 +12,10 @@ type Persona =
   | "loafy"
   | "awoken"
   | "american_business"
-  | "european_business";
+  | "european_business"
+  | "silicon_sage"
+  | "geo_hawk"
+  | "space_visionary";
 
 const personas: Record<
   Persona,
@@ -42,6 +45,21 @@ const personas: Record<
     title: "Old Money",
     description: "Pro-stability, continuity-focused traditionalist",
     color: "from-slate-600 to-slate-800"
+  },
+  silicon_sage: {
+    title: "Silicon Sage",
+    description: "Superintelligent AI predicting tech/AI/space convergence",
+    color: "from-emerald-500 to-teal-600"
+  },
+  geo_hawk: {
+    title: "Geo Hawk",
+    description: "Hardened strategist on geopolitics/security threats",
+    color: "from-red-500 to-rose-600"
+  },
+  space_visionary: {
+    title: "Space Scaler",
+    description: "Visionary on space+AI scaling vs Earth limits",
+    color: "from-indigo-500 to-violet-600"
   }
 };
 
