@@ -6,7 +6,8 @@ export type Persona =
   | "european_business"
   | "silicon_sage"
   | "geo_hawk"
-  | "space_visionary";
+  | "space_visionary"
+  | "ai_doomsayer";
 
 export interface Editor {
   bio: string;
