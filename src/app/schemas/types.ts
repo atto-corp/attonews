@@ -3,7 +3,9 @@ export type Persona =
   | "loafy"
   | "awoken"
   | "american_business"
-  | "european_business";
+  | "european_business"
+  | "silicon_sage"
+  | "geo_hawk";
 
 export interface Editor {
   bio: string;
