@@ -1,5 +1,5 @@
 export type Persona =
-  | "us_china_hawk"
+  | "crypto_zealot"
   | "loafy"
   | "awoken"
   | "american_business"

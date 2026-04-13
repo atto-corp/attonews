@@ -8,7 +8,7 @@ import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 
 type Persona =
-  | "us_china_hawk"
+  | "crypto_zealot"
   | "loafy"
   | "awoken"
   | "american_business"
@@ -22,10 +22,10 @@ const personas: Record<
   Persona,
   { title: string; description: string; color: string }
 > = {
-  us_china_hawk: {
-    title: "US-China Hawk",
-    description: "Realist tracking CCP threats & decoupling",
-    color: "from-orange-500 to-red-600"
+  crypto_zealot: {
+    title: "Crypto Zealot",
+    description: "Bitcoin maximalist for financial sovereignty",
+    color: "from-yellow-400 to-amber-600"
   },
   loafy: {
     title: "Loafy",
