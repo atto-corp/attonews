@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Artifact,
-  ArtifactJob,
-  ArtifactInput,
-  ArtifactType
-} from "../schemas/types";
+import { Artifact, ArtifactJob, ArtifactInput } from "../schemas/types";
+import { apiService } from "../services/api.service";
+
+const builtinSchemas = {
+  event:
+    "z.object({title:z.string(),facts:z.array(z.string()),where:z.string().optional(),when:z.string().optional()})",
+  article: "z.object({headline:z.string(),lead:z.string(),body:z.string()})",
+  edition: "z.object({stories:z.array(z.string())})",
+  daily_edition:
+    "z.object({front_page_headline:z.string(),front_page_article:z.string(),topics:z.array(z.object({headline:z.string(),summary:z.string(),articles:z.array(z.string())}))})"
+};
 
 export default function ArtifactsPage() {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
@@ -15,12 +20,14 @@ export default function ArtifactsPage() {
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
-    type: "event" as ArtifactType,
+    type: "event",
     inputs: [
       { name: "", source: "artifacts" as "artifacts" | "external" }
     ] as ArtifactInput[],
     prompt_system: "",
-    prompt_user_template: ""
+    prompt_user_template: "",
+    output_schema:
+      "z.object({title:z.string(),facts:z.array(z.string()),where:z.string().optional(),when:z.string().optional()})"
   });
 
   useEffect(() => {
@@ -32,9 +39,7 @@ export default function ArtifactsPage() {
 
   const fetchArtifacts = async () => {
     try {
-      const res = await fetch("/api/artifacts");
-      if (!res.ok) throw new Error("Failed to fetch artifacts");
-      const data = await res.json();
+      const data = await apiService.get<Artifact[]>("/api/artifacts");
       setArtifacts(data);
     } catch (err: any) {
       setError(err.message);
@@ -45,11 +50,8 @@ export default function ArtifactsPage() {
 
   const fetchJobs = async () => {
     try {
-      const res = await fetch("/api/artifacts/jobs");
-      if (res.ok) {
-        const data = await res.json();
-        setJobs(data);
-      }
+      const data = await apiService.get<ArtifactJob[]>("/api/artifacts/jobs");
+      setJobs(data);
     } catch (err) {
       console.error("Failed to fetch jobs:", err);
     }
@@ -57,7 +59,7 @@ export default function ArtifactsPage() {
 
   const queueArtifact = async (id: string) => {
     try {
-      await fetch(`/api/artifacts/queue/${id}`, { method: "POST" });
+      await apiService.post(`/api/artifacts/queue/${id}`);
       await fetchJobs();
     } catch (err) {
       console.error("Failed to queue:", err);
@@ -66,25 +68,20 @@ export default function ArtifactsPage() {
 
   const handleCreateArtifact = async () => {
     try {
-      const res = await fetch("/api/artifacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(createForm)
+      await apiService.post("/api/artifacts", createForm);
+      setShowCreateModal(false);
+      setCreateForm({
+        type: "event",
+        inputs: [{ name: "", source: "artifacts" }],
+        prompt_system: "",
+        prompt_user_template: "",
+        output_schema:
+          "z.object({title:z.string(),facts:z.array(z.string()),where:z.string().optional(),when:z.string().optional()})"
       });
-      if (res.ok) {
-        setShowCreateModal(false);
-        setCreateForm({
-          type: "event",
-          inputs: [{ name: "", source: "artifacts" }],
-          prompt_system: "",
-          prompt_user_template: ""
-        });
-        fetchArtifacts();
-      } else {
-        alert("Failed to create artifact");
-      }
+      fetchArtifacts();
     } catch (err) {
       console.error("Error creating artifact:", err);
+      alert("Failed to create artifact");
     }
   };
 
@@ -238,78 +235,98 @@ export default function ArtifactsPage() {
               </h3>
 
               <div className="mb-4 p-4 bg-gray-50 rounded">
-                <h4 className="font-semibold mb-2">Inputs & Templates</h4>
-                <p className="text-sm text-gray-600 mb-2">
+                <h4 className="font-semibold mb-2 text-gray-900">
+                  Inputs & Templates
+                </h4>
+                <p className="text-sm text-gray-900 mb-2">
                   <strong>Inputs</strong> fetch data for prompts.
                 </p>
-                <ul className="text-sm text-gray-600 list-disc pl-5 mb-2">
+                <ul className="text-sm text-gray-900 list-disc pl-5 mb-2">
                   <li>
                     <strong>Artifacts source:</strong>{" "}
-                    <code>{`{name:"events", source:"artifacts", type:"event", filter:{limit:5, reporterId:"demo", since:"1h"}}`}</code>{" "}
+                    <code className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-1 rounded">{`{name:"events", source:"artifacts", type:"event", filter:{limit:5, reporterId:"demo", since:"1h"}}`}</code>{" "}
                     → Fetches latest matching artifacts from the database.
                   </li>
                   <li>
                     <strong>Bluesky (external):</strong>{" "}
-                    <code>{`{name:"bluesky", source:"external", filter:{limit:20}}`}</code>{" "}
+                    <code className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-1 rounded">{`{name:"bluesky", source:"external", filter:{limit:20}}`}</code>{" "}
                     → Fetches an array of latest Bluesky message texts via
                     TinyJetstream.
                   </li>
                 </ul>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-900">
                   <strong>Prompts:</strong>
                   <br />- <strong>system:</strong> Instructions for the AI
                   (e.g., "You are a news editor").
                   <br />- <strong>user_template:</strong> Template string with
-                  variables like <code>{`{{inputs[0].name}}`}</code>, rendered
-                  with Handlebars.
+                  variables like{" "}
+                  <code className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-1 rounded">{`{{inputs[0].name}}`}</code>
+                  , rendered with Handlebars.
                 </p>
               </div>
 
               <form className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-900">
                     Type
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={createForm.type}
                     onChange={(e) =>
                       setCreateForm((prev) => ({
                         ...prev,
-                        type: e.target.value as ArtifactType
+                        type: e.target.value
                       }))
                     }
-                    className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-                  >
-                    <option value="event">event</option>
-                    <option value="article">article</option>
-                    <option value="edition">edition</option>
-                    <option value="daily_edition">daily_edition</option>
-                    <option value="custom">custom</option>
-                  </select>
+                    className="mt-1 block w-full border border-gray-300 rounded-md p-2 text-gray-900"
+                    placeholder="e.g., event, article, custom_news"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Inputs
                   </label>
                   {createForm.inputs.map((input, index) => (
                     <div key={index} className="border p-3 mb-2 rounded">
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-500">
-                            Name
+                          <label className="block text-xs font-medium text-gray-700">
+                            Type
                           </label>
                           <input
                             type="text"
-                            value={input.name}
+                            value={input.type || ""}
                             onChange={(e) =>
-                              updateInput(index, "name", e.target.value)
+                              updateInput(
+                                index,
+                                "type",
+                                e.target.value || undefined
+                              )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm text-gray-900"
+                            placeholder="e.g., event, article"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-500">
+                          <label className="block text-xs font-medium text-gray-700">
+                            Filter (JSON)
+                          </label>
+                          <textarea
+                            value={JSON.stringify(input.filter || {}, null, 2)}
+                            onChange={(e) => {
+                              try {
+                                const val = JSON.parse(e.target.value);
+                                updateInput(index, "filter", val);
+                              } catch {}
+                            }}
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm text-gray-900"
+                            rows={2}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">
                             Source
                           </label>
                           <select
@@ -321,7 +338,7 @@ export default function ArtifactsPage() {
                                 e.target.value as "artifacts" | "external"
                               )
                             }
-                            className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm"
+                            className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm text-gray-900"
                           >
                             <option value="artifacts">artifacts</option>
                             <option value="external">external</option>
@@ -378,7 +395,7 @@ export default function ArtifactsPage() {
                         )}
                         {input.source === "external" && (
                           <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-gray-500">
+                            <label className="block text-xs font-medium text-gray-700">
                               Filter (JSON)
                             </label>
                             <textarea
@@ -393,7 +410,7 @@ export default function ArtifactsPage() {
                                   updateInput(index, "filter", val);
                                 } catch {}
                               }}
-                              className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm"
+                              className="mt-1 block w-full border border-gray-300 rounded-md p-1 text-sm text-gray-900"
                               rows={2}
                             />
                           </div>

@@ -6,33 +6,18 @@ import { fetchLatestMessages } from "./bluesky.service";
 import handlebars from "handlebars";
 import { z } from "zod";
 
-const artifactOutputSchemas: Record<string, z.ZodSchema> = {
-  event: z.object({
-    title: z.string(),
-    facts: z.array(z.string()),
-    where: z.string().optional(),
-    when: z.string().optional()
-  }),
-  article: z.object({
-    headline: z.string(),
-    lead: z.string(),
-    body: z.string()
-  }),
-  edition: z.object({
-    stories: z.array(z.string()) // article IDs
-  }),
-  daily_edition: z.object({
-    front_page_headline: z.string(),
-    front_page_article: z.string(),
-    topics: z.array(
-      z.object({
-        headline: z.string(),
-        summary: z.string(),
-        articles: z.array(z.string())
-      })
-    )
-  })
+const builtinSchemas: Record<string, string> = {
+  event:
+    "z.object({title:z.string(),facts:z.array(z.string()),where:z.string().optional(),when:z.string().optional()})",
+  article: "z.object({headline:z.string(),lead:z.string(),body:z.string()})",
+  edition: "z.object({stories:z.array(z.string())})",
+  daily_edition:
+    "z.object({front_page_headline:z.string(),front_page_article:z.string(),topics:z.array(z.object({headline:z.string(),summary:z.string(),articles:z.array(z.string())}))})"
 };
+
+function getSchemaForType(schemaString: string): z.ZodSchema {
+  return new Function("z", "return " + schemaString)() as z.ZodSchema;
+}
 
 export class ArtifactService {
   private aiClient: AIClient;
@@ -74,6 +59,10 @@ export class ArtifactService {
     // Parse response
     const output = JSON.parse(response.choices[0].message.content || "{}");
 
+    // Validate with Zod schema
+    const schema = getSchemaForType(artifact.output_schema);
+    const validatedOutput = schema.parse(output);
+
     const metadata = {
       model_name: modelUsed,
       input_tokens: response.usage?.prompt_tokens || 0,
@@ -89,7 +78,7 @@ export class ArtifactService {
     });
 
     console.log(`Artifact ${artifactId}: Generation completed`);
-    return { output: response, metadata };
+    return { output: validatedOutput, metadata };
   }
 
   private async resolveInputs(

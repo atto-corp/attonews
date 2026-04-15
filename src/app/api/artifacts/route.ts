@@ -1,50 +1,54 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { withAuth } from "../../utils/auth";
 import { ServiceContainer } from "../../services/service-container";
-import { Artifact } from "../../schemas/types";
 
+// GET /api/artifacts - Get all artifacts
 export async function GET() {
-  try {
-    const container = ServiceContainer.getInstance();
-    const dataStorage = await container.getDataStorageService();
-    const artifacts = await dataStorage.getAllArtifacts();
-    return NextResponse.json(artifacts);
-  } catch (error) {
-    console.error("Error listing artifacts:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+  const dataStorage =
+    await ServiceContainer.getInstance().getDataStorageService();
+  const artifacts = await dataStorage.getAllArtifacts();
+  return NextResponse.json(artifacts);
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const container = ServiceContainer.getInstance();
-    const dataStorage = await container.getDataStorageService();
+// POST /api/artifacts - Create new artifact
+export const POST = withAuth(
+  async (request: Request, user) => {
+    const { type, inputs, prompt_system, prompt_user_template, output_schema } =
+      await request.json();
 
-    const body: Omit<Artifact, "id" | "metadata"> & {
-      metadata?: Partial<Artifact["metadata"]>;
-    } = await request.json();
-    const artifact: Artifact = {
-      id: await dataStorage.generateId("artifact"),
-      type: body.type,
-      inputs: body.inputs,
-      prompt_system: body.prompt_system,
-      prompt_user_template: body.prompt_user_template,
-      output: body.output,
-      metadata: {
-        status: "pending" as const,
-        ...body.metadata
-      }
+    if (
+      !type ||
+      !inputs ||
+      !prompt_system ||
+      !prompt_user_template ||
+      !output_schema
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const id = crypto.randomUUID();
+    const artifact = {
+      id,
+      type,
+      inputs: inputs.map((input: any) => ({
+        name: input.name,
+        source: input.source,
+        type: input.type,
+        filter: input.filter
+      })),
+      prompt_system,
+      prompt_user_template,
+      output_schema,
+      metadata: { status: "pending" as const }
     };
 
+    const dataStorage =
+      await ServiceContainer.getInstance().getDataStorageService();
     await dataStorage.saveArtifact(artifact);
     return NextResponse.json(artifact, { status: 201 });
-  } catch (error) {
-    console.error("Error creating artifact:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { requiredRole: "admin" }
+);

@@ -367,17 +367,12 @@ export interface DynamicPersona {
   system_prompt: string;
 }
 
-export type ArtifactType =
-  | "event"
-  | "article"
-  | "edition"
-  | "daily_edition"
-  | "custom";
+// Artifact types are now free-form strings
 
 export interface ArtifactInput {
   name: string;
   source: "artifacts" | "external";
-  type?: ArtifactType; // for source='artifacts'
+  type?: string; // for source='artifacts'
   filter?: {
     reporterId?: string;
     limit?: number;
@@ -388,10 +383,11 @@ export interface ArtifactInput {
 
 export interface Artifact {
   id: string;
-  type: ArtifactType;
+  type: string;
   inputs: ArtifactInput[];
   prompt_system: string;
   prompt_user_template: string;
+  output_schema: string;
   output?: any;
   metadata: {
     model_name?: string;
