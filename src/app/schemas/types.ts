@@ -9,6 +9,14 @@ export type Persona =
   | "space_visionary"
   | "ai_doomsayer";
 
+export enum AIModelOption {
+  GENERAL = "modelName",
+  ARTICLE_GENERATION = "articleModelName",
+  EVENT_GENERATION = "eventModelName",
+  STORY_SELECTION = "storySelectionModelName",
+  EDITION_SELECTION = "editionSelectionModelName"
+}
+
 export interface Editor {
   bio: string;
   prompt: string;

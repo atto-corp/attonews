@@ -4,7 +4,8 @@ import {
   Event,
   ArticleGenerationMetadata,
   EventGenerationMetadata,
-  DynamicPersona
+  DynamicPersona,
+  AIModelOption
 } from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
@@ -68,6 +69,19 @@ export class AIService {
     await this.dataStorageService.addLog(message);
   }
 
+  private async logOpenAIError(
+    consoleMsg: string,
+    eventDesc: string,
+    error: any
+  ): Promise<void> {
+    console.error(`${consoleMsg}:`, (error as any).error ?? error);
+    await this.logAIResponse(
+      eventDesc,
+      undefined,
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+
   private stripReasoningDetails(response: OpenAIResponse): OpenAIResponse {
     if (!response.choices) {
       return response;
@@ -129,15 +143,6 @@ export class AIService {
       // Get configurable message slice count from Redis
       const messageSliceCount = await this.aiClient.getMessageSliceCount();
 
-      // Fetch editor for model name
-      let editor;
-      try {
-        editor = await this.dataStorageService.getEditor();
-      } catch (error) {
-        console.warn("Failed to fetch editor for model name:", error);
-        editor = { modelName: "gpt-5-nano" };
-      }
-
       // Fetch recent social media messages to inform article generation
       let socialMediaMessages: Array<{
         did: string;
@@ -175,32 +180,36 @@ export class AIService {
         );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const model = modelName || editor!.modelName;
-      console.log(`Calling openai article generation with model ${model}`);
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ],
-        response_format: zodResponseFormat(
-          reporterArticleSchema,
-          "reporter_article"
-        )
-      });
+      console.log(
+        `Calling openai article generation with ${AIModelOption.ARTICLE_GENERATION}`
+      );
+      const completionResult = await this.aiClient.createChatCompletion(
+        AIModelOption.ARTICLE_GENERATION,
+        {
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ],
+          response_format: zodResponseFormat(
+            reporterArticleSchema,
+            "reporter_article"
+          )
+        }
+      );
 
       await this.logAIResponse(
         `Article generation for reporter ${reporter.id}`,
-        response
+        completionResult.response
       );
 
-      const content = response.choices[0]?.message?.content?.trim();
+      const content =
+        completionResult.response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
       }
@@ -220,9 +229,9 @@ export class AIService {
         articleId,
         reporter.id,
         generationTime,
-        modelName || editor!.modelName,
+        modelName || completionResult.modelUsed,
         parsedResponse.body,
-        response.usage
+        completionResult.response.usage
       );
 
       return {
@@ -283,30 +292,34 @@ export class AIService {
 
       const model = modelName || editor!.modelName;
       console.log(`Calling openai story selection with model ${model}`);
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ]
-      });
+      const completion = await this.aiClient
+        .getClient()
+        .chat.completions.create({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ]
+        });
+      const completionResult = { response: completion, modelUsed: model };
+      const { response: openaiResponse, modelUsed } = completionResult;
 
       // Track KPI usage
       await KpiService.incrementKpisFromOpenAIResponse(
-        response,
+        openaiResponse,
         this.dataStorageService
       );
 
-      await this.logAIResponse("Story selection", response);
+      await this.logAIResponse("Story selection", openaiResponse);
 
       const selectedShuffledIndices =
-        response.choices[0]?.message?.content
+        openaiResponse.choices[0]?.message?.content
           ?.trim()
           .split(",")
           .map((num: string) => parseInt(num.trim()) - 1)
@@ -326,9 +339,9 @@ export class AIService {
         return {
           selectedArticles: fallbackShuffled.slice(0, numStories),
           fullPrompt,
-          modelName: modelName || editor!.modelName,
-          inputTokenCount: response.usage?.prompt_tokens,
-          outputTokenCount: response.usage?.completion_tokens
+          modelName: modelUsed,
+          inputTokenCount: openaiResponse.usage?.prompt_tokens,
+          outputTokenCount: openaiResponse.usage?.completion_tokens
         };
       }
 
@@ -342,16 +355,15 @@ export class AIService {
       return {
         selectedArticles,
         fullPrompt,
-        modelName: modelName || editor!.modelName,
-        inputTokenCount: response.usage?.prompt_tokens,
-        outputTokenCount: response.usage?.completion_tokens
+        modelName: modelUsed,
+        inputTokenCount: openaiResponse.usage?.prompt_tokens,
+        outputTokenCount: openaiResponse.usage?.completion_tokens
       };
     } catch (error) {
-      console.error("Error selecting newsworthy stories:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error selecting newsworthy stories",
         "Story selection",
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       const minStories = 3;
       const maxStories = Math.min(5, shuffledArticles.length);
@@ -374,7 +386,7 @@ export class AIService {
         fullPrompt: `System: You are an experienced news editor evaluating story newsworthiness. Select the most important and engaging stories based on journalistic criteria.
 
 User: Given the following articles and editorial guidelines: "${editorPrompt}", select the 3-5 most newsworthy stories from the list below.`,
-        modelName: modelName || editor!.modelName,
+        modelName: modelName || "gpt-4o-mini",
         inputTokenCount: 0,
         outputTokenCount: 0
       };
@@ -405,15 +417,6 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     inputTokenCount?: number;
     outputTokenCount?: number;
   }> {
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     if (editions.length === 0) {
       throw new Error("No editions available for daily edition generation");
     }
@@ -424,35 +427,40 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         AIPrompts.selectNotableEditionsPrompts(editionsText, editorPrompt);
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const model = modelName || editor!.modelName;
       console.log(
-        `Calling openai daily edition generation with model ${model}`
+        `Calling openai daily edition generation with ${AIModelOption.EDITION_SELECTION}`
       );
       console.log("Full prompt:", fullPrompt);
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ],
-        response_format: zodResponseFormat(dailyEditionSchema, "daily_edition")
-      });
+      const result = await this.aiClient.createChatCompletion(
+        AIModelOption.EDITION_SELECTION,
+        {
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ],
+          response_format: zodResponseFormat(
+            reporterArticleSchema,
+            "reporter_article"
+          )
+        },
+        modelName
+      );
 
       // Track KPI usage
       await KpiService.incrementKpisFromOpenAIResponse(
-        response,
+        result.response,
         this.dataStorageService
       );
 
-      await this.logAIResponse("Daily edition generation", response);
+      await this.logAIResponse("Daily edition generation", result.response);
 
-      const content = response.choices[0]?.message?.content?.trim();
+      const content = result.response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
       }
@@ -473,16 +481,15 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       return {
         content: parsedResponse,
         fullPrompt,
-        modelName: modelName || editor!.modelName,
-        inputTokenCount: response.usage?.prompt_tokens,
-        outputTokenCount: response.usage?.completion_tokens
+        modelName: result.modelUsed,
+        inputTokenCount: result.response.usage?.prompt_tokens,
+        outputTokenCount: result.response.usage?.completion_tokens
       };
     } catch (error) {
-      console.error("Error generating daily edition:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error generating daily edition",
         "Daily edition generation",
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       throw error;
     }
@@ -508,15 +515,6 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     messages: string[];
   }> {
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     try {
       // Format last events for context
       const eventsContext = AIResponseUtils.formatEventsContext(lastEvents);
@@ -556,38 +554,42 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const model = modelName || editor!.modelName;
-      console.log(`Calling openai event generation with model ${model}`);
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ],
-        response_format: zodResponseFormat(
-          eventGenerationResponseSchema,
-          "event_generation"
-        )
-      });
+      console.log(
+        `Calling openai event generation with ${AIModelOption.EVENT_GENERATION}`
+      );
+      const result = await this.aiClient.createChatCompletion(
+        AIModelOption.EVENT_GENERATION,
+        {
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ],
+          response_format: zodResponseFormat(
+            reporterArticleSchema,
+            "reporter_article"
+          )
+        },
+        modelName
+      );
 
       // Track KPI usage
       await KpiService.incrementKpisFromOpenAIResponse(
-        response,
+        result.response,
         this.dataStorageService
       );
 
       await this.logAIResponse(
         `Event generation for reporter ${reporter.id}`,
-        response
+        result.response
       );
 
-      const content = response.choices[0]?.message?.content?.trim();
+      const content = result.response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service for events");
       }
@@ -597,8 +599,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
 
       const eventMetadata = AIResponseUtils.createEventMetadata(
-        modelName || editor!.modelName,
-        response.usage
+        modelName || "",
+        result.response.usage
       );
 
       const eventsWithMetadata = (parsedResponse.events as any[]).map(
@@ -614,11 +616,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         messages: socialMediaMessages.map((x) => x.text)
       };
     } catch (error) {
-      console.error("Error generating events:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error generating events",
         `Event generation for reporter ${reporter.id}`,
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       // Return empty events on error
       return {
@@ -657,15 +658,6 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     prompt: string;
     messages: string[];
   } | null> {
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     const generationTime = Date.now();
     const articleId = `article_${generationTime}_${Math.random().toString(36).substring(2, 8)}`;
     const beatsList = reporter.beats.join(", ");
@@ -720,40 +712,41 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         );
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const model = modelName || editor!.modelName;
       console.log(
-        `Calling openai articles from events generation with model ${model}`
+        `Calling openai articles from events generation with ${AIModelOption.ARTICLE_GENERATION}`
       );
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ],
-        response_format: zodResponseFormat(
-          reporterArticleSchema,
-          "reporter_article"
-        )
-      });
+      const result = await this.aiClient.createChatCompletion(
+        AIModelOption.ARTICLE_GENERATION,
+        {
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: userPrompt
+            }
+          ],
+          response_format: zodResponseFormat(
+            reporterArticleSchema,
+            "reporter_article"
+          )
+        }
+      );
 
       // Track KPI usage
       await KpiService.incrementKpisFromOpenAIResponse(
-        response,
+        result.response,
         this.dataStorageService
       );
 
       await this.logAIResponse(
         `Article from events for reporter ${reporter.id}`,
-        response
+        result.response
       );
 
-      const content = response.choices[0]?.message?.content?.trim();
+      const content = result.response.choices[0]?.message?.content?.trim();
       if (!content) {
         throw new Error("No response content from AI service");
       }
@@ -773,9 +766,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         articleId,
         reporter.id,
         generationTime,
-        modelName || editor!.modelName,
+        result.modelUsed,
         parsedResponse.body,
-        response.usage
+        result.response.usage
       );
 
       return {
@@ -784,11 +777,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         messages: socialMediaMessages.map((x) => x.text)
       };
     } catch (error) {
-      console.error("Error generating article from events:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error generating article from events",
         `Article from events for reporter ${reporter.id}`,
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       return null;
     }
@@ -810,15 +802,6 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       throw new Error(`Persona ${personaKey} not found`);
     }
 
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     try {
       const threads = await this.dataStorageService.getForumThreads(
         forumId,
@@ -832,7 +815,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
           threadIds: [],
           threadTitles: [],
           fullPrompt: "No threads available",
-          modelName: modelName || editor!.modelName
+          modelName: modelName || "gpt-4o-mini"
         };
       }
 
@@ -860,23 +843,20 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
         return { thread, systemPrompt, userPrompt, fullPrompt };
       });
-
-      const model = modelName || editor!.modelName;
-
       const threadRepliesSchema = z.array(z.string()).length(3);
 
+      let completionModel = null;
       const replies = await Promise.all(
         promptData.map(
           async ({ thread, systemPrompt, userPrompt, fullPrompt }) => {
             try {
               console.log(
-                `Calling openai thread reply generation for thread ${thread.id} with model ${model}`
+                `Calling openai thread reply generation for thread ${thread.id} with ${AIModelOption.GENERAL}`
               );
 
-              const response = await this.aiClient
-                .getClient()
-                .chat.completions.create({
-                  model,
+              const completionResult = await this.aiClient.createChatCompletion(
+                AIModelOption.GENERAL,
+                {
                   messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userPrompt }
@@ -885,9 +865,12 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
                     threadRepliesSchema,
                     "replies"
                   )
-                });
+                }
+              );
+              completionModel = completionResult.modelUsed;
 
-              const content = response.choices[0]?.message?.content;
+              const content =
+                completionResult.response.choices[0]?.message?.content;
               if (!content) {
                 throw new Error("No response content from AI service");
               }
@@ -896,24 +879,20 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
               await this.logAIResponse(
                 `Thread reply generation for thread ${thread.id}`,
-                response
+                completionResult.response
               );
 
               return parsed;
             } catch (error) {
-              console.error(
-                `Error generating reply for thread ${thread.id}:`,
+              await this.logOpenAIError(
+                `Error generating reply for thread ${thread.id}`,
+                `Thread reply generation for thread ${thread.id}`,
                 error
               );
               if (error && typeof error === "object" && "response" in error) {
                 const err = error as { response?: { data?: unknown } };
                 console.error("Response body:", err.response?.data);
               }
-              await this.logAIResponse(
-                `Thread reply generation for thread ${thread.id}`,
-                undefined,
-                error instanceof Error ? error.message : "Unknown error"
-              );
               return ["", "", ""];
             }
           }
@@ -925,14 +904,13 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         threadIds: threads.map((t) => t.id),
         threadTitles: threads.map((t) => t.title),
         fullPrompt: promptData.map((p) => p.fullPrompt).join("\n\n---\n\n"),
-        modelName: model
+        modelName: completionModel || ""
       };
     } catch (error) {
-      console.error("Error generating thread reply options:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error generating thread reply options",
         "Thread reply generation",
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       throw error;
     }
@@ -950,15 +928,6 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     modelName: string;
   } | null> {
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     try {
       let persona: { system_prompt: string; display: string };
       const dynamicPersonas =
@@ -999,43 +968,40 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
-      const model = modelName || editor!.modelName;
+      const result = await this.aiClient.createChatCompletion(
+        AIModelOption.GENERAL,
+        {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          reasoning_effort: "minimal",
+          response_format: zodResponseFormat(generatedCommentSchema, "comment")
+        },
+        modelName
+      );
 
-      const response = await this.aiClient.getClient().chat.completions.create({
-        model,
-        reasoning_effort: "minimal",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        response_format: zodResponseFormat(generatedCommentSchema, "comment")
-      });
+      const usedModel = modelName || "gpt-4o-mini";
 
-      const content = response.choices[0]?.message?.content;
+      const content = result.response.choices[0]?.message?.content;
       if (!content) {
         throw new Error("No response content from AI service");
       }
 
       const parsed = JSON.parse(content);
 
-      await this.logAIResponse(
-        "Comment generation for daily edition",
-        response
-      );
-
       return {
         topicIndex: parsed.topicIndex,
         persona: persona.display,
         commentText: parsed.comment,
         fullPrompt,
-        modelName: model
+        modelName: usedModel
       };
     } catch (error) {
-      console.error("Error generating comment:", error);
-      await this.logAIResponse(
+      await this.logOpenAIError(
+        "Error generating comment",
         "Comment generation for daily edition",
-        undefined,
-        error instanceof Error ? error.message : "Unknown error"
+        error
       );
       return null;
     }
@@ -1067,49 +1033,43 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
   ): Promise<DynamicPersona[]> {
     console.log("Generating dynamic personas for edition");
 
-    // Fetch editor for model name
-    let editor;
-    try {
-      editor = await this.dataStorageService.getEditor();
-    } catch (error) {
-      console.warn("Failed to fetch editor for model name:", error);
-      editor = { modelName: "gpt-5-nano" };
-    }
-
     const { systemPrompt, userPrompt } =
       AIPrompts.generateDynamicPersonasPrompts(editionText);
-    const model = editor!.modelName;
 
     let attempts = 0;
     const maxAttempts = 2;
     while (attempts < maxAttempts) {
       try {
-        const response = await this.aiClient
-          .getClient()
-          .chat.completions.create({
-            model,
-            reasoning_effort: "minimal",
+        const result = await this.aiClient.createChatCompletion(
+          AIModelOption.GENERAL,
+          {
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt }
             ],
+            reasoning_effort: "minimal",
             response_format: zodResponseFormat(
               DynamicPersonasSchema,
               "personas"
             )
-          });
-        const content = response.choices[0]?.message?.content;
+          }
+        );
+        const content = result.response.choices[0]?.message?.content;
         if (!content) throw new Error("No response from AI for personas");
 
         const parsed = JSON.parse(content);
         const personas = DynamicPersonasSchema.parse(parsed);
-        await this.logAIResponse("Dynamic personas generation", response);
+        await this.logAIResponse(
+          "Dynamic personas generation",
+          result.response
+        );
         return personas;
       } catch (error) {
         attempts++;
-        console.error(
-          `Persona generation attempt ${attempts} failed:`,
-          (error as any).error
+        await this.logOpenAIError(
+          `Persona generation attempt ${attempts} failed`,
+          "Dynamic personas generation",
+          error
         );
         if (attempts >= maxAttempts) {
           console.error("Max retries exceeded; falling back to empty personas");

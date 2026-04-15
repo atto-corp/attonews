@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { IDataStorageService } from "./data-storage.interface";
+import { AIModelOption } from "../schemas/types";
 
 export class AIClient {
   private openai: OpenAI;
@@ -60,5 +61,35 @@ export class AIClient {
       );
     }
     return messageSliceCount;
+  }
+
+  async createChatCompletion(
+    option: AIModelOption,
+    createParams: Omit<
+      OpenAI.Chat.Completions.ChatCompletionCreateParams,
+      "model" | "stream"
+    >,
+    modelOverride?: string
+  ): Promise<{
+    response: OpenAI.Chat.Completions.ChatCompletion;
+    modelUsed: string;
+  }> {
+    const editor = await this.dataStorageService.getEditor();
+    if (!editor) {
+      throw new Error("No editor configuration found");
+    }
+
+    const model = modelOverride || editor[option];
+    if (!model) {
+      throw new Error(`Model not configured for option: ${option}`);
+    }
+
+    const response = await this.getClient().chat.completions.create({
+      ...createParams,
+      model,
+      stream: false
+    });
+
+    return { response, modelUsed: model };
   }
 }
