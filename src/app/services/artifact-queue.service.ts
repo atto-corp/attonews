@@ -65,6 +65,27 @@ export class ArtifactQueueService {
       return result; // allow any for BullMQ
     } catch (error) {
       console.error(`Artifact ${artifactId} generation failed:`, error);
+      // Update artifact status to failed
+      try {
+        const currentArtifact =
+          await this.dataStorageService.getArtifact(artifactId);
+        if (currentArtifact) {
+          await this.dataStorageService.updateArtifact(artifactId, {
+            metadata: {
+              ...currentArtifact.metadata,
+              status: "failed" as const,
+              error_message:
+                error instanceof Error ? error.message : String(error)
+            }
+          });
+          console.log(`Artifact ${artifactId} marked as failed`);
+        }
+      } catch (updateError) {
+        console.error(
+          `Failed to update artifact ${artifactId} status:`,
+          updateError
+        );
+      }
       throw error;
     }
   }
