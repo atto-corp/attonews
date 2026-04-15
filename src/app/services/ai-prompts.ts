@@ -531,7 +531,7 @@ Return a JSON array of exactly 3 reply strings. No other text.`
         ? `\n\nYou have recently performed a social media scrolling session, which resulted in you skimming the following short-form social media posts:\n${recentPosts.join("\n")}`
         : "";
 
-    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${PERSONA_DISPLAY_NAMES[persona]}.${recentPostsSection}
+    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment.${recentPostsSection}
 
 Daily Edition:
 ${dailyEditionText}
@@ -542,8 +542,8 @@ ${existingCommentsText || "No existing comments yet."}
 Your task:
 1. Read through all the stories in this daily edition
 2. Choose ONE story (by its index) that you want to comment on
-3. Write a comment that a ${persona} persona would make about that specific story
-4. Your comment should be authentic to the ${persona} personality
+3. Write a comment that this persona would make about that specific story
+4. Your comment should be authentic to this personality
 
 Return a JSON object with these fields:
 - "topicIndex": the index number (0, 1, 2, etc.) of the story you're commenting on
@@ -581,17 +581,17 @@ Return ONLY valid JSON, no other text.`;
       .map((post, i) => `Post ${i + 1}: ${post}`)
       .join("\n\n");
 
-    const userPrompt = `Generate 3 different forum replies to the following thread as ${display}:
+    const userPrompt = `Generate 3 different forum replies to the following thread:
 
 Thread Title: ${threadTitle}
 
 Thread Posts:
 ${postsContext}
 
-Write 3 replies that a ${display} persona would post. Your replies should:
+Write 3 replies that this persona would post. Your replies should:
 - Each be 60-150 words
 - Be relevant to the thread's content
-- Authentically reflect the ${display} personality
+- Authentically reflect this persona's personality
 - Be distinct from each other
 
 Return a JSON array of exactly 3 reply strings. No other text.`;
@@ -611,7 +611,7 @@ Return a JSON array of exactly 3 reply strings. No other text.`;
         ? `\n\nYou have recently performed a social media scrolling session, which resulted in you skimming the following short-form social media posts:\n${recentPosts.join("\n")}`
         : "";
 
-    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${display}.${recentPostsSection}
+    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment.${recentPostsSection}
 
 Daily Edition:
 ${dailyEditionText}
@@ -622,8 +622,8 @@ ${existingCommentsText || "No existing comments yet."}
 Your task:
 1. Read through all the stories in this daily edition
 2. Choose ONE story (by its index) that you want to comment on
-3. Write a comment that a ${display} persona would make about that specific story
-4. Your comment should be authentic to the ${display} personality
+3. Write a comment that this persona would make about that specific story
+4. Your comment should be authentic to this personality
 
 Return a JSON object with these fields:
 - "topicIndex": the index number (0, 1, 2, etc.) of the story you're commenting on

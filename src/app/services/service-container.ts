@@ -38,8 +38,8 @@ export class ServiceContainer {
       //   console.log("Using PostgreSQL data storage backend");
       //   this.dataStorageService = new PostgreSQLDataStorageService();
       // } else {
-        console.log("Using Redis data storage backend");
-        this.dataStorageService = new RedisDataStorageService();
+      console.log("Using Redis data storage backend");
+      this.dataStorageService = new RedisDataStorageService();
       // }
 
       await this.dataStorageService.connect();
