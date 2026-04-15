@@ -135,6 +135,9 @@ export class ServiceContainer {
 
   // Cleanup method for testing or shutdown
   async disconnect(): Promise<void> {
+    if (this.artifactQueueService) {
+      await this.artifactQueueService.close();
+    }
     if (this.dataStorageService) {
       await this.dataStorageService.disconnect();
     }

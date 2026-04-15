@@ -1,0 +1,16 @@
+[Unit]
+Description=Newsroom Worker
+After=network.target redis.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=u
+ExecStart=/home/u/.nvm/nvm-exec npx tsx src/app/workers/artifact.worker.ts
+Environment=NODE_VERSION=24.5.0 NODE_ENV=production
+WorkingDirectory=/home/u/agentic-newsroom-spec
+EnvironmentFile=/home/u/agentic-newsroom-spec/.env.local
+
+[Install]
+WantedBy=multi-user.target
