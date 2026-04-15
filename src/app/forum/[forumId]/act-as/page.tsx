@@ -120,9 +120,10 @@ export default function ActAsPage() {
         const errData = await res.json();
         throw new Error(errData.error || "Failed to post reply");
       }
+      const data = await res.json();
       setSuccess("Reply posted successfully!");
-      // Refresh options
-      setTimeout(() => fetchReplyOptions(selectedPersona), 1500);
+      // Redirect to thread
+      setTimeout(() => router.push(`/thread/${data.threadId}`), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to post reply");
     } finally {
@@ -206,9 +207,12 @@ export default function ActAsPage() {
           {replyOptions.map((option, idx) => (
             <ContentCard key={idx} className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-white">
+                <Link
+                  href={`/thread/${option.threadId}`}
+                  className="text-xl font-semibold text-white hover:text-white/90 transition-colors"
+                >
                   {option.threadTitle}
-                </h3>
+                </Link>
                 <span className="text-purple-300 text-sm font-medium">
                   {option.persona}
                 </span>
