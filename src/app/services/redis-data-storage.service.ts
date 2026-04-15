@@ -11,8 +11,10 @@ import {
   REDIS_KEYS,
   ForumSection,
   ForumThread,
-  ForumPost
+  ForumPost,
+  DynamicPersona
 } from "../schemas/types";
+import { CLASSIC_PERSONAS } from "./ai-prompts";
 import { IDataStorageService } from "./data-storage.interface";
 
 export class RedisDataStorageService implements IDataStorageService {
@@ -2121,5 +2123,25 @@ export class RedisDataStorageService implements IDataStorageService {
         freeMemory
       }
     };
+  }
+
+  async getDynamicPersonas(): Promise<DynamicPersona[] | null> {
+    const data = await this.client.get(REDIS_KEYS.PERSONAS_DYNAMIC_LATEST);
+    return data ? JSON.parse(data) : null;
+  }
+
+  async setDynamicPersonas(
+    personas: DynamicPersona[],
+    ttlHours = 24
+  ): Promise<void> {
+    await this.client.setEx(
+      REDIS_KEYS.PERSONAS_DYNAMIC_LATEST,
+      ttlHours * 3600,
+      JSON.stringify(personas)
+    );
+  }
+
+  async getClassicPersonas(): Promise<typeof CLASSIC_PERSONAS> {
+    return CLASSIC_PERSONAS;
   }
 }

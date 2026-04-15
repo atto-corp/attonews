@@ -7,78 +7,21 @@ import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 
-type Persona =
-  | "crypto_zealot"
-  | "loafy"
-  | "awoken"
-  | "american_business"
-  | "european_business"
-  | "silicon_sage"
-  | "geo_hawk"
-  | "space_visionary"
-  | "ai_doomsayer";
-
-const personas: Record<
-  Persona,
-  { title: string; description: string; color: string }
-> = {
-  crypto_zealot: {
-    title: "Crypto Zealot",
-    description: "Bitcoin maximalist for financial sovereignty",
-    color: "from-yellow-400 to-amber-600"
-  },
-  loafy: {
-    title: "Loafy",
-    description: "A casual, laid-back user with little commitment",
-    color: "from-amber-500 to-orange-600"
-  },
-  awoken: {
-    title: "Awoken",
-    description: "A user with strong convictions ready to share",
-    color: "from-purple-500 to-indigo-600"
-  },
-  american_business: {
-    title: "New Money",
-    description: "Pro-disruption, competition-focused entrepreneur",
-    color: "from-blue-500 to-cyan-600"
-  },
-  european_business: {
-    title: "Old Money",
-    description: "Pro-stability, continuity-focused traditionalist",
-    color: "from-slate-600 to-slate-800"
-  },
-  silicon_sage: {
-    title: "Silicon Sage",
-    description: "Superintelligent AI predicting tech/AI/space convergence",
-    color: "from-emerald-500 to-teal-600"
-  },
-  geo_hawk: {
-    title: "Geo Hawk",
-    description: "Hardened strategist on geopolitics/security threats",
-    color: "from-red-500 to-rose-600"
-  },
-  space_visionary: {
-    title: "Space Scaler",
-    description: "Visionary on space+AI scaling vs Earth limits",
-    color: "from-indigo-500 to-violet-600"
-  },
-  ai_doomsayer: {
-    title: "AI Doomsayer",
-    description: "Forecaster warning of AI existential risks",
-    color: "from-gray-900 to-slate-900"
-  }
-};
+interface ReplyOption {
+  threadId: number;
+  threadTitle: string;
+  replies: string[];
+  persona: string;
+}
 
 export default function ActAsPage() {
-  const [step, setStep] = useState<"persona" | "reply">("persona");
-  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
-  const [replyOptions, setReplyOptions] = useState<string[][]>([]);
-  const [threadIds, setThreadIds] = useState<number[]>([]);
-  const [threadTitles, setThreadTitles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasReader, setHasReader] = useState(false);
+  const [personas, setPersonas] = useState<string[]>([]);
+  const [selectedPersona, setSelectedPersona] = useState<string>("");
+  const [replyOptions, setReplyOptions] = useState<ReplyOption[]>([]);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
   const params = useParams();
   const forumId = params.forumId as string;
@@ -89,76 +32,79 @@ export default function ActAsPage() {
       router.push("/login");
       return;
     }
-    checkReaderPermission(token);
-  }, [router]);
+    fetchPersonas();
+  }, [router, forumId]);
 
-  const checkReaderPermission = async (token: string) => {
+  const fetchPersonas = async () => {
     try {
-      const response = await fetch("/api/abilities/reader", {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/personas", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (response.ok) {
-        const data = await response.json();
-        setHasReader(data.hasReader);
+      if (!res.ok) throw new Error("Failed to fetch personas");
+      const data = await res.json();
+      // Combine classic and dynamic personas for display
+      const allPersonas = [
+        ...Object.keys(data.classic || {}),
+        ...(Array.isArray(data.dynamic)
+          ? data.dynamic.map((p: any) => p.display)
+          : [])
+      ];
+      setPersonas(allPersonas);
+      if (allPersonas.length > 0) {
+        setSelectedPersona(allPersonas[0]);
+        fetchReplyOptions(allPersonas[0]);
+      } else {
+        setLoading(false);
       }
     } catch (err) {
-      console.error("Failed to check reader permission", err);
+      setError(err instanceof Error ? err.message : "Failed to load personas");
+      setLoading(false);
     }
   };
 
-  const handlePersonaSelect = async (persona: Persona) => {
-    setSelectedPersona(persona);
+  const fetchReplyOptions = async (personaKey: string) => {
     setLoading(true);
-    setStep("reply");
     setError(null);
-
+    setSuccess(null);
     try {
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const response = await fetch(
-        `/api/forum/${forumId}/act-as?persona=${persona}`,
+      const res = await fetch(
+        `/api/forum/${forumId}/act-as?persona=${encodeURIComponent(personaKey)}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to generate reply options");
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to generate replies");
       }
-
-      const data = await response.json();
-      setReplyOptions(data.replies || []);
-      setThreadIds(data.threadIds || []);
-      setThreadTitles(data.threadTitles || []);
-      setStep("reply");
+      const data = await res.json();
+      const formatted = data.threadTitles.map((title: string, i: number) => ({
+        threadId: data.threadIds ? data.threadIds[i] : i,
+        threadTitle: title,
+        replies: data.replies[i] || [],
+        persona: personaKey
+      }));
+      setReplyOptions(formatted);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to generate reply options"
       );
+      setReplyOptions([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReplySelect = async (replyText: string, threadIndex: number) => {
-    if (!selectedPersona) return;
-
+  const handlePostReply = async (threadId: number, replyText: string) => {
+    if (!selectedPersona || !replyText) return;
     setSubmitting(true);
     setError(null);
-
+    setSuccess(null);
     try {
       const token = localStorage.getItem("accessToken");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const response = await fetch(`/api/forum/${forumId}/act-as`, {
+      const res = await fetch(`/api/forum/${forumId}/act-as`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,68 +113,29 @@ export default function ActAsPage() {
         body: JSON.stringify({
           persona: selectedPersona,
           replyText,
-          threadIndex
+          threadIndex: replyOptions.findIndex((r) => r.threadId === threadId)
         })
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create post");
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to post reply");
       }
-
-      router.push(`/forum/${forumId}`);
+      setSuccess("Reply posted successfully!");
+      // Refresh options
+      setTimeout(() => fetchReplyOptions(selectedPersona), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create post");
+      setError(err instanceof Error ? err.message : "Failed to post reply");
+    } finally {
       setSubmitting(false);
     }
   };
 
-  const handleBack = () => {
-    if (step === "reply") {
-      setStep("persona");
-      setSelectedPersona(null);
-      setReplyOptions([]);
-      setThreadIds([]);
-      setThreadTitles([]);
-    }
-  };
-
-  const forumTitles: Record<string, string> = {
-    announcements: "Announcements",
-    general: "General",
-    suggestions: "Suggestions",
-    content: "Content",
-    sources: "Sources",
-    methods: "Methods",
-    history: "History",
-    prehistory: "Prehistory",
-    speculation: "Speculation",
-    music: "Music",
-    "movies-tv": "Movies & TV",
-    technology: "Technology",
-    politics: "Politics",
-    "the-internet": "The Internet"
-  };
-
-  const forumTitle = forumTitles[forumId] || forumId;
-
-  if (!hasReader) {
+  if (loading && personas.length === 0) {
     return (
       <PageContainer>
-        <ContentCard className="p-8">
-          <h2 className="text-xl font-semibold text-white/90 mb-2">
-            Permission Required
-          </h2>
-          <p className="text-white/70 mb-4">
-            You need reader permission to act as a forum user.
-          </p>
-          <Link
-            href={`/forum/${forumId}`}
-            className="text-blue-400 hover:text-blue-300"
-          >
-            ← Back to Forum
-          </Link>
-        </ContentCard>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
       </PageContainer>
     );
   }
@@ -237,142 +144,98 @@ export default function ActAsPage() {
     <PageContainer>
       <ContentCard className="p-8 mb-8">
         <PageHeader
-          title={step === "persona" ? "Act as Forum User" : "Choose a Reply"}
-          description={forumTitle}
+          title="Act as Forum User"
+          description="Generate authentic replies as different forum personas"
         >
-          <button
-            onClick={
-              step === "reply"
-                ? handleBack
-                : () => router.push(`/forum/${forumId}`)
-            }
+          <Link
+            href={`/forum/${forumId}`}
             className="relative px-6 py-3 backdrop-blur-sm bg-white/10 border border-white/20 rounded-xl font-medium text-white/90 hover:bg-white/20 transition-all duration-300"
           >
             ← Back to Forum
-          </button>
+          </Link>
         </PageHeader>
       </ContentCard>
 
-      {step === "persona" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(Object.keys(personas) as Persona[]).map((key) => {
-            const persona = personas[key];
-            return (
-              <button
-                key={key}
-                onClick={() => handlePersonaSelect(key)}
-                disabled={loading}
-                className="group text-left"
-              >
-                <ContentCard
-                  className={`p-8 h-full bg-gradient-to-br ${persona.color} border-0 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <div className="text-center">
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      {persona.title}
-                    </h3>
-                    <p className="text-white/80">{persona.description}</p>
-                  </div>
-                </ContentCard>
-              </button>
-            );
-          })}
+      <ContentCard className="p-6 mb-8">
+        <div className="flex items-center gap-4 mb-6">
+          <label className="text-white/80 font-medium">Select Persona:</label>
+          <select
+            value={selectedPersona}
+            onChange={(e) => {
+              setSelectedPersona(e.target.value);
+              fetchReplyOptions(e.target.value);
+            }}
+            className="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 focus:outline-none focus:border-purple-400"
+          >
+            {personas.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => fetchReplyOptions(selectedPersona)}
+            disabled={loading}
+            className="px-5 py-2 bg-purple-500/30 border border-purple-400/40 hover:bg-purple-500/50 text-white rounded-xl transition-colors disabled:opacity-50"
+          >
+            Refresh
+          </button>
         </div>
-      )}
-
-      {step === "reply" && loading && (
-        <ContentCard className="p-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-            <p className="mt-4 text-white/80">Generating reply options...</p>
-          </div>
-        </ContentCard>
-      )}
-
-      {step === "reply" && !loading && (
-        <div className="space-y-6">
-          <div className="text-center mb-8">
-            <span
-              className={`inline-block px-4 py-2 rounded-full bg-gradient-to-r ${personas[selectedPersona!].color} text-white font-medium`}
-            >
-              Acting as: {personas[selectedPersona!].title}
-            </span>
-          </div>
-
-          {replyOptions.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="p-4 text-left text-white/50 text-sm font-medium w-16">
-                      Reply Options
-                    </th>
-                    {threadTitles.map((title, idx) => (
-                      <th
-                        key={idx}
-                        className="p-4 text-left text-white/80 text-sm font-semibold bg-white/5 border-b border-white/10"
-                      >
-                        <div className="max-w-xs truncate" title={title}>
-                          {title}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[0, 1, 2].map((replyIndex) => (
-                    <tr key={replyIndex}>
-                      <td className="p-4 text-white/50 text-sm font-medium align-top">
-                        Option {replyIndex + 1}
-                      </td>
-                      {replyOptions.map((threadReplies, threadIdx) => (
-                        <td
-                          key={threadIdx}
-                          className="p-4 align-top border-b border-white/5"
-                        >
-                          <button
-                            onClick={() =>
-                              handleReplySelect(
-                                threadReplies[replyIndex],
-                                threadIdx
-                              )
-                            }
-                            disabled={submitting}
-                            className="w-full text-left group"
-                          >
-                            <ContentCard className="p-4 h-full border border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:border-white/40 disabled:opacity-50 disabled:cursor-not-allowed">
-                              <div className="text-white/90 whitespace-pre-wrap text-sm">
-                                {threadReplies[replyIndex] ||
-                                  "(No reply generated)"}
-                              </div>
-                              <div className="mt-2 text-xs text-white/50">
-                                {threadReplies[replyIndex]?.length || 0} chars
-                              </div>
-                            </ContentCard>
-                          </button>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {replyOptions.length === 0 && (
-            <ContentCard className="p-8">
-              <p className="text-center text-white/70">
-                No threads available in this forum to generate replies for.
-              </p>
-            </ContentCard>
-          )}
-        </div>
-      )}
+      </ContentCard>
 
       {error && (
         <ContentCard className="mt-6 p-4 bg-red-500/20 border border-red-500/30">
           <p className="text-red-200">{error}</p>
         </ContentCard>
+      )}
+
+      {success && (
+        <ContentCard className="mt-6 p-4 bg-green-500/20 border border-green-500/30">
+          <p className="text-green-200">{success}</p>
+        </ContentCard>
+      )}
+
+      {replyOptions.length === 0 && !loading && !error ? (
+        <ContentCard className="p-8">
+          <p className="text-center text-white/70">
+            No threads available in this forum to generate replies for.
+          </p>
+        </ContentCard>
+      ) : (
+        <div className="space-y-8">
+          {replyOptions.map((option, idx) => (
+            <ContentCard key={idx} className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white">
+                  {option.threadTitle}
+                </h3>
+                <span className="text-purple-300 text-sm font-medium">
+                  {option.persona}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {option.replies.map((reply, rIdx) => (
+                  <div
+                    key={rIdx}
+                    className="group bg-white/5 border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition-all"
+                  >
+                    <div className="text-white/90 text-[15px] leading-relaxed mb-4">
+                      {reply}
+                    </div>
+                    <button
+                      onClick={() => handlePostReply(option.threadId, reply)}
+                      disabled={submitting}
+                      className="text-xs px-6 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/50 text-white font-medium rounded-xl transition-all flex items-center gap-2"
+                    >
+                      {submitting ? "Posting..." : "Post as " + option.persona}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </ContentCard>
+          ))}
+        </div>
       )}
     </PageContainer>
   );

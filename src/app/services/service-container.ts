@@ -34,13 +34,13 @@ export class ServiceContainer {
       // Check environment variable to determine which storage backend to use
       const storageBackend = process.env.DATA_STORAGE_BACKEND || "redis";
 
-      if (storageBackend === "postgres" || storageBackend === "postgresql") {
-        console.log("Using PostgreSQL data storage backend");
-        this.dataStorageService = new PostgreSQLDataStorageService();
-      } else {
+      // if (storageBackend === "postgres" || storageBackend === "postgresql") {
+      //   console.log("Using PostgreSQL data storage backend");
+      //   this.dataStorageService = new PostgreSQLDataStorageService();
+      // } else {
         console.log("Using Redis data storage backend");
         this.dataStorageService = new RedisDataStorageService();
-      }
+      // }
 
       await this.dataStorageService.connect();
     }

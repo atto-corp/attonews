@@ -14,7 +14,9 @@ import {
 } from "../schemas/types";
 import { IDataStorageService } from "./data-storage.interface";
 
-export class PostgreSQLDataStorageService implements IDataStorageService {
+export class PostgreSQLDataStorageService
+//  implements IDataStorageService 
+{
   private pool: Pool;
 
   constructor() {

@@ -9,6 +9,7 @@ import { AIService } from "./ai.service";
 import { ReporterService } from "./reporter.service";
 import { PERSONA_DISPLAY_NAMES } from "./ai-prompts";
 import { fetchLatestMessages } from "./bluesky.service";
+import { ServiceContainer } from "./service-container";
 
 export type JobType =
   | "reporter"
@@ -300,7 +301,7 @@ export class EditorService {
     }
 
     const newComment = {
-      author: PERSONA_DISPLAY_NAMES[result.persona],
+      author: result.persona,
       content: result.commentText,
       createdAt: currentTime,
       persona: result.persona
@@ -522,6 +523,17 @@ export class EditorService {
         console.log(
           `[${new Date().toISOString()}] Successfully generated daily edition ${dailyEdition.id}`
         );
+
+        // Generate dynamic personas
+        const editionText = `${dailyEdition.frontPageArticle}\n${dailyEdition.topics.map((t) => t.headline + "\n" + t.newsStoryFirstParagraph).join("\n")}`;
+        const aiService = await ServiceContainer.getInstance().getAIService();
+        const dynamicPersonas =
+          await aiService.generateDynamicPersonas(editionText);
+        await this.dataStorageService.setDynamicPersonas(dynamicPersonas, 24); // TTL 24 hours
+        console.log(
+          `[${new Date().toISOString()}] Generated ${dynamicPersonas.length} dynamic personas`
+        );
+
         return {
           message: `Daily edition generation job completed successfully. Created edition ${dailyEdition.id} with ${dailyEdition.editions.length} newspaper editions.`,
           jobType

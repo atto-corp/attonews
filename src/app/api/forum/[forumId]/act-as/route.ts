@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "../../../../utils/auth";
 import { ServiceContainer } from "../../../../services/service-container";
-import { PERSONA_DISPLAY_NAMES } from "../../../../services/ai-prompts";
-import { Persona } from "../../../../schemas/types";
-
-const validPersonas = Object.keys(PERSONA_DISPLAY_NAMES) as Persona[];
 
 export const GET = withAuth(
   async (
@@ -15,13 +11,11 @@ export const GET = withAuth(
   ): Promise<NextResponse> => {
     const { forumId } = await params;
     const { searchParams } = new URL(request.url);
-    const persona = searchParams.get("persona") as Persona | null;
+    const personaKey = searchParams.get("persona") as string | null;
 
-    if (!persona || !validPersonas.includes(persona)) {
+    if (!personaKey) {
       return NextResponse.json(
-        {
-          error: `Invalid persona. Must be one of: ${validPersonas.join(", ")}`
-        },
+        { error: "persona parameter is required" },
         { status: 400 }
       );
     }
@@ -30,15 +24,23 @@ export const GET = withAuth(
       const container = ServiceContainer.getInstance();
       const aiService = await container.getAIService();
 
+      const personaData = await aiService.getPersona(personaKey);
+      if (!personaData) {
+        return NextResponse.json(
+          { error: `Persona ${personaKey} not found` },
+          { status: 400 }
+        );
+      }
+
       const result = await aiService.generateThreadReplyOptions(
         forumId,
-        persona
+        personaKey
       );
 
       return NextResponse.json({
         replies: result.replies,
         threadTitles: result.threadTitles,
-        persona
+        personaKey
       });
     } catch (error) {
       console.error("Error generating thread reply options:", error);
@@ -67,13 +69,14 @@ export const POST = withAuth(
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { persona: rawPersona, replyText } = body;
+    const { persona: personaKey, replyText } = body;
 
-    if (!rawPersona || !validPersonas.includes(rawPersona as Persona)) {
-      return NextResponse.json({ error: "Invalid persona" }, { status: 400 });
+    if (!personaKey) {
+      return NextResponse.json(
+        { error: "persona is required" },
+        { status: 400 }
+      );
     }
-
-    const persona = rawPersona as Persona;
 
     if (!replyText || typeof replyText !== "string") {
       return NextResponse.json(
@@ -90,6 +93,16 @@ export const POST = withAuth(
     }
 
     try {
+      const container = ServiceContainer.getInstance();
+      const aiService = await container.getAIService();
+      const personaData = await aiService.getPersona(personaKey);
+      if (!personaData) {
+        return NextResponse.json(
+          { error: `Persona ${personaKey} not found` },
+          { status: 400 }
+        );
+      }
+
       const threads = await dataStorage.getForumThreads(forumId, 0, 3);
 
       if (threads.length === 0) {
@@ -101,7 +114,7 @@ export const POST = withAuth(
 
       const threadIndex = body.threadIndex ?? 0;
       const threadId = threads[threadIndex]?.id || threads[0].id;
-      const author = PERSONA_DISPLAY_NAMES[persona];
+      const author = personaData.display;
 
       const result = await dataStorage.createPost(threadId, replyText, author);
 

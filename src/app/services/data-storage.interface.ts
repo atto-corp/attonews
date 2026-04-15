@@ -9,8 +9,10 @@ import {
   User,
   ForumSection,
   ForumThread,
-  ForumPost
+  ForumPost,
+  DynamicPersona
 } from "../schemas/types";
+import { CLASSIC_PERSONAS } from "./ai-prompts";
 
 export interface IDataStorageService {
   // Connection management
@@ -132,4 +134,12 @@ export interface IDataStorageService {
     redis: { usedMemory: number; usedMemoryPeak: number };
     system: { totalMemory: number; usedMemory: number; freeMemory: number };
   }>;
+
+  // Persona operations
+  getDynamicPersonas(): Promise<DynamicPersona[] | null>;
+  setDynamicPersonas(
+    personas: DynamicPersona[],
+    ttlHours?: number
+  ): Promise<void>;
+  getClassicPersonas(): Promise<typeof CLASSIC_PERSONAS>;
 }

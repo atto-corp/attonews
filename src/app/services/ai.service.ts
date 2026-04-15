@@ -3,7 +3,8 @@ import {
   Article,
   Event,
   ArticleGenerationMetadata,
-  EventGenerationMetadata
+  EventGenerationMetadata,
+  DynamicPersona
 } from "../schemas/types";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
@@ -20,7 +21,11 @@ import {
 import { IDataStorageService } from "./data-storage.interface";
 import { KpiService } from "./kpi.service";
 import { fetchLatestMessages } from "./bluesky.service";
-import { AIPrompts, PERSONA_DISPLAY_NAMES } from "./ai-prompts";
+import {
+  AIPrompts,
+  PERSONA_DISPLAY_NAMES,
+  PERSONA_SYSTEM_PROMPTS
+} from "./ai-prompts";
 import { Persona } from "../schemas/types";
 import { AIResponseUtils } from "./ai-response-utils";
 import { AIClient } from "./ai-client";
@@ -790,7 +795,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
   async generateThreadReplyOptions(
     forumId: string,
-    persona: Persona,
+    personaKey: string,
     modelName?: string
   ): Promise<{
     replies: string[][];
@@ -799,6 +804,11 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     fullPrompt: string;
     modelName: string;
   }> {
+    const personaData = await this.getPersona(personaKey);
+    if (!personaData) {
+      throw new Error(`Persona ${personaKey} not found`);
+    }
+
     // Fetch editor for model name
     let editor;
     try {
@@ -839,8 +849,9 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         const selectedPosts = [...first10, ...last15];
 
         const { systemPrompt, userPrompt } =
-          AIPrompts.generateThreadReplyPrompts(
-            persona,
+          AIPrompts.generateGenericThreadReplyPrompts(
+            personaData.system_prompt,
+            personaData.display,
             thread.title,
             selectedPosts
           );
@@ -933,7 +944,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     recentPosts?: string[]
   ): Promise<{
     topicIndex: number;
-    persona: Persona;
+    persona: string;
     commentText: string;
     fullPrompt: string;
     modelName: string;
@@ -948,29 +959,46 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     }
 
     try {
-      const personas: Persona[] = Object.keys(
-        PERSONA_DISPLAY_NAMES
-      ) as Persona[];
-      const randomPersona =
-        personas[Math.floor(Math.random() * personas.length)];
+      let persona: { system_prompt: string; display: string };
+      const dynamicPersonas =
+        await this.dataStorageService.getDynamicPersonas();
+      if (
+        dynamicPersonas &&
+        dynamicPersonas.length > 0 &&
+        Math.random() < 0.7
+      ) {
+        persona =
+          dynamicPersonas[Math.floor(Math.random() * dynamicPersonas.length)];
+        console.log(`Using dynamic persona: ${persona.display}`);
+      } else {
+        const personas: Persona[] = Object.keys(
+          PERSONA_DISPLAY_NAMES
+        ) as Persona[];
+        const randomPersona =
+          personas[Math.floor(Math.random() * personas.length)];
+        persona = {
+          system_prompt: PERSONA_SYSTEM_PROMPTS[randomPersona],
+          display: PERSONA_DISPLAY_NAMES[randomPersona]
+        };
+        console.log(`Using classic persona: ${randomPersona}`);
+      }
 
       const existingCommentsText = existingComments
         .map((c) => `- ${c.author}: ${c.content}`)
         .join("\n");
 
-      const { systemPrompt, userPrompt } = AIPrompts.generateCommentPrompts(
-        randomPersona,
-        dailyEditionText,
-        existingCommentsText,
-        recentPosts
-      );
+      const { systemPrompt, userPrompt } =
+        AIPrompts.generateCommentPromptsGeneric(
+          persona.system_prompt,
+          persona.display,
+          dailyEditionText,
+          existingCommentsText,
+          recentPosts
+        );
 
       const fullPrompt = `System: ${systemPrompt}\n\nUser: ${userPrompt}`;
 
       const model = modelName || editor!.modelName;
-      console.log(
-        `Generating comment for daily edition with persona: ${randomPersona}, model: ${model}`
-      );
 
       const response = await this.aiClient.getClient().chat.completions.create({
         model,
@@ -996,7 +1024,7 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
 
       return {
         topicIndex: parsed.topicIndex,
-        persona: randomPersona,
+        persona: persona.display,
         commentText: parsed.comment,
         fullPrompt,
         modelName: model
@@ -1010,5 +1038,47 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
       );
       return null;
     }
+  }
+
+  async getPersona(
+    personaKey: string
+  ): Promise<{ system_prompt: string; display: string } | null> {
+    const classicPersonas = await this.dataStorageService.getClassicPersonas();
+    if (classicPersonas[personaKey as Persona]) {
+      return {
+        system_prompt: PERSONA_SYSTEM_PROMPTS[personaKey as Persona],
+        display: classicPersonas[personaKey as Persona].display
+      };
+    }
+    const dynamicPersonas = await this.dataStorageService.getDynamicPersonas();
+    const dynamic = dynamicPersonas?.find((p) => p.display === personaKey);
+    if (dynamic) {
+      return {
+        system_prompt: dynamic.system_prompt,
+        display: dynamic.display
+      };
+    }
+    return null;
+  }
+
+  async generateDynamicPersonas(
+    editionText: string
+  ): Promise<DynamicPersona[]> {
+    console.log("Generating dynamic personas for edition");
+    const { systemPrompt, userPrompt } =
+      AIPrompts.generateDynamicPersonasPrompts(editionText);
+    const model = "gpt-5-nano"; // or from editor
+    const response = await this.aiClient.getClient().chat.completions.create({
+      model,
+      reasoning_effort: "minimal",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ]
+    });
+    const content = response.choices[0].message.content;
+    if (!content) throw new Error("No response from AI for personas");
+    const personas = JSON.parse(content) as DynamicPersona[];
+    return personas;
   }
 }

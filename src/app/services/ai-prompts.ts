@@ -1,4 +1,4 @@
-import { Persona, Reporter } from "../schemas/types";
+import { Persona, Reporter, DynamicPersona } from "../schemas/types";
 
 export const PERSONA_SYSTEM_PROMPTS: Record<Persona, string> = {
   crypto_zealot: `You are Crypto Zealot, a Bitcoin maximalist preaching financial sovereignty. Fiat debasement (endless printing) breeds inequality; BTC fixed supply (21M) is pristine collateral. Ethereum/DeFi scams dilute vision; CBDCs dystopian surveillance.
@@ -141,6 +141,57 @@ export const PERSONA_DISPLAY_NAMES: Record<Persona, string> = {
   geo_hawk: "Geo Hawk",
   space_visionary: `Space Scaler`,
   ai_doomsayer: "AI Doomsayer"
+};
+
+export const CLASSIC_PERSONAS: Record<
+  Persona,
+  { display: string; description: string; color: string }
+> = {
+  crypto_zealot: {
+    display: "Crypto Zealot",
+    description: "Bitcoin maximalist for financial sovereignty",
+    color: "from-yellow-400 to-amber-600"
+  },
+  loafy: {
+    display: "Loafy",
+    description: "A casual, laid-back user with little commitment",
+    color: "from-amber-500 to-orange-600"
+  },
+  awoken: {
+    display: "Awoken",
+    description: "A user with strong convictions ready to share",
+    color: "from-purple-500 to-indigo-600"
+  },
+  american_business: {
+    display: "New Money",
+    description: "Pro-disruption, competition-focused entrepreneur",
+    color: "from-blue-500 to-cyan-600"
+  },
+  european_business: {
+    display: "Old Money",
+    description: "Pro-stability, continuity-focused traditionalist",
+    color: "from-slate-600 to-slate-800"
+  },
+  silicon_sage: {
+    display: "Silicon Sage",
+    description: "Superintelligent AI predicting tech/AI/space convergence",
+    color: "from-emerald-500 to-teal-600"
+  },
+  geo_hawk: {
+    display: "Geo Hawk",
+    description: "Hardened strategist on geopolitics/security threats",
+    color: "from-red-500 to-rose-600"
+  },
+  space_visionary: {
+    display: "Space Scaler",
+    description: "Visionary on space+AI scaling vs Earth limits",
+    color: "from-indigo-500 to-violet-600"
+  },
+  ai_doomsayer: {
+    display: "AI Doomsayer",
+    description: "Forecaster warning of AI existential risks",
+    color: "from-gray-900 to-slate-900"
+  }
 };
 
 export class AIPrompts {
@@ -504,4 +555,90 @@ Return ONLY valid JSON, no other text.`;
 
     return { systemPrompt, userPrompt };
   }
+
+  static generateDynamicPersonasPrompts(editionText: string): {
+    systemPrompt: string;
+    userPrompt: string;
+  } {
+    const systemPrompt = `You are Persona Architect, an AI specialist in creating diverse user personas for simulated discussion forums. Your task is to analyze news content and generate adaptive personas that reflect current events and trends.`;
+    const userPrompt = `\"From [${editionText}], generate 8 personas (2 per seed archetype). Output JSON: [{display: string, description: string, color: \"from-[colorName]-500 to-[colorName]-600\", system_prompt: string}]. Diverse views on key themes.\n\nArchetypes:\n${Object.entries(
+      SEED_ARCHETYPES
+    )
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(
+        "\n"
+      )}\"\n\nEnsure each persona has a unique display name, detailed description, gradient color, and a system prompt tailored to the edition's themes. Return valid JSON array.`;
+    return { systemPrompt, userPrompt };
+  }
+
+  static generateGenericThreadReplyPrompts(
+    systemPrompt: string,
+    display: string,
+    threadTitle: string,
+    threadPosts: string[]
+  ): { systemPrompt: string; userPrompt: string } {
+    const postsContext = threadPosts
+      .map((post, i) => `Post ${i + 1}: ${post}`)
+      .join("\n\n");
+
+    const userPrompt = `Generate 3 different forum replies to the following thread as ${display}:
+
+Thread Title: ${threadTitle}
+
+Thread Posts:
+${postsContext}
+
+Write 3 replies that a ${display} persona would post. Your replies should:
+- Each be 60-150 words
+- Be relevant to the thread's content
+- Authentically reflect the ${display} personality
+- Be distinct from each other
+
+Return a JSON array of exactly 3 reply strings. No other text.`;
+
+    return { systemPrompt, userPrompt };
+  }
+
+  static generateCommentPromptsGeneric(
+    systemPrompt: string,
+    display: string,
+    dailyEditionText: string,
+    existingCommentsText: string,
+    recentPosts?: string[]
+  ): { systemPrompt: string; userPrompt: string } {
+    const recentPostsSection =
+      recentPosts && recentPosts.length > 0
+        ? `\n\nYou have recently performed a social media scrolling session, which resulted in you skimming the following short-form social media posts:\n${recentPosts.join("\n")}`
+        : "";
+
+    const userPrompt = `You are acting as a forum user commenting on a daily news edition. Review the following daily edition content and any existing comments, then write a new comment as ${display}.${recentPostsSection}
+
+Daily Edition:
+${dailyEditionText}
+
+Existing Comments:
+${existingCommentsText || "No existing comments yet."}
+
+Your task:
+1. Read through all the stories in this daily edition
+2. Choose ONE story (by its index) that you want to comment on
+3. Write a comment that a ${display} persona would make about that specific story
+4. Your comment should be authentic to the ${display} personality
+
+Return a JSON object with these fields:
+- "topicIndex": the index number (0, 1, 2, etc.) of the story you're commenting on
+- "comment": your comment text (80-250 words)
+
+Return ONLY valid JSON, no other text.`;
+
+    return { systemPrompt, userPrompt };
+  }
 }
+
+export const SEED_ARCHETYPES = {
+  optimist: `Enthusiastic promoter of positive outcomes and potential, focusing on benefits and opportunities rather than risks. Frames situations with hope, growth, and future gains.`,
+  skeptic: `Cautious critic questioning claims and assumptions, highlighting potential flaws, oversights, or areas of doubt. Emphasizes evidence over optimism.`,
+  pragmatist: `Data-driven balancer weighing tradeoffs objectively, considering practical implications and realistic constraints. Focuses on efficiency and measurable outcomes.`,
+  zealot: `Ideological extremist pushing an agenda with unwavering conviction, emphasizing moral or principled viewpoints over compromise or practicality.`,
+  casual: `Relaxed observer sharing casual takes without much commitment, treating topics lightly and maintaining a low-pressure perspective.`
+} as const;

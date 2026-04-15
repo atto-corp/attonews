@@ -80,7 +80,7 @@ export interface DailyEditionComment {
   author: string;
   content: string;
   createdAt: number;
-  persona: Persona;
+  persona: string;
 }
 
 export interface DailyEdition {
@@ -283,7 +283,10 @@ export const REDIS_KEYS = {
     `forum:thread:${threadId}:post:${postId}`,
   FORUM_COUNTER: (forumId: string) => `forum:${forumId}:counter`,
   FORUM_NEXT_THREAD_ID: "forum:next_thread_id",
-  FORUM_NEXT_POST_ID: "forum:next_post_id"
+  FORUM_NEXT_POST_ID: "forum:next_post_id",
+  // Personas
+  PERSONAS_CLASSIC: "personas:classic",
+  PERSONAS_DYNAMIC_LATEST: "personas:dynamic:latest"
 } as const;
 
 export interface ForumPost {
@@ -336,4 +339,11 @@ export interface RedisDailyEditionData {
   id: string;
   editions: string[];
   time: number;
+}
+
+export interface DynamicPersona {
+  display: string;
+  description: string;
+  color: string;
+  system_prompt: string;
 }
