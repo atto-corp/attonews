@@ -6,6 +6,7 @@ import Link from "next/link";
 import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
+import { apiService } from "../services/api.service";
 
 interface LatestThread {
   id: number;
@@ -58,11 +59,7 @@ export default function ForumPage() {
 
   const fetchForumData = async () => {
     try {
-      const response = await fetch("/api/forum");
-      if (!response.ok) {
-        throw new Error("Failed to fetch forum data");
-      }
-      const data = await response.json();
+      const data = await apiService.get<Section[]>("/api/forum");
       setSections(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load forum");

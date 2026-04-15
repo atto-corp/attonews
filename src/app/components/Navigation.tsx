@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { apiService } from "../services/api.service";
 
 interface User {
   id: string;
@@ -41,16 +42,8 @@ export default function Navigation({ appFullName }: NavigationProps) {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      }
+      const data = await apiService.get<{ user: User }>("/api/auth/verify");
+      setUser(data.user);
     } catch (error) {
       console.error("Auth check failed:", error);
     } finally {

@@ -6,6 +6,7 @@ import PageContainer from "../../components/PageContainer";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import PageHeader from "../../components/PageHeader";
 import EmptyState from "../../components/EmptyState";
+import { apiService } from "../services/api.service";
 
 interface Article {
   id: string;
@@ -39,11 +40,10 @@ export default function EditionsPage() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-        }
+        const config = await apiService.get<{ app: { name: string } }>(
+          "/api/config"
+        );
+        setAppName(config.app.name);
       } catch (error) {
         console.error("Failed to load config:", error);
       }
@@ -53,20 +53,20 @@ export default function EditionsPage() {
 
   const fetchEditions = async () => {
     try {
-      const response = await fetch("/api/editions/latest");
-      if (response.ok) {
-        const editionsData = await response.json();
+      const editionsData = await apiService.get<NewspaperEdition[]>(
+        "/api/editions/latest"
+      );
 
-        const fullEditions = await Promise.all(
-          editionsData.map((edition: NewspaperEdition) =>
-            fetch(`/api/editions/${edition.id}`).then((res) => res.json())
-          )
-        );
+      const fullEditions = await Promise.all(
+        editionsData.map(
+          async (edition: NewspaperEdition) =>
+            await apiService.get<NewspaperEdition>(
+              `/api/editions/${edition.id}`
+            )
+        )
+      );
 
-        setEditions(fullEditions);
-      } else {
-        setMessage("Failed to load newspaper editions");
-      }
+      setEditions(fullEditions);
     } catch (error) {
       setMessage("Error loading newspaper editions");
       console.error("Error fetching newspaper editions:", error);
@@ -78,11 +78,10 @@ export default function EditionsPage() {
   const fetchEditionWithArticles = async (editionId: string) => {
     setLoadingArticles(editionId);
     try {
-      const response = await fetch(`/api/editions/${editionId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setEditions((prev) => prev.map((e) => (e.id === editionId ? data : e)));
-      }
+      const data = await apiService.get<NewspaperEdition>(
+        `/api/editions/${editionId}`
+      );
+      setEditions((prev) => prev.map((e) => (e.id === editionId ? data : e)));
     } catch (error) {
       console.error("Error fetching edition articles:", error);
     } finally {

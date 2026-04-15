@@ -54,7 +54,7 @@
 //       generated_at: null
 //     }
 //   };
-  
+
 //   // Demo edition artifact
 //   const editionArtifact = {
 //     id: await dataStorage.generateId('artifact'),

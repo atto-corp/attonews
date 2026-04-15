@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Event } from "../schemas/types";
+import { apiService } from "@/app/services/api.service";
 
 interface SafeEvent {
   id: string;
@@ -42,11 +43,8 @@ export default function EventsPage() {
 
   const fetchPublicEvents = async () => {
     try {
-      const response = await fetch("/api/events/public");
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
-      }
-      const eventsData = await response.json();
+      const eventsData =
+        await apiService.get<SafeEvent[]>("/api/events/public");
       setPublicEvents(eventsData || []);
     } catch (err) {
       console.error("Error fetching public events:", err);
@@ -62,20 +60,12 @@ export default function EventsPage() {
         return;
       }
 
-      const userResponse = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const userData = await apiService.get<{ user: User }>("/api/auth/verify");
+      setCurrentUser(userData.user);
+      setIsAdmin(userData.user.role === "admin");
 
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setCurrentUser(userData.user);
-        setIsAdmin(userData.user.role === "admin");
-
-        if (userData.user.role === "admin") {
-          await fetchAdminEvents(token);
-        }
+      if (userData.user.role === "admin") {
+        await fetchAdminEvents(token);
       }
     } catch (err) {
       console.error("Auth check failed:", err);
@@ -87,17 +77,9 @@ export default function EventsPage() {
   const fetchAdminEvents = async (token: string) => {
     try {
       setAdminLoading(true);
-      const eventsResponse = await fetch("/api/events", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!eventsResponse.ok) {
-        throw new Error("Failed to fetch admin events");
-      }
-
-      const eventsData = await eventsResponse.json();
+      const eventsData = await apiService.get<{ events: Event[] }>(
+        "/api/events"
+      );
       setAdminEvents(eventsData.events || []);
     } catch (err) {
       setError(
@@ -129,17 +111,7 @@ export default function EventsPage() {
         return;
       }
 
-      const response = await fetch("/api/events/generate", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate events");
-      }
+      await apiService.post("/api/events/generate");
 
       // Refresh both public and admin events
       await fetchPublicEvents();
@@ -163,19 +135,9 @@ export default function EventsPage() {
         return;
       }
 
-      const response = await fetch("/api/articles/generate-from-events", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate articles from events");
-      }
-
-      const result = await response.json();
+      const result = await apiService.post(
+        "/api/articles/generate-from-events"
+      );
       console.log("Articles generated from events:", result);
 
       // Refresh events (articles are generated from events, so events remain the same)

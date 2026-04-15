@@ -7,6 +7,7 @@ import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 import FormInput from "@/components/FormInput";
+import { apiService } from "@/app/services/api.service";
 
 export default function NewThreadPage() {
   const [subject, setSubject] = useState("");
@@ -29,13 +30,10 @@ export default function NewThreadPage() {
 
   const checkReaderPermission = async (token: string) => {
     try {
-      const response = await fetch("/api/abilities/reader", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setHasReader(data.hasReader);
-      }
+      const data = await apiService.get<{ hasReader: boolean }>(
+        "/api/abilities/reader"
+      );
+      setHasReader(data.hasReader);
     } catch (err) {
       console.error("Failed to check reader permission", err);
     }
@@ -49,30 +47,13 @@ export default function NewThreadPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const response = await fetch(`/api/forum/${forumId}/thread`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ title: subject, content: body })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to create thread");
-      }
-
-      const data = await response.json();
+      const data = await apiService.post<{ threadId: number }>(
+        `/api/forum/${forumId}/thread`,
+        { title: subject, content: body }
+      );
       router.push(`/thread/${data.threadId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create thread");
+    } catch (err: any) {
+      setError(err.message || "Failed to create thread");
       setSubmitting(false);
     }
   };

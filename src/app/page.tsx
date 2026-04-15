@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { apiService } from "@/app/services/api.service";
 
 interface DailyEditionComment {
   author: string;
@@ -75,12 +76,11 @@ export default function Home() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-          setAppFullName(config.app.fullName);
-        }
+        const config = await apiService.get<{
+          app: { name: string; fullName: string };
+        }>("/api/config");
+        setAppName(config.app.name);
+        setAppFullName(config.app.fullName);
       } catch (error) {
         console.error("Failed to load config:", error);
       }
@@ -96,16 +96,8 @@ export default function Home() {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      }
+      const data = await apiService.get<{ user: User }>("/api/auth/verify");
+      setUser(data.user);
     } catch (error) {
       console.error("Auth check failed:", error);
     } finally {
@@ -115,16 +107,11 @@ export default function Home() {
 
   const fetchDailyEditions = async () => {
     try {
-      const response = await fetch("/api/daily-editions");
-      if (response.ok) {
-        const data = await response.json();
-        setDailyEditions(data);
-        // Auto-select the latest edition if available
-        if (data.length > 0) {
-          setSelectedEdition(data[0]);
-        }
-      } else {
-        setMessage("Failed to load daily editions");
+      const data = await apiService.get<DailyEdition[]>("/api/daily-editions");
+      setDailyEditions(data);
+      // Auto-select the latest edition if available
+      if (data.length > 0) {
+        setSelectedEdition(data[0]);
       }
     } catch (error) {
       setMessage("Error loading daily editions");

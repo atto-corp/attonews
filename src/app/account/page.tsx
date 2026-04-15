@@ -8,6 +8,7 @@ import ContentCard from "../../components/ContentCard";
 import PageHeader from "../../components/PageHeader";
 import GradientButton from "../../components/GradientButton";
 import FormInput from "../../components/FormInput";
+import { apiService } from "../services/api.service";
 
 interface User {
   id: string;
@@ -43,22 +44,12 @@ export default function AccountPage() {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        // Load existing account info (placeholder - would come from API)
-        loadAccountInfo();
-        // Load abilities
-        loadAbilities();
-      } else {
-        router.push("/login");
-      }
+      const data = await apiService.get<{ user: User }>("/api/auth/verify");
+      setUser(data.user);
+      // Load existing account info (placeholder - would come from API)
+      loadAccountInfo();
+      // Load abilities
+      loadAbilities();
     } catch (error) {
       console.error("Auth check failed:", error);
       router.push("/login");
@@ -83,42 +74,15 @@ export default function AccountPage() {
 
   const loadAbilities = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
+      const [readerData, reporterData, editorData] = await Promise.all([
+        apiService.get<{ hasReader: boolean }>("/api/abilities/reader"),
+        apiService.get<{ hasReporter: boolean }>("/api/abilities/reporter"),
+        apiService.get<{ hasEditor: boolean }>("/api/abilities/editor")
+      ]);
 
-      const [readerResponse, reporterResponse, editorResponse] =
-        await Promise.all([
-          fetch("/api/abilities/reader", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }),
-          fetch("/api/abilities/reporter", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }),
-          fetch("/api/abilities/editor", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          })
-        ]);
-
-      if (readerResponse.ok) {
-        const readerData = await readerResponse.json();
-        setHasReader(readerData.hasReader);
-      }
-
-      if (reporterResponse.ok) {
-        const reporterData = await reporterResponse.json();
-        setHasReporter(reporterData.hasReporter);
-      }
-
-      if (editorResponse.ok) {
-        const editorData = await editorResponse.json();
-        setHasEditor(editorData.hasEditor);
-      }
+      setHasReader(readerData.hasReader);
+      setHasReporter(reporterData.hasReporter);
+      setHasEditor(editorData.hasEditor);
     } catch {
       console.error("Failed to load abilities");
     }

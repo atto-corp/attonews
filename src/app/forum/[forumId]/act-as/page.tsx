@@ -6,6 +6,7 @@ import Link from "next/link";
 import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
+import { apiService } from "@/app/services/api.service";
 
 interface ReplyOption {
   threadId: number;
@@ -46,12 +47,10 @@ export default function ActAsPage() {
 
   const fetchPersonas = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch("/api/personas", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error("Failed to fetch personas");
-      const data = await res.json();
+      const data = await apiService.get<{
+        classic: Record<string, any>;
+        dynamic: any[];
+      }>("/api/personas");
       const classicPersonas = Object.entries(data.classic || {}).map(
         ([key, val]: [string, any]) => ({
           key,
@@ -89,18 +88,13 @@ export default function ActAsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(
-        `/api/forum/${forumId}/act-as?persona=${encodeURIComponent(personaKey)}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      const data = await apiService.get<{
+        threadTitles: string[];
+        threadIds?: number[];
+        replies: string[][];
+      }>(
+        `/api/forum/${forumId}/act-as?persona=${encodeURIComponent(personaKey)}`
       );
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to generate replies");
-      }
-      const data = await res.json();
       const personaInfo = personas.find(
         (p: PersonaInfo) => p.key === personaKey
       );
@@ -113,10 +107,8 @@ export default function ActAsPage() {
         personaDisplay: display
       }));
       setReplyOptions(formatted);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to generate reply options"
-      );
+    } catch (err: any) {
+      setError(err.message || "Failed to generate reply options");
       setReplyOptions([]);
     } finally {
       setLoading(false);
@@ -129,29 +121,19 @@ export default function ActAsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`/api/forum/${forumId}/act-as`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
+      const data = await apiService.post<{ threadId: number }>(
+        `/api/forum/${forumId}/act-as`,
+        {
           persona: selectedPersonaKey,
           replyText,
           threadIndex: replyOptions.findIndex((r) => r.threadId === threadId)
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to post reply");
-      }
-      const data = await res.json();
+        }
+      );
       setSuccess("Reply posted successfully!");
       // Redirect to thread
       setTimeout(() => router.push(`/thread/${data.threadId}`), 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to post reply");
+    } catch (err: any) {
+      setError(err.message || "Failed to post reply");
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { apiService } from "@/app/services/api.service";
 
 interface User {
   id: string;
@@ -28,16 +29,8 @@ export default function PricingPage() {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      }
+      const data = await apiService.get<{ user: User }>("/api/auth/verify");
+      setUser(data.user);
     } catch (error) {
       console.error("Auth check failed:", error);
     } finally {

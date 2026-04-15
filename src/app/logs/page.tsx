@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "../schemas/types";
+import { apiService } from "@/app/services/api.service";
 
 interface LogsResponse {
   logs: string[];
@@ -27,19 +28,7 @@ export default function LogsPage() {
         return;
       }
 
-      const userResponse = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        setError("Authentication failed");
-        setLoading(false);
-        return;
-      }
-
-      const userData = await userResponse.json();
+      const userData = await apiService.get<{ user: User }>("/api/auth/verify");
       setCurrentUser(userData.user);
 
       if (userData.user.role !== "admin") {
@@ -48,17 +37,7 @@ export default function LogsPage() {
         return;
       }
 
-      const logsResponse = await fetch("/api/logs/latest", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!logsResponse.ok) {
-        throw new Error("Failed to fetch logs");
-      }
-
-      const logsData = await logsResponse.json();
+      const logsData = await apiService.get<LogsResponse>("/api/logs/latest");
       setData(logsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

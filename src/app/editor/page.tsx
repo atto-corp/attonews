@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { KpiName } from "../schemas/types";
+import { apiService } from "../services/api.service";
 
 interface EditorData {
   bio: string;
@@ -98,11 +99,10 @@ export default function EditorPage() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-        }
+        const config = await apiService.get<{ app: { name: string } }>(
+          "/api/config"
+        );
+        setAppName(config.app.name);
       } catch (error) {
         console.error("Failed to load config:", error);
       }
@@ -118,18 +118,10 @@ export default function EditorPage() {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsAdmin(data.user.role === "admin");
-      } else {
-        setIsAdmin(false);
-      }
+      const data = await apiService.get<{ user: { role: string } }>(
+        "/api/auth/verify"
+      );
+      setIsAdmin(data.user.role === "admin");
     } catch (error) {
       console.error("Error checking admin status:", error);
       setIsAdmin(false);
@@ -138,13 +130,8 @@ export default function EditorPage() {
 
   const fetchEditorData = async () => {
     try {
-      const response = await fetch("/api/editor");
-      if (response.ok) {
-        const data = await response.json();
-        setEditorData(data);
-      } else {
-        setMessage("Failed to load editor data");
-      }
+      const data = await apiService.get<EditorData>("/api/editor");
+      setEditorData(data);
     } catch (error) {
       setMessage("Error loading editor data");
       console.error("Error fetching editor data:", error);
@@ -158,29 +145,15 @@ export default function EditorPage() {
     setMessage("");
 
     try {
-      const accessToken = localStorage.getItem("accessToken");
       const requestBody = {
         ...editorData
       };
 
-      const response = await fetch("/api/editor", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (response.ok) {
-        setMessage("Editor data saved successfully!");
-        setTimeout(() => setMessage(""), 3000);
-      } else {
-        const error = await response.json();
-        setMessage(error.error || "Failed to save editor data");
-      }
-    } catch (error) {
-      setMessage("Error saving editor data");
+      await apiService.put("/api/editor", requestBody);
+      setMessage("Editor data saved successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      setMessage(error.error || "Error saving editor data");
       console.error("Error saving editor data:", error);
     } finally {
       setSaving(false);
@@ -192,30 +165,18 @@ export default function EditorPage() {
     setMessage("");
 
     try {
-      const accessToken = localStorage.getItem("accessToken");
       const requestBody = {
         jobType
       };
 
-      const response = await fetch("/api/editor/jobs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setMessage(result.message);
-        setTimeout(() => setMessage(""), 5000);
-      } else {
-        const error = await response.json();
-        setMessage(error.error || `Failed to trigger ${jobType} job`);
-      }
-    } catch (error) {
-      setMessage(`Error triggering ${jobType} job`);
+      const result = await apiService.post<{ message: string }>(
+        "/api/editor/jobs",
+        requestBody
+      );
+      setMessage(result.message);
+      setTimeout(() => setMessage(""), 5000);
+    } catch (error: any) {
+      setMessage(error.error || `Error triggering ${jobType} job`);
       console.error(`Error triggering ${jobType} job:`, error);
     } finally {
       setJobTriggering(null);
@@ -224,11 +185,8 @@ export default function EditorPage() {
 
   const fetchJobStatus = async () => {
     try {
-      const response = await fetch("/api/editor/jobs");
-      if (response.ok) {
-        const status = await response.json();
-        setJobStatus(status);
-      }
+      const status = await apiService.get<JobStatus>("/api/editor/jobs");
+      setJobStatus(status);
     } catch (error) {
       console.error("Error fetching job status:", error);
     }
@@ -236,11 +194,8 @@ export default function EditorPage() {
 
   const fetchKpiData = async () => {
     try {
-      const response = await fetch("/api/kpi");
-      if (response.ok) {
-        const data = await response.json();
-        setKpiData(data);
-      }
+      const data = await apiService.get<KpiData>("/api/kpi");
+      setKpiData(data);
     } catch (error) {
       console.error("Error fetching KPI data:", error);
     }
@@ -248,11 +203,8 @@ export default function EditorPage() {
 
   const fetchMemoryInfo = async () => {
     try {
-      const response = await fetch("/api/editor/memory");
-      if (response.ok) {
-        const data = await response.json();
-        setMemoryInfo(data);
-      }
+      const data = await apiService.get<MemoryInfo>("/api/editor/memory");
+      setMemoryInfo(data);
     } catch (error) {
       console.error("Error fetching memory info:", error);
     }

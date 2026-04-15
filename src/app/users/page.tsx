@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "../schemas/types";
+import { apiService } from "@/app/services/api.service";
 
 interface SafeUser {
   id: string;
@@ -32,19 +33,7 @@ export default function UsersPage() {
       }
 
       // First, verify the current user
-      const userResponse = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        setError("Authentication failed");
-        setLoading(false);
-        return;
-      }
-
-      const userData = await userResponse.json();
+      const userData = await apiService.get<{ user: User }>("/api/auth/verify");
       setCurrentUser(userData.user);
 
       // Check if user is admin
@@ -55,17 +44,7 @@ export default function UsersPage() {
       }
 
       // Fetch users
-      const usersResponse = await fetch("/api/users", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!usersResponse.ok) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const usersData = await usersResponse.json();
+      const usersData = await apiService.get<SafeUser[]>("/api/users");
       setUsers(usersData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -106,19 +85,7 @@ export default function UsersPage() {
         return;
       }
 
-      const response = await fetch("/api/events/generate", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate events");
-      }
-
-      const result = await response.json();
+      const result = await apiService.post<any>("/api/events/generate");
       alert(
         `Events generated successfully! Created ${result.totalGenerated} events.`
       );

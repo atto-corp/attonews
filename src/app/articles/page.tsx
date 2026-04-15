@@ -9,6 +9,7 @@ import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
 import GradientButton from "@/components/GradientButton";
 import ExpandableSection from "@/components/ExpandableSection";
+import { apiService } from "@/app/services/api.service";
 
 interface Article {
   id: string;
@@ -57,31 +58,25 @@ function ArticlesContent() {
 
       // Check reader ability if no reporterId (all articles view)
       if (!reporterId) {
-        const response = await fetch("/api/abilities/reader", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        try {
+          const data = await apiService.get<{ hasReader: boolean }>(
+            "/api/abilities/reader"
+          );
           setHasReaderAccess(data.hasReader);
-        } else {
+        } catch {
           // If we can't check permissions, assume no reader access
           setHasReaderAccess(false);
         }
       }
 
       // Get user info for display
-      const userResponse = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
+      try {
+        const userData = await apiService.get<{ user: User }>(
+          "/api/auth/verify"
+        );
         setUser(userData.user);
+      } catch (error) {
+        console.error("Error getting user data:", error);
       }
     } catch (error) {
       console.error("Error checking user access:", error);
@@ -98,11 +93,10 @@ function ArticlesContent() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-        }
+        const config = await apiService.get<{ app: { name: string } }>(
+          "/api/config"
+        );
+        setAppName(config.app.name);
       } catch (error) {
         console.error("Failed to load config:", error);
       }
@@ -112,35 +106,26 @@ function ArticlesContent() {
 
   const fetchArticles = useCallback(async () => {
     try {
-      let response;
+      let data;
       if (reporterId) {
         // Fetch articles by specific reporter
-        response = await fetch(`/api/articles?reporterId=${reporterId}`);
+        data = await apiService.get<Article[]>(
+          `/api/articles?reporterId=${reporterId}`
+        );
       } else {
         // Check if user has reader access for all articles
-        const token = localStorage.getItem("accessToken");
-        if (token && hasReaderAccess) {
-          // User is authenticated and has reader access - fetch all articles
-          response = await fetch("/api/articles/all", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
+        if (hasReaderAccess) {
+          // User has reader access - fetch all articles
+          data = await apiService.get<Article[]>("/api/articles/all");
         } else {
-          // User is not authenticated or doesn't have reader access - fetch latest 5 articles
-          response = await fetch("/api/articles/public");
+          // User doesn't have reader access - fetch latest 5 articles
+          data = await apiService.get<Article[]>("/api/articles/public");
         }
       }
 
-      if (response.ok) {
-        const data = await response.json();
-        setArticles(data);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Failed to load articles");
-      }
-    } catch (error) {
-      setError("Error loading articles");
+      setArticles(data);
+    } catch (error: any) {
+      setError(error?.message || "Error loading articles");
       console.error("Error fetching articles:", error);
     } finally {
       setLoading(false);

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import ExpandableSection from "@/components/ExpandableSection";
+import { apiService } from "@/app/services/api.service";
 
 interface Article {
   id: string;
@@ -28,18 +29,15 @@ export default function ArticlePage() {
 
   const fetchArticle = useCallback(async () => {
     try {
-      const response = await fetch(`/api/articles/${articleId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setArticle(data);
-      } else if (response.status === 404) {
+      const data = await apiService.get<Article>(`/api/articles/${articleId}`);
+      setArticle(data);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("404")) {
         setError("Article not found");
       } else {
-        setError("Failed to load article");
+        setError("Error loading article");
+        console.error("Error fetching article:", error);
       }
-    } catch (error) {
-      setError("Error loading article");
-      console.error("Error fetching article:", error);
     } finally {
       setLoading(false);
     }
@@ -55,11 +53,10 @@ export default function ArticlePage() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-        }
+        const config = await apiService.get<{ app: { name: string } }>(
+          "/api/config"
+        );
+        setAppName(config.app.name);
       } catch (error) {
         console.error("Failed to load config:", error);
       }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { apiService } from "@/app/services/api.service";
 
 interface Reporter {
   id: string;
@@ -50,11 +51,10 @@ export default function ReportersPage() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await fetch("/api/config");
-        if (response.ok) {
-          const config = await response.json();
-          setAppName(config.app.name);
-        }
+        const config = await apiService.get<{ app: { name: string } }>(
+          "/api/config"
+        );
+        setAppName(config.app.name);
       } catch (error) {
         console.error("Failed to load config:", error);
       }
@@ -70,16 +70,8 @@ export default function ReportersPage() {
         return;
       }
 
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      }
+      const data = await apiService.get<{ user: User }>("/api/auth/verify");
+      setUser(data.user);
     } catch (error) {
       console.error("Auth check failed:", error);
     } finally {
@@ -90,17 +82,12 @@ export default function ReportersPage() {
   const fetchReporters = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch("/api/reporters", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setReporters(data);
-      } else {
-        setMessage("Failed to load reporters");
+      if (!token) {
+        setMessage("Not authenticated");
+        return;
       }
+      const data = await apiService.get<Reporter[]>("/api/reporters");
+      setReporters(data);
     } catch (error) {
       setMessage("Error loading reporters");
       console.error("Error fetching reporters:", error);
@@ -115,27 +102,19 @@ export default function ReportersPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/reporters/${reporter.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          beats: reporter.beats,
-          prompt: reporter.prompt
-        })
-      });
-
-      if (response.ok) {
-        setMessage("Reporter updated successfully!");
-        setEditingReporter(null);
-        setTimeout(() => setMessage(""), 3000);
-        fetchReporters(); // Refresh the list
-      } else {
-        const error = await response.json();
-        setMessage(error.error || "Failed to update reporter");
+      if (!token) {
+        setMessage("Not authenticated");
+        setSaving(false);
+        return;
       }
+      await apiService.put(`/api/reporters/${reporter.id}`, {
+        beats: reporter.beats,
+        prompt: reporter.prompt
+      });
+      setMessage("Reporter updated successfully!");
+      setEditingReporter(null);
+      setTimeout(() => setMessage(""), 3000);
+      fetchReporters(); // Refresh the list
     } catch (error) {
       setMessage("Error updating reporter");
       console.error("Error updating reporter:", error);
@@ -150,25 +129,17 @@ export default function ReportersPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch("/api/reporters", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(newReporter)
-      });
-
-      if (response.ok) {
-        setMessage("Reporter created successfully!");
-        setShowCreateForm(false);
-        setNewReporter({ beats: [], prompt: "" });
-        setTimeout(() => setMessage(""), 3000);
-        fetchReporters(); // Refresh the list
-      } else {
-        const error = await response.json();
-        setMessage(error.error || "Failed to create reporter");
+      if (!token) {
+        setMessage("Not authenticated");
+        setSaving(false);
+        return;
       }
+      await apiService.post("/api/reporters", newReporter);
+      setMessage("Reporter created successfully!");
+      setShowCreateForm(false);
+      setNewReporter({ beats: [], prompt: "" });
+      setTimeout(() => setMessage(""), 3000);
+      fetchReporters(); // Refresh the list
     } catch (error) {
       setMessage("Error creating reporter");
       console.error("Error creating reporter:", error);
@@ -187,21 +158,15 @@ export default function ReportersPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/reporters/${reporterId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setMessage("Reporter deleted successfully!");
-        setTimeout(() => setMessage(""), 3000);
-        fetchReporters(); // Refresh the list
-      } else {
-        const error = await response.json();
-        setMessage(error.error || "Failed to delete reporter");
+      if (!token) {
+        setMessage("Not authenticated");
+        setSaving(false);
+        return;
       }
+      await apiService.delete(`/api/reporters/${reporterId}`);
+      setMessage("Reporter deleted successfully!");
+      setTimeout(() => setMessage(""), 3000);
+      fetchReporters(); // Refresh the list
     } catch (error) {
       setMessage("Error deleting reporter");
       console.error("Error deleting reporter:", error);
@@ -260,22 +225,17 @@ export default function ReportersPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/reporters/${reporterId}/toggle`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessage(data.message);
-        setTimeout(() => setMessage(""), 3000);
-        fetchReporters(); // Refresh the list
-      } else {
-        const error = await response.json();
-        setMessage(error.error || "Failed to toggle reporter status");
+      if (!token) {
+        setMessage("Not authenticated");
+        setSaving(false);
+        return;
       }
+      const data = await apiService.post<any>(
+        `/api/reporters/${reporterId}/toggle`
+      );
+      setMessage(data.message);
+      setTimeout(() => setMessage(""), 3000);
+      fetchReporters(); // Refresh the list
     } catch (error) {
       setMessage("Error toggling reporter status");
       console.error("Error toggling reporter status:", error);

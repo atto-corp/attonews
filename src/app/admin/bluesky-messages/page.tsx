@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "../../schemas/types";
+import { apiService } from "@/app/services/api.service";
 
 interface BlueskyMessage {
   did: string;
@@ -36,19 +37,7 @@ export default function BlueskyMessagesPage() {
       }
 
       // First, verify the current user
-      const userResponse = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!userResponse.ok) {
-        setError("Authentication failed");
-        setLoading(false);
-        return;
-      }
-
-      const userData = await userResponse.json();
+      const userData = await apiService.get<{ user: User }>("/api/auth/verify");
       setCurrentUser(userData.user);
 
       // Check if user is admin
@@ -59,17 +48,9 @@ export default function BlueskyMessagesPage() {
       }
 
       // Fetch Bluesky messages
-      const messagesResponse = await fetch("/api/admin/bluesky-messages", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!messagesResponse.ok) {
-        throw new Error("Failed to fetch Bluesky messages");
-      }
-
-      const messagesData = await messagesResponse.json();
+      const messagesData = await apiService.get<BlueskyResponse>(
+        "/api/admin/bluesky-messages"
+      );
       setData(messagesData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

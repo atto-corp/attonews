@@ -6,6 +6,7 @@ import Link from "next/link";
 import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
+import { apiService } from "../../services/api.service";
 
 interface Thread {
   id: number;
@@ -67,13 +68,10 @@ export default function ForumViewPage() {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
-      const response = await fetch("/api/abilities/reader", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setHasReader(data.hasReader);
-      }
+      const data = await apiService.get<{ hasReader: boolean }>(
+        "/api/abilities/reader"
+      );
+      setHasReader(data.hasReader);
     } catch (err) {
       console.error("Failed to check reader permission", err);
     }
@@ -81,11 +79,7 @@ export default function ForumViewPage() {
 
   const fetchThreads = async () => {
     try {
-      const response = await fetch(`/api/forum/${forumId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch threads");
-      }
-      const data = await response.json();
+      const data = await apiService.get<Thread[]>(`/api/forum/${forumId}`);
       setThreads(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load threads");

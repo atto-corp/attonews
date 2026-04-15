@@ -8,6 +8,7 @@ import PageHeader from "../../components/PageHeader";
 import GradientButton from "../../components/GradientButton";
 import FormInput from "../../components/FormInput";
 import EmptyState from "../../components/EmptyState";
+import { apiService } from "@/app/services/api.service";
 
 interface AdEntry {
   id: string;
@@ -30,9 +31,7 @@ const AdsPage: React.FC = () => {
   // Fetch ads from API
   const fetchAds = async () => {
     try {
-      const response = await fetch("/api/ads");
-      if (!response.ok) throw new Error("Failed to fetch ads");
-      const data = await response.json();
+      const data = await apiService.get<AdEntry[]>("/api/ads");
       setAds(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch ads");
@@ -53,19 +52,11 @@ const AdsPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("/api/ads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newAd.name,
-          bidPrice: newAd.bidPrice,
-          promptContent: newAd.promptContent
-        })
+      const createdAd = await apiService.post<AdEntry>("/api/ads", {
+        name: newAd.name,
+        bidPrice: newAd.bidPrice,
+        promptContent: newAd.promptContent
       });
-
-      if (!response.ok) throw new Error("Failed to create ad");
-
-      const createdAd = await response.json();
       setAds((prev) => [...prev, createdAd]);
       setNewAd({ name: "", bidPrice: "", promptContent: "" });
       setError(null);
@@ -81,15 +72,9 @@ const AdsPage: React.FC = () => {
     value: string | number
   ) => {
     try {
-      const response = await fetch(`/api/ads/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value })
+      const updatedAd = await apiService.put<AdEntry>(`/api/ads/${id}`, {
+        [field]: value
       });
-
-      if (!response.ok) throw new Error("Failed to update ad");
-
-      const updatedAd = await response.json();
       setAds((prev) => prev.map((ad) => (ad.id === id ? updatedAd : ad)));
       setError(null);
     } catch (err) {
@@ -102,12 +87,7 @@ const AdsPage: React.FC = () => {
     if (!confirm("Are you sure you want to delete this ad?")) return;
 
     try {
-      const response = await fetch(`/api/ads/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!response.ok) throw new Error("Failed to delete ad");
-
+      await apiService.delete(`/api/ads/${id}`);
       setAds((prev) => prev.filter((ad) => ad.id !== id));
       setError(null);
     } catch (err) {

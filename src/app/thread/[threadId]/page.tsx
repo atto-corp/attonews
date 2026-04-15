@@ -6,6 +6,7 @@ import Link from "next/link";
 import PageContainer from "@/components/PageContainer";
 import ContentCard from "@/components/ContentCard";
 import PageHeader from "@/components/PageHeader";
+import { apiService } from "../../services/api.service";
 
 interface Thread {
   id: number;
@@ -56,11 +57,9 @@ export default function ThreadViewPage() {
 
   const fetchThread = async () => {
     try {
-      const response = await fetch(`/api/thread/${threadId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch thread");
-      }
-      const data = await response.json();
+      const data = await apiService.get<{ thread: Thread; posts: Post[] }>(
+        "/api/thread/${threadId}"
+      );
       setThread(data.thread);
       setPosts(data.posts || []);
     } catch (err) {
@@ -82,26 +81,15 @@ export default function ThreadViewPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/thread/${threadId}/post`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          content: newPost,
-          author: "user"
-        })
+      await apiService.post(`/api/thread/${threadId}/post`, {
+        content: newPost,
+        author: "user"
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to create post");
-      }
 
       setNewPost("");
       await fetchThread();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create post");
+    } catch (err: any) {
+      setError(err.message || "Failed to create post");
     } finally {
       setSubmitting(false);
     }
