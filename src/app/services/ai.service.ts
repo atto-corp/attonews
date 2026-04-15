@@ -1066,9 +1066,19 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     editionText: string
   ): Promise<DynamicPersona[]> {
     console.log("Generating dynamic personas for edition");
+
+    // Fetch editor for model name
+    let editor;
+    try {
+      editor = await this.dataStorageService.getEditor();
+    } catch (error) {
+      console.warn("Failed to fetch editor for model name:", error);
+      editor = { modelName: "gpt-5-nano" };
+    }
+
     const { systemPrompt, userPrompt } =
       AIPrompts.generateDynamicPersonasPrompts(editionText);
-    const model = "gpt-4o-mini";
+    const model = editor!.modelName;
 
     let attempts = 0;
     const maxAttempts = 2;
@@ -1097,7 +1107,10 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
         return personas;
       } catch (error) {
         attempts++;
-        console.error(`Persona generation attempt ${attempts} failed:`, error);
+        console.error(
+          `Persona generation attempt ${attempts} failed:`,
+          (error as any).error
+        );
         if (attempts >= maxAttempts) {
           console.error("Max retries exceeded; falling back to empty personas");
           return [];

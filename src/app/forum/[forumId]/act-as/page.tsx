@@ -11,12 +11,21 @@ interface ReplyOption {
   threadId: number;
   threadTitle: string;
   replies: string[];
-  persona: string;
+  personaDisplay: string;
+}
+
+export interface PersonaInfo {
+  key: string;
+  display: string;
+  description: string;
+  color?: string;
 }
 
 export default function ActAsPage() {
-  const [personas, setPersonas] = useState<string[]>([]);
-  const [selectedPersona, setSelectedPersona] = useState<string>("");
+  const [personas, setPersonas] = useState<PersonaInfo[]>([]);
+  const [selectedPersonaKey, setSelectedPersonaKey] = useState<string>("");
+  const [currentPersonaDisplay, setCurrentPersonaDisplay] =
+    useState<string>("");
   const [replyOptions, setReplyOptions] = useState<ReplyOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -43,17 +52,29 @@ export default function ActAsPage() {
       });
       if (!res.ok) throw new Error("Failed to fetch personas");
       const data = await res.json();
-      // Combine classic and dynamic personas for display
-      const allPersonas = [
-        ...Object.keys(data.classic || {}),
-        ...(Array.isArray(data.dynamic)
-          ? data.dynamic.map((p: any) => p.display)
-          : [])
-      ];
+      const classicPersonas = Object.entries(data.classic || {}).map(
+        ([key, val]: [string, any]) => ({
+          key,
+          display: val.display || key,
+          description: val.description || "",
+          color: val.color
+        })
+      ) as PersonaInfo[];
+
+      const dynamicPersonas = (data.dynamic || []).map((p: any) => ({
+        key: p.display,
+        display: p.display,
+        description: p.description || "",
+        color: p.color
+      })) as PersonaInfo[];
+
+      const allPersonas = [...classicPersonas, ...dynamicPersonas];
       setPersonas(allPersonas);
       if (allPersonas.length > 0) {
-        setSelectedPersona(allPersonas[0]);
-        fetchReplyOptions(allPersonas[0]);
+        const firstKey = allPersonas[0].key;
+        setSelectedPersonaKey(firstKey);
+        setCurrentPersonaDisplay(allPersonas[0].display);
+        fetchReplyOptions(firstKey);
       } else {
         setLoading(false);
       }
@@ -80,11 +101,16 @@ export default function ActAsPage() {
         throw new Error(errData.error || "Failed to generate replies");
       }
       const data = await res.json();
+      const personaInfo = personas.find(
+        (p: PersonaInfo) => p.key === personaKey
+      );
+      const display = personaInfo?.display || personaKey;
+      setCurrentPersonaDisplay(display);
       const formatted = data.threadTitles.map((title: string, i: number) => ({
         threadId: data.threadIds ? data.threadIds[i] : i,
         threadTitle: title,
         replies: data.replies[i] || [],
-        persona: personaKey
+        personaDisplay: display
       }));
       setReplyOptions(formatted);
     } catch (err) {
@@ -98,7 +124,7 @@ export default function ActAsPage() {
   };
 
   const handlePostReply = async (threadId: number, replyText: string) => {
-    if (!selectedPersona || !replyText) return;
+    if (!selectedPersonaKey || !replyText) return;
     setSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -111,7 +137,7 @@ export default function ActAsPage() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          persona: selectedPersona,
+          persona: selectedPersonaKey,
           replyText,
           threadIndex: replyOptions.findIndex((r) => r.threadId === threadId)
         })
@@ -158,29 +184,41 @@ export default function ActAsPage() {
       </ContentCard>
 
       <ContentCard className="p-6 mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <label className="text-white/80 font-medium">Select Persona:</label>
-          <select
-            value={selectedPersona}
-            onChange={(e) => {
-              setSelectedPersona(e.target.value);
-              fetchReplyOptions(e.target.value);
-            }}
-            className="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 focus:outline-none focus:border-purple-400"
-          >
-            {personas.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <label className="text-white/80 font-medium">Select Persona:</label>
+            <button
+              onClick={() => fetchReplyOptions(selectedPersonaKey)}
+              disabled={loading || !selectedPersonaKey}
+              className="px-6 py-2 bg-purple-500/30 border border-purple-400/40 hover:bg-purple-500/50 text-white rounded-xl transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              ↻ Refresh
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4 bg-white/5 border border-white/20 rounded-2xl max-h-72 overflow-y-auto">
+            {personas.map((persona) => (
+              <button
+                key={persona.key}
+                onClick={() => {
+                  setSelectedPersonaKey(persona.key);
+                  fetchReplyOptions(persona.key);
+                }}
+                className={`p-3 rounded-xl border border-white/10 text-left transition-all duration-200 hover:border-purple-400/50 hover:shadow-lg hover:scale-[1.02]
+                  ${
+                    selectedPersonaKey === persona.key
+                      ? `bg-gradient-to-br ${persona.color || "from-purple-500 to-indigo-600"} ring-2 ring-white/50 shadow-xl`
+                      : "bg-white/10 hover:bg-white/20"
+                  }`}
+              >
+                <div className="font-bold text-lg leading-tight mb-1">
+                  {persona.display}
+                </div>
+                <div className="text-xs text-white/70 leading-tight line-clamp-2">
+                  {persona.description}
+                </div>
+              </button>
             ))}
-          </select>
-          <button
-            onClick={() => fetchReplyOptions(selectedPersona)}
-            disabled={loading}
-            className="px-5 py-2 bg-purple-500/30 border border-purple-400/40 hover:bg-purple-500/50 text-white rounded-xl transition-colors disabled:opacity-50"
-          >
-            Refresh
-          </button>
+          </div>
         </div>
       </ContentCard>
 
@@ -214,7 +252,7 @@ export default function ActAsPage() {
                   {option.threadTitle}
                 </Link>
                 <span className="text-purple-300 text-sm font-medium">
-                  {option.persona}
+                  {option.personaDisplay}
                 </span>
               </div>
 
@@ -232,7 +270,9 @@ export default function ActAsPage() {
                       disabled={submitting}
                       className="text-xs px-6 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/50 text-white font-medium rounded-xl transition-all flex items-center gap-2"
                     >
-                      {submitting ? "Posting..." : "Post as " + option.persona}
+                      {submitting
+                        ? "Posting..."
+                        : "Post as " + option.personaDisplay}
                     </button>
                   </div>
                 ))}
