@@ -55,7 +55,7 @@ All users can freely access recent content without registration. Visit the follo
      Create a `.env.local` file with:
      ```
      OPENAI_API_KEY=your_openai_api_key
-     DATA_STORAGE_BACKEND=redis  # or 'postgres' for PostgreSQL
+      DATA_STORAGE_BACKEND=redis
      ```
 
 3. **Database Configuration**:
@@ -64,13 +64,7 @@ All users can freely access recent content without registration. Visit the follo
     - Ensure Redis is running on `redis://localhost:6379`
     - Set `DATA_STORAGE_BACKEND=redis` (or omit for default)
 
-    **PostgreSQL (Optional)**:
-    - Install and start PostgreSQL server
-    - Create a database named `newsroom`
-    - Set `DATA_STORAGE_BACKEND=postgres`
-    - Set `POSTGRES_URL` to your PostgreSQL connection string
-    - Run schema creation: `npx ts-node src/scripts/create-postgres-schema.ts`
-    - Migrate data from Redis: `npx ts-node src/scripts/migrate-redis-to-postgres.ts`
+
 
 3. **Start the development server**:
    ```bash

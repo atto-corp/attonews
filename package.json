@@ -8,14 +8,21 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write --list-different .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "workers": "tsx watch src/app/workers/artifact.worker.ts",
+    "bull-board": "node -r tsx ./node_modules/@bull-board/fastify/dist/main.js --port 8081 --queues artifact_generate"
   },
   "dependencies": {
+    "@bull-board/api": "^7.0.0",
+    "@bull-board/fastify": "^7.0.0",
+    "@bull-board/ui": "^7.0.0",
     "@types/bcrypt": "^6.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.74.1",
     "cron": "^4.3.3",
+    "handlebars": "^4.7.9",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "mbjc": "^1.0.5",

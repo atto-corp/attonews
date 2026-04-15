@@ -8,6 +8,8 @@ import { KpiService } from "./kpi.service";
 import { AIService } from "./ai.service";
 import { AbilitiesService } from "./abilities.service";
 import { ConfigService } from "./config.service";
+import { ArtifactService } from "./artifact.service";
+import { ArtifactQueueService } from "./artifact-queue.service";
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
@@ -19,6 +21,8 @@ export class ServiceContainer {
   private aiService: AIService | null = null;
   private abilitiesService: AbilitiesService | null = null;
   private configService: ConfigService | null = null;
+  private artifactService: ArtifactService | null = null;
+  private artifactQueueService: ArtifactQueueService | null = null;
 
   private constructor() {}
 
@@ -108,6 +112,27 @@ export class ServiceContainer {
     return this.configService;
   }
 
+  async getArtifactService(): Promise<ArtifactService> {
+    if (!this.artifactService) {
+      const dataStorage = await this.getDataStorageService();
+      const aiService = await this.getAIService();
+      this.artifactService = new ArtifactService(dataStorage, aiService);
+    }
+    return this.artifactService;
+  }
+
+  async getArtifactQueueService(): Promise<ArtifactQueueService> {
+    if (!this.artifactQueueService) {
+      const artifactService = await this.getArtifactService();
+      const dataStorage = await this.getDataStorageService();
+      this.artifactQueueService = new ArtifactQueueService(
+        artifactService,
+        dataStorage
+      );
+    }
+    return this.artifactQueueService;
+  }
+
   // Cleanup method for testing or shutdown
   async disconnect(): Promise<void> {
     if (this.dataStorageService) {
@@ -122,5 +147,7 @@ export class ServiceContainer {
     this.aiService = null;
     this.abilitiesService = null;
     this.configService = null;
+    this.artifactService = null;
+    this.artifactQueueService = null;
   }
 }

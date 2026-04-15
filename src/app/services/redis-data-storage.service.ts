@@ -12,7 +12,8 @@ import {
   ForumSection,
   ForumThread,
   ForumPost,
-  DynamicPersona
+  DynamicPersona,
+  Artifact
 } from "../schemas/types";
 import { CLASSIC_PERSONAS } from "./ai-prompts";
 import { IDataStorageService } from "./data-storage.interface";
@@ -2152,5 +2153,127 @@ export class RedisDataStorageService implements IDataStorageService {
 
   async getClassicPersonas(): Promise<typeof CLASSIC_PERSONAS> {
     return CLASSIC_PERSONAS;
+  }
+
+  // Artifact operations
+  async saveArtifact(artifact: Artifact): Promise<void> {
+    const artifactId = artifact.id;
+    const multi = this.client.multi();
+    multi.set(REDIS_KEYS.ARTIFACT_TYPE(artifactId), artifact.type);
+    multi.set(
+      REDIS_KEYS.ARTIFACT_INPUTS(artifactId),
+      JSON.stringify(artifact.inputs)
+    );
+    multi.set(
+      REDIS_KEYS.ARTIFACT_PROMPT_SYSTEM(artifactId),
+      artifact.prompt_system
+    );
+    multi.set(
+      REDIS_KEYS.ARTIFACT_PROMPT_USER_TEMPLATE(artifactId),
+      artifact.prompt_user_template
+    );
+    if (artifact.output)
+      multi.set(
+        REDIS_KEYS.ARTIFACT_OUTPUT(artifactId),
+        JSON.stringify(artifact.output)
+      );
+    multi.set(
+      REDIS_KEYS.ARTIFACT_METADATA(artifactId),
+      JSON.stringify(artifact.metadata)
+    );
+    // Add to latest ZSET
+    multi.zAdd(REDIS_KEYS.ARTIFACTS_LATEST, {
+      score: artifact.metadata.generated_at || Date.now(),
+      value: artifactId
+    });
+    // Add to type ZSET
+    multi.zAdd(REDIS_KEYS.ARTIFACTS_BY_TYPE(artifact.type), {
+      score: artifact.metadata.generated_at || Date.now(),
+      value: artifactId
+    });
+    await multi.exec();
+  }
+
+  async getArtifact(artifactId: string): Promise<Artifact | null> {
+    const results = await this.client.mGet([
+      REDIS_KEYS.ARTIFACT_TYPE(artifactId),
+      REDIS_KEYS.ARTIFACT_INPUTS(artifactId),
+      REDIS_KEYS.ARTIFACT_PROMPT_SYSTEM(artifactId),
+      REDIS_KEYS.ARTIFACT_PROMPT_USER_TEMPLATE(artifactId),
+      REDIS_KEYS.ARTIFACT_OUTPUT(artifactId),
+      REDIS_KEYS.ARTIFACT_METADATA(artifactId)
+    ]);
+    if (!results[0]) return null;
+    return {
+      id: artifactId,
+      type: results[0] as string,
+      inputs: JSON.parse(results[1] || "[]"),
+      prompt_system: results[2] || "",
+      prompt_user_template: results[3] || "",
+      output: results[4] ? JSON.parse(results[4]) : undefined,
+      metadata: JSON.parse(results[5] || "{}")
+    } as Artifact;
+  }
+
+  async getAllArtifacts(): Promise<Artifact[]> {
+    const latest = await this.client.zRange(
+      REDIS_KEYS.ARTIFACTS_LATEST,
+      0,
+      -1,
+      { REV: true }
+    );
+    const artifacts: Artifact[] = [];
+    for (const id of latest) {
+      const artifact = await this.getArtifact(id);
+      if (artifact) artifacts.push(artifact);
+    }
+    return artifacts;
+  }
+
+  async getArtifactsByType(type: string, limit?: number): Promise<Artifact[]> {
+    const ids = await this.client.zRange(
+      REDIS_KEYS.ARTIFACTS_BY_TYPE(type),
+      0,
+      limit ? limit - 1 : -1,
+      { REV: true }
+    );
+    const artifacts: Artifact[] = [];
+    for (const id of ids) {
+      const artifact = await this.getArtifact(id);
+      if (artifact) artifacts.push(artifact);
+    }
+    return artifacts;
+  }
+
+  async getArtifactsByReporter(reporterId: string): Promise<Artifact[]> {
+    const all = await this.getAllArtifacts();
+    return all.filter((a) => a.metadata.reporterId === reporterId);
+  }
+
+  async deleteArtifact(artifactId: string): Promise<void> {
+    const artifact = await this.getArtifact(artifactId);
+    if (!artifact) return;
+    const multi = this.client.multi();
+    multi.del([
+      REDIS_KEYS.ARTIFACT_TYPE(artifactId),
+      REDIS_KEYS.ARTIFACT_INPUTS(artifactId),
+      REDIS_KEYS.ARTIFACT_PROMPT_SYSTEM(artifactId),
+      REDIS_KEYS.ARTIFACT_PROMPT_USER_TEMPLATE(artifactId),
+      REDIS_KEYS.ARTIFACT_OUTPUT(artifactId),
+      REDIS_KEYS.ARTIFACT_METADATA(artifactId)
+    ]);
+    multi.zRem(REDIS_KEYS.ARTIFACTS_LATEST, artifactId);
+    multi.zRem(REDIS_KEYS.ARTIFACTS_BY_TYPE(artifact.type), artifactId);
+    await multi.exec();
+  }
+
+  async updateArtifact(
+    artifactId: string,
+    updates: Partial<Artifact>
+  ): Promise<void> {
+    const current = await this.getArtifact(artifactId);
+    if (!current) throw new Error("Artifact not found");
+    const updated = { ...current, ...updates };
+    await this.saveArtifact(updated);
   }
 }

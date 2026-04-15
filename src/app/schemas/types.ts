@@ -292,9 +292,21 @@ export const REDIS_KEYS = {
   FORUM_COUNTER: (forumId: string) => `forum:${forumId}:counter`,
   FORUM_NEXT_THREAD_ID: "forum:next_thread_id",
   FORUM_NEXT_POST_ID: "forum:next_post_id",
-  // Personas
+  //  // Personas
   PERSONAS_CLASSIC: "personas:classic",
-  PERSONAS_DYNAMIC_LATEST: "personas:dynamic:latest"
+  PERSONAS_DYNAMIC_LATEST: "personas:dynamic:latest",
+
+  // Artifacts
+  ARTIFACTS_LATEST: "artifact:latest",
+  ARTIFACTS_BY_TYPE: (type: string) => `artifact:${type}`,
+  ARTIFACT_TYPE: (artifactId: string) => `artifact:${artifactId}:type`,
+  ARTIFACT_INPUTS: (artifactId: string) => `artifact:${artifactId}:inputs`,
+  ARTIFACT_PROMPT_SYSTEM: (artifactId: string) =>
+    `artifact:${artifactId}:prompt_system`,
+  ARTIFACT_PROMPT_USER_TEMPLATE: (artifactId: string) =>
+    `artifact:${artifactId}:prompt_user_template`,
+  ARTIFACT_OUTPUT: (artifactId: string) => `artifact:${artifactId}:output`,
+  ARTIFACT_METADATA: (artifactId: string) => `artifact:${artifactId}:metadata`
 } as const;
 
 export interface ForumPost {
@@ -353,4 +365,51 @@ export interface DynamicPersona {
   display: string;
   description: string;
   system_prompt: string;
+}
+
+export type ArtifactType =
+  | "event"
+  | "article"
+  | "edition"
+  | "daily_edition"
+  | "custom";
+
+export interface ArtifactInput {
+  name: string;
+  source: "artifacts" | "external";
+  type?: ArtifactType; // for source='artifacts'
+  filter?: {
+    reporterId?: string;
+    limit?: number;
+    since?: string; // e.g. '3h', '1d'
+    date?: string; // ISO date
+  };
+}
+
+export interface Artifact {
+  id: string;
+  type: ArtifactType;
+  inputs: ArtifactInput[];
+  prompt_system: string;
+  prompt_user_template: string;
+  output?: any;
+  metadata: {
+    model_name?: string;
+    input_tokens?: number;
+    output_tokens?: number;
+    generated_at?: number;
+    reporterId?: string;
+    status: "pending" | "generated" | "failed";
+    error_message?: string;
+  };
+}
+
+export interface ArtifactJob {
+  id: string;
+  artifactId: string;
+  status: "waiting" | "active" | "completed" | "failed";
+  progress?: number;
+  result?: any;
+  error?: string;
+  createdAt?: number;
 }

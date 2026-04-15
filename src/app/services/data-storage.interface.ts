@@ -10,7 +10,9 @@ import {
   ForumSection,
   ForumThread,
   ForumPost,
-  DynamicPersona
+  DynamicPersona,
+  Artifact,
+  ArtifactJob
 } from "../schemas/types";
 import { CLASSIC_PERSONAS } from "./ai-prompts";
 
@@ -142,4 +144,13 @@ export interface IDataStorageService {
     ttlHours?: number
   ): Promise<void>;
   getClassicPersonas(): Promise<typeof CLASSIC_PERSONAS>;
+
+  // Artifact operations
+  saveArtifact(artifact: Artifact): Promise<void>;
+  getArtifact(artifactId: string): Promise<Artifact | null>;
+  getAllArtifacts(): Promise<Artifact[]>;
+  getArtifactsByType(type: string, limit?: number): Promise<Artifact[]>;
+  getArtifactsByReporter(reporterId: string): Promise<Artifact[]>;
+  deleteArtifact(artifactId: string): Promise<void>;
+  updateArtifact(artifactId: string, updates: Partial<Artifact>): Promise<void>;
 }
