@@ -19,6 +19,10 @@ export default function ArtifactsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewOutputModal, setViewOutputModal] = useState<{
+    artifact: Artifact | null;
+    open: boolean;
+  }>({ artifact: null, open: false });
   const [createForm, setCreateForm] = useState({
     type: "event",
     inputs: [
@@ -64,6 +68,10 @@ export default function ArtifactsPage() {
     } catch (err) {
       console.error("Failed to queue:", err);
     }
+  };
+
+  const viewOutput = async (artifact: Artifact) => {
+    setViewOutputModal({ artifact, open: true });
   };
 
   const handleCreateArtifact = async () => {
@@ -177,6 +185,14 @@ export default function ArtifactsPage() {
                   >
                     Queue
                   </button>
+                  {artifact.metadata.status === "generated" && (
+                    <button
+                      onClick={() => viewOutput(artifact)}
+                      className="bg-green-500 hover:bg-green-700 text-white px-2 py-1 rounded"
+                    >
+                      View Output
+                    </button>
+                  )}
                   {/* Edit, Delete buttons */}
                 </td>
               </tr>
@@ -483,6 +499,33 @@ export default function ArtifactsPage() {
                   className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded"
                 >
                   Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Output Modal */}
+      {viewOutputModal.open && viewOutputModal.artifact && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Output for {viewOutputModal.artifact.type} -{" "}
+                {viewOutputModal.artifact.id}
+              </h3>
+              <pre className="bg-gray-100 p-4 rounded text-sm text-gray-900 overflow-x-auto">
+                {JSON.stringify(viewOutputModal.artifact.output, null, 2)}
+              </pre>
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() =>
+                    setViewOutputModal({ artifact: null, open: false })
+                  }
+                  className="bg-gray-500 hover:bg-gray-700 text-white px-4 py-2 rounded"
+                >
+                  Close
                 </button>
               </div>
             </div>
