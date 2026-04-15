@@ -16,7 +16,8 @@ import {
   dailyEditionSchema,
   reporterArticleSchema,
   eventGenerationResponseSchema,
-  generatedCommentSchema
+  generatedCommentSchema,
+  DynamicPersonasSchema
 } from "../schemas/response-schemas";
 import { IDataStorageService } from "./data-storage.interface";
 import { KpiService } from "./kpi.service";
@@ -1067,18 +1068,43 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
     console.log("Generating dynamic personas for edition");
     const { systemPrompt, userPrompt } =
       AIPrompts.generateDynamicPersonasPrompts(editionText);
-    const model = "gpt-5-nano"; // or from editor
-    const response = await this.aiClient.getClient().chat.completions.create({
-      model,
-      reasoning_effort: "minimal",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
-    });
-    const content = response.choices[0].message.content;
-    if (!content) throw new Error("No response from AI for personas");
-    const personas = JSON.parse(content) as DynamicPersona[];
-    return personas;
+    const model = "gpt-4o-mini";
+
+    let attempts = 0;
+    const maxAttempts = 2;
+    while (attempts < maxAttempts) {
+      try {
+        const response = await this.aiClient
+          .getClient()
+          .chat.completions.create({
+            model,
+            reasoning_effort: "minimal",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ],
+            response_format: zodResponseFormat(
+              DynamicPersonasSchema,
+              "personas"
+            )
+          });
+        const content = response.choices[0]?.message?.content;
+        if (!content) throw new Error("No response from AI for personas");
+
+        const parsed = JSON.parse(content);
+        const personas = DynamicPersonasSchema.parse(parsed);
+        await this.logAIResponse("Dynamic personas generation", response);
+        return personas;
+      } catch (error) {
+        attempts++;
+        console.error(`Persona generation attempt ${attempts} failed:`, error);
+        if (attempts >= maxAttempts) {
+          console.error("Max retries exceeded; falling back to empty personas");
+          return [];
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
+      }
+    }
+    return [];
   }
 }

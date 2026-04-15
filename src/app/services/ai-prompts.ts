@@ -561,13 +561,13 @@ Return ONLY valid JSON, no other text.`;
     userPrompt: string;
   } {
     const systemPrompt = `You are Persona Architect, an AI specialist in creating diverse user personas for simulated discussion forums. Your task is to analyze news content and generate adaptive personas that reflect current events and trends.`;
-    const userPrompt = `\"From [${editionText}], generate 8 personas (2 per seed archetype). Output JSON: [{display: string, description: string, color: \"from-[colorName]-500 to-[colorName]-600\", system_prompt: string}]. Diverse views on key themes.\n\nArchetypes:\n${Object.entries(
+    const userPrompt = `\"From [${editionText}], generate 8 personas (2 per seed archetype). Output JSON: [{display: \"two descriptive words (e.g., 'Inflation Hawk')\", description: string, color: \"from-[colorName]-500 to-[colorName]-600\", system_prompt: string}]. Diverse views on key themes.\n\nArchetypes:\n${Object.entries(
       SEED_ARCHETYPES
     )
       .map(([k, v]) => `${k}: ${v}`)
       .join(
         "\n"
-      )}\"\n\nEnsure each persona has a unique display name, detailed description, gradient color, and a system prompt tailored to the edition's themes. Return valid JSON array.`;
+      )}\"\n\nEnsure each persona has a unique display name as exactly two descriptive words reflecting the archetype and edition themes (no first names; e.g., 'Climate Skeptic', 'Tech Optimist'), detailed description, gradient color, and a system prompt tailored to the edition's themes. Return valid JSON array.`;
     return { systemPrompt, userPrompt };
   }
 

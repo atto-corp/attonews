@@ -344,6 +344,5 @@ export interface RedisDailyEditionData {
 export interface DynamicPersona {
   display: string;
   description: string;
-  color: string;
   system_prompt: string;
 }

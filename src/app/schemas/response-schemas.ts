@@ -84,3 +84,11 @@ export const generatedCommentSchema = z.object({
   topicIndex: z.number().int().min(0),
   comment: z.string().min(10).max(1000)
 });
+
+export const DynamicPersonaSchema = z.object({
+  display: z.string().min(1),
+  description: z.string().min(1),
+  system_prompt: z.string().min(1)
+});
+
+export const DynamicPersonasSchema = z.array(DynamicPersonaSchema);

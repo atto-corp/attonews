@@ -16,6 +16,7 @@ import {
 } from "../schemas/types";
 import { CLASSIC_PERSONAS } from "./ai-prompts";
 import { IDataStorageService } from "./data-storage.interface";
+import { DynamicPersonasSchema } from "../schemas/response-schemas";
 
 export class RedisDataStorageService implements IDataStorageService {
   private client: RedisClientType;
@@ -2127,7 +2128,15 @@ export class RedisDataStorageService implements IDataStorageService {
 
   async getDynamicPersonas(): Promise<DynamicPersona[] | null> {
     const data = await this.client.get(REDIS_KEYS.PERSONAS_DYNAMIC_LATEST);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+    try {
+      const parsed = JSON.parse(data);
+      return DynamicPersonasSchema.parse(parsed);
+    } catch (error) {
+      console.error("Invalid stored dynamic personas; clearing cache:", error);
+      await this.client.del(REDIS_KEYS.PERSONAS_DYNAMIC_LATEST);
+      return null;
+    }
   }
 
   async setDynamicPersonas(
