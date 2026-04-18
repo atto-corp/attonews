@@ -20,6 +20,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.9.0",
     "bullmq": "^5.74.1",
     "cron": "^4.3.3",
     "handlebars": "^4.7.9",
