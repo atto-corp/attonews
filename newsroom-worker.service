@@ -1,6 +1,6 @@
 [Unit]
 Description=Newsroom Worker
-After=network.target redis.target
+After=network.target
 StartLimitIntervalSec=0
 [Service]
 Type=simple
