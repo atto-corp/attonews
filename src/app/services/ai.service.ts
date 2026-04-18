@@ -445,8 +445,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
             }
           ],
           response_format: zodResponseFormat(
-            reporterArticleSchema,
-            "reporter_article"
+            dailyEditionSchema,
+            "daily_edition"
           )
         },
         modelName
@@ -571,8 +571,8 @@ User: Given the following articles and editorial guidelines: "${editorPrompt}", 
             }
           ],
           response_format: zodResponseFormat(
-            reporterArticleSchema,
-            "reporter_article"
+            eventGenerationResponseSchema,
+            "events"
           )
         },
         modelName
